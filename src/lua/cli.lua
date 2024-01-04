@@ -44,6 +44,7 @@ local export_table =
 	["md"]   = Cmd.ExportMarkdownFile,
 	["rtf"]  = Cmd.ExportRTFFile,
 	["docx"] = Cmd.ExportDOCXFile,
+	["org"]  = Cmd.ExportOrgFile,
 }
 
 function CLIMessage(...)

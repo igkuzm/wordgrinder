@@ -108,6 +108,7 @@ local ExportMenu = CreateMenu("Export current document",
 	{"FEtr",   "F", "Export to Troff...",        nil,         Cmd.ExportTroffFile},
 	{"FErtf",  "R", "Export to Rtf...",          nil,         Cmd.ExportRTFFile},
 	{"FEdocx", "D", "Export to MS DOCX...",      nil,         Cmd.ExportDOCXFile},
+	{"FEorg",  "E", "Export to Emacs Org...",    nil,         Cmd.ExportOrgFile},
 })
 
 local DocumentSettingsMenu = CreateMenu("Document settings",
