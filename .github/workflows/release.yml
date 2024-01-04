@@ -1,0 +1,42 @@
+name: Autorelease
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  dev-release:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: apt
+      run: sudo apt update && sudo apt install ninja-build mingw-w64 libz-mingw-w64-dev nsis
+    - name: make
+      run: make windows debian-distr
+    - name: tag
+      uses: hole19/git-tag-action@master
+      env:
+        TAG: dev
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: delete-old-assets
+      uses: mknejp/delete-release-assets@v1
+      with:
+        token: ${{ github.token }}
+        tag: dev
+        assets: | 
+          wordgrinder-*.tar.xz
+          WordGrinder-*-setup.exe
+    - name: release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Development build
+        files: |
+          wordgrinder-*.tar.xz
+          bin/WordGrinder-*-setup.exe
+        tag_name: dev
+        prerelease: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

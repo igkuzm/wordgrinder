@@ -1,0 +1,164 @@
+WordGrinder dumpfile v3: this is a text file; diff me!
+.addons.autosave.enabled: false
+.addons.autosave.pattern: "%F.autosave.%T.wg"
+.addons.autosave.period: 10
+.addons.htmlexport.bold_off: "</b>"
+.addons.htmlexport.bold_on: "<b>"
+.addons.htmlexport.italic_off: "</i>"
+.addons.htmlexport.italic_on: "<i>"
+.addons.htmlexport.underline_off: "</u>"
+.addons.htmlexport.underline_on: "<u>"
+.addons.pagecount.enabled: false
+.addons.pagecount.wordsperpage: 250
+.addons.scrapbook.document: "Scrapbook"
+.addons.scrapbook.pattern: "Item from '%N' at %T:"
+.addons.scrapbook.timestamp: true
+.addons.smartquotes.doublequotes: false
+.addons.smartquotes.leftdouble: "“"
+.addons.smartquotes.leftsingle: "‘"
+.addons.smartquotes.notinraw: true
+.addons.smartquotes.rightdouble: "”"
+.addons.smartquotes.rightsingle: "’"
+.addons.smartquotes.singlequotes: false
+.addons.spellchecker.enabled: false
+.addons.spellchecker.usesystemdictionary: true
+.addons.spellchecker.useuserdictionary: true
+.documents.1.co: 1
+.documents.1.cp: 1
+.documents.1.cw: 1
+.documents.1.margin: 0
+.documents.1.name: "main"
+.documents.1.viewmode: 1
+.documents.1.wordcount: 1
+.documents.2.co: 13
+.documents.2.cp: 7
+.documents.2.cw: 2
+.documents.2.margin: 0
+.documents.2.name: "1.docx"
+.documents.2.viewmode: 1
+.documents.2.wordcount: 171
+.fileformat: 8
+.menu.accelerators.^@: "ZM"
+.menu.accelerators.^B: "SB"
+.menu.accelerators.BACKSPACE: "ZDPC"
+.menu.accelerators.^C: "EC"
+.menu.accelerators.DELETE: "ZDNC"
+.menu.accelerators.^DOWN: "ZNP"
+.menu.accelerators.DOWN: "ZD"
+.menu.accelerators.^E: "ZDW"
+.menu.accelerators.EC: "^C"
+.menu.accelerators.ECadd: "^M"
+.menu.accelerators.ECfind: "^L"
+.menu.accelerators.EF: "^F"
+.menu.accelerators.EG: "^G"
+.menu.accelerators.EN: "^K"
+.menu.accelerators.END: "ZE"
+.menu.accelerators.EP: "^V"
+.menu.accelerators.ER: "^R"
+.menu.accelerators.Eredo: "^Y"
+.menu.accelerators.ET: "^X"
+.menu.accelerators.Eundo: "^Z"
+.menu.accelerators.^F: "EF"
+.menu.accelerators.FQ: "^Q"
+.menu.accelerators.FS: "^S"
+.menu.accelerators.^G: "EG"
+.menu.accelerators.HOME: "ZH"
+.menu.accelerators.^I: "SI"
+.menu.accelerators.^K: "EN"
+.menu.accelerators.^L: "ECfind"
+.menu.accelerators.^LEFT: "ZWL"
+.menu.accelerators.LEFT: "ZL"
+.menu.accelerators.^M: "ECadd"
+.menu.accelerators.^O: "SO"
+.menu.accelerators.^P: "SP"
+.menu.accelerators.^PGDN: "ZED"
+.menu.accelerators.PGDN: "ZPGDN"
+.menu.accelerators.^PGUP: "ZBD"
+.menu.accelerators.PGUP: "ZPGUP"
+.menu.accelerators.^Q: "FQ"
+.menu.accelerators.^R: "ER"
+.menu.accelerators.^RIGHT: "ZWR"
+.menu.accelerators.RIGHT: "ZR"
+.menu.accelerators.^S: "FS"
+.menu.accelerators.SB: "^B"
+.menu.accelerators.S^DOWN: "ZSNP"
+.menu.accelerators.SDOWN: "ZSD"
+.menu.accelerators.SEND: "ZSE"
+.menu.accelerators.SHOME: "ZSH"
+.menu.accelerators.SI: "^I"
+.menu.accelerators.S^LEFT: "ZSWL"
+.menu.accelerators.SLEFT: "ZSL"
+.menu.accelerators.SO: "^O"
+.menu.accelerators.SP: "^P"
+.menu.accelerators.S^PGDN: "ZSED"
+.menu.accelerators.SPGDN: "ZSPGDN"
+.menu.accelerators.S^PGUP: "ZSBD"
+.menu.accelerators.SPGUP: "ZSPGUP"
+.menu.accelerators.S^RIGHT: "ZSWR"
+.menu.accelerators.SRIGHT: "ZSR"
+.menu.accelerators.SU: "^U"
+.menu.accelerators.S^UP: "ZSPP"
+.menu.accelerators.SUP: "ZSU"
+.menu.accelerators.^U: "SU"
+.menu.accelerators.^UP: "ZPP"
+.menu.accelerators.UP: "ZU"
+.menu.accelerators.^V: "EP"
+.menu.accelerators.^W: "ZSW"
+.menu.accelerators.^X: "ET"
+.menu.accelerators.^Y: "Eredo"
+.menu.accelerators.^Z: "Eundo"
+.menu.accelerators.ZBD: "^PGUP"
+.menu.accelerators.ZD: "DOWN"
+.menu.accelerators.ZDNC: "DELETE"
+.menu.accelerators.ZDPC: "BACKSPACE"
+.menu.accelerators.ZDW: "^E"
+.menu.accelerators.ZE: "END"
+.menu.accelerators.ZED: "^PGDN"
+.menu.accelerators.ZH: "HOME"
+.menu.accelerators.ZL: "LEFT"
+.menu.accelerators.ZM: "^@"
+.menu.accelerators.ZNP: "^DOWN"
+.menu.accelerators.ZPGDN: "PGDN"
+.menu.accelerators.ZPGUP: "PGUP"
+.menu.accelerators.ZPP: "^UP"
+.menu.accelerators.ZR: "RIGHT"
+.menu.accelerators.ZSBD: "S^PGUP"
+.menu.accelerators.ZSD: "SDOWN"
+.menu.accelerators.ZSE: "SEND"
+.menu.accelerators.ZSED: "S^PGDN"
+.menu.accelerators.ZSH: "SHOME"
+.menu.accelerators.ZSL: "SLEFT"
+.menu.accelerators.ZSNP: "S^DOWN"
+.menu.accelerators.ZSPGDN: "SPGDN"
+.menu.accelerators.ZSPGUP: "SPGUP"
+.menu.accelerators.ZSPP: "S^UP"
+.menu.accelerators.ZSR: "SRIGHT"
+.menu.accelerators.ZSU: "SUP"
+.menu.accelerators.ZSW: "^W"
+.menu.accelerators.ZSWL: "S^LEFT"
+.menu.accelerators.ZSWR: "S^RIGHT"
+.menu.accelerators.ZU: "UP"
+.menu.accelerators.ZWL: "^LEFT"
+.menu.accelerators.ZWR: "^RIGHT"
+.name: "/home/kuzmich/src/wordgrinder/src/wordgrinder-0.8/.wg"
+.statusbar: true
+.current: 2
+#1
+P 
+.
+#2
+RIGHT Командиру воинской части 95498
+CENTER Рапорт
+P Настоящим докладываю, что 18.04.2023г. при исполнении обязанностей военной службы получил ранение: Сочетанная травма головы, органов брюшной полости. Находился на лечении в 1472 ВМКГ г. Севастополь с 19.04.2023 по 22.04.2023, в ГВКГ им. Бурденко г. Москва с 22.04.2023 по 27.05.2023, в ФГКУ "411ВГ" г. Белогорск с 27.05.2023 по 07.06.2023, в 1477 ВМКГ г. Владивосток с 07.06.2023 по 27.06.2023. Решением ВВК от 20.06.2023 признан нуждающимся в отпуске по болезни сроком на 60 суток. Отпуск буду проводить по адресу: г. Владивосток, ул. Ладыгина 2, кв. 57.
+P Прошу:
+LN Предоставить отпуск по болезни сроком на 60 суток с 28.06.2023 по 27.09.2023.
+LN Предоставить выписку из журнала боевых действий от 18.04.2023 для оформлЫssЫЫыыЫssения документов.
+LN Рассмотреть вопрос об осуществлении единовременной выплаты в связи с ранением (рапортыы прилагаю)
+P Документы прошу отправить по адресу:
+P 690037, г. Владивосток, ул. Ладыгина 2, кв. 57.
+P К рапорту прилагаю:
+P Выписной эпикриз 1477 ВМКГ от 27.06.2023 (копия)
+P Заключение военно-врачебной комиссии n59/1721 от 20.06.2023
+P Рапорт о рассмотрении вопроса об осуществлении единовременной выплаты в связи с ранением
+P Первичная медицинская карточка (форма 100) (копия)
+.

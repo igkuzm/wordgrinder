@@ -1,0 +1,44 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: apt
+      run: sudo apt update && sudo apt install ninja-build liblua5.1-dev liblua5.2-dev libncursesw5-dev zlib1g-dev libxft-dev
+    - name: make
+      run: make dev
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: brew
+      run: brew install pkg-config ninja
+    - name: make
+      run: make dev
+
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: msys2/setup-msys2@v2
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: pacman
+      run: |
+        pacman -S --noconfirm --needed make ninja gcc mingw-w64-i686-nsis mingw-w64-cross-gcc mingw-w64-i686-zlib pkg-config zip
+    - name: build
+      run: |
+        make windows wintests WINCC=/opt/bin/i686-w64-mingw32-gcc.exe WINDRES=/opt/bin/i686-w64-mingw32-windres.exe MAKENSIS=/mingw32/bin/makensis.exe CFLAGS="-I/mingw32/include" LDFLAGS="-L/mingw32/lib"
+
