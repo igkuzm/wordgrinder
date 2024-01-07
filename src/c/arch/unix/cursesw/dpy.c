@@ -218,6 +218,7 @@ const char* dpy_getkeyname(uni_t k)
 		case KEY_RESIZE: return "KEY_RESIZE";
 		case 13: return "KEY_RETURN";
 		case 27: return "KEY_ESCAPE";
+		case '\t': return "KEY_TAB";
 	}
 
 	static char buffer[32];

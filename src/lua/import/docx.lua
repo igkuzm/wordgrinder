@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 03.01.2024
+Last Modified Date: 06.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -186,78 +186,118 @@ local function add_text(styles, importer, xml)
 	end
 end
 
-local function import_paragraphs(styles, lists, importer, paragraph, defaultstyle)
-	local wgstyle = defaultstyle
-	for _, element in ipairs(paragraph) do
-		-- get paragraph properties
-		if (element._name == W .. " pPr") then
+local function import_run(styles, lists, importer, element, defaultstyle)
+	-- set default values
+	importer:style_off(ITALIC)
+	importer:style_off(BOLD)
+	importer:style_off(UNDERLINE)
+
+	for _, element in ipairs(element) do
+		--get run properties
+		if (element._name == W .. " rPr") then
 			for _, element in ipairs(element) do
-				--get paragraph style
-				if (element._name == W .. " pStyle") then
+				if (element._name == W .. " rStyle") then
 					local stylename = element[VAL] or ""
 					local style = styles[stylename] or {}
-					if style.indented then
-						wgstyle = "Q"
+					if style.italic then
+						importer:style_on(ITALIC)
 					end
-					if style.right then
-						wgstyle = "RIGHT"
+					if style.bold then
+						importer:style_on(BOLD)
 					end
-					if style.left then
-						wgstyle = "LEFT"
-					end
-					if style.center then
-						wgstyle = "CENTER"
-					end
-					if style.header then
-						wgstyle = style.iheader
+					if style.underline then
+						importer:style_on(UNDERLINE)
 					end
 				end
-				--get numbering
-				if (element._name == W .. " numPr") then
-					for _, element in ipairs(element) do
-						if (element._name == W .. " numId") then
-							local numId = element[VAL]
-							for _, list in pairs(lists) do
-								if (numId == list.numId) then
-									wgstyle = list.style
+				if (element._name == W .. " b") then
+					importer:style_on(BOLD)
+				end
+				if (element._name == W .. " i") then
+					importer:style_on(ITALIC)
+				end
+				if (element._name == W .. " ul") then
+					importer:style_on(UNDERLINE)
+				end
+			end
+		end
+		--get run text
+		if (element._name == W .. " t") then
+			add_text(styles, importer, element)
+		end
+	end
+end
+
+local function import_paragraphs(styles, lists, importer, element, defaultstyle)
+	local wgstyle = defaultstyle
+	-- get table 
+	if (element._name == W .. " tbl") then
+		for _, element in ipairs(element) do
+			-- table row
+			if (element._name == W .. " tr") then
+				wgstyle = "TR"
+				for _, element in ipairs(element) do
+					-- table cell
+					if (element._name == W .. " tc") then
+						for _, element in ipairs(element) do
+							-- paragraph
+							if (element._name == W .. " p") then
+								for _, element in ipairs(element) do
+									-- run
+									if (element._name == W .. " r") then
+										import_run(styles, lists, importer, element, wgstyle)
+									end
+								end
+							end
+						end
+						importer:text("; ")
+					end
+				end
+				importer:flushparagraph(wgstyle)
+			end
+		end
+	else
+		for _, element in ipairs(element) do
+			-- get paragraph properties
+			if (element._name == W .. " pPr") then
+				for _, element in ipairs(element) do
+					--get paragraph style
+					if (element._name == W .. " pStyle") then
+						local stylename = element[VAL] or ""
+						local style = styles[stylename] or {}
+						if style.indented then
+							wgstyle = "Q"
+						end
+						if style.right then
+							wgstyle = "RIGHT"
+						end
+						if style.left then
+							wgstyle = "LEFT"
+						end
+						if style.center then
+							wgstyle = "CENTER"
+						end
+						if style.header then
+							wgstyle = style.iheader
+						end
+					end
+					--get numbering
+					if (element._name == W .. " numPr") then
+						for _, element in ipairs(element) do
+							if (element._name == W .. " numId") then
+								local numId = element[VAL]
+								for _, list in pairs(lists) do
+									if (numId == list.numId) then
+										wgstyle = list.style
+									end
 								end
 							end
 						end
 					end
 				end
 			end
-		end
-		
-		-- get run
-		if (element._name == W .. " r") then
-			-- set default values
-			importer:style_off(ITALIC)
-			importer:style_off(BOLD)
-			importer:style_off(UNDERLINE)
-		
-			for _, element in ipairs(element) do
-				--get run properties
-				if (element._name == W .. " rPr") then
-					for _, element in ipairs(element) do
-						if (element._name == W .. " rStyle") then
-							local stylename = element[VAL] or ""
-							local style = styles[stylename] or {}
-							if style.italic then
-								importer:style_on(ITALIC)
-							end
-							if style.bold then
-								importer:style_on(BOLD)
-							end
-							if style.underline then
-								importer:style_on(UNDERLINE)
-							end
-						end
-					end
-				end
-				--get run text
-				if (element._name == W .. " t") then
-					add_text(styles, importer, element)
-				end
+			-- get run
+			if (element._name == W .. " r") then
+				import_run(styles, lists, importer, element, wgstyle)
 			end
 		end
 	end
@@ -312,7 +352,7 @@ function Cmd.ImportDOCXFile(filename)
 		if (element._name == W .. " body") then
 			for _, element in ipairs(element) do
 				-- get paragraph
-				if (element._name == W .. " p") then
+				if (element._name == W .. " p") or (element._name == W .. " tbl")then
 					import_paragraphs(styles, lists, importer, element, "P")
 				end
 			end

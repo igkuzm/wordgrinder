@@ -100,6 +100,8 @@ static int writestyled_cb(lua_State* L)
 	const char* revon = s + forceinteger(L, 5) - 1;
 	const char* revoff = s + forceinteger(L, 6) - 1;
 	int sor = forceinteger(L, 7);
+	
+	int istable = forceinteger(L, 8);
 
 	int attr = sor;
 	int mark = 0;
@@ -132,6 +134,10 @@ static int writestyled_cb(lua_State* L)
 			if (first && (oattr & (DPY_REVERSE|DPY_UNDERLINE))
 				&& ((attr | mark) == oattr))
 				dpy_writechar(x-1, y, 160); /* non-breaking space */
+
+			if (istable)
+				if (c == ';')
+					c = ' ';
 
 			dpy_writechar(x, y, c);
 			x += emu_wcwidth(c);

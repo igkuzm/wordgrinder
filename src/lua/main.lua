@@ -2,7 +2,7 @@
 File              : main.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 04.01.2024
+Last Modified Date: 06.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -224,7 +224,6 @@ function WordProcessor(filename)
             else
                 -- It's not in masterkeymap. If it's printable, insert it; if it's
                 -- not, look it up in the menu hierarchy.
-
                 if not c:match("^KEY_") then
                     Cmd.Checkpoint()
                     Cmd.TypeWhileSelected()
