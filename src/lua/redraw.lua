@@ -2,7 +2,7 @@
 File              : redraw.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 04.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -12,6 +12,7 @@ Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 local int = math.floor
 local min = math.min
 local Write = wg.write
+local WriteRow = wg.writerow
 local GotoXY = wg.gotoxy
 local ClearArea = wg.cleararea
 local SetNormal = wg.setnormal
@@ -24,6 +25,7 @@ local GetStringWidth = wg.getstringwidth
 local ShowCursor = wg.showcursor
 local HideCursor = wg.hidecursor
 local Sync = wg.sync
+local string_len = string.len
 
 local BLINK_TIME = 0.8
 
@@ -223,7 +225,8 @@ function RedrawScreen()
 			leftpadding + margin
 
 		if 
-			paragraph.style == "TRB" 
+			paragraph.style == "TRB" or 
+			paragraph.style == "IMG"
 		then
 			Write(pstart-1,y+1, "└")
 			Write(pstart + Document.wrapwidth, y+1, "┘")
@@ -236,21 +239,34 @@ function RedrawScreen()
 			paragraph.style == "TRB" 
 		then
 			lines = paragraph:wrapTableRow()
+		elseif
+			paragraph.style == "IMG" 
+		then
+			lines = paragraph:wrapImage()
 		else
 			lines = paragraph:wrap()
 		end
 		
 		for ln = #lines, 1, -1 do
 			if 
-				paragraph.style == "TRB"
+				paragraph.style == "TRB" or
+				paragraph.style == "IMG"
 			then
 				Write(pstart-1, y, "│")
 				Write(pstart + Document.wrapwidth, y, "│")
 				local i
 				local w = 0
-				for i=1,paragraph.cn-1,1 do
-					w = w + paragraph.cellWidth[i]
-					Write(pstart-1 + w, y, "│")
+				if paragraph.style == "TRB" then
+					for i=1,paragraph.cn-1,1 do
+						w = w + paragraph.cellWidth[i]
+						Write(pstart-1 + w, y, "│")
+					end
+				end
+				if paragraph.style == "IMG" then
+					local row = paragraph.imagedata[ln]
+					if row then
+						WriteRow(pstart, y, row)
+					end
 				end
 			end
 
@@ -279,13 +295,14 @@ function RedrawScreen()
 		end
 
 		if 
-			paragraph.style == "TRB" 
+			paragraph.style == "TRB" or
+			paragraph.style == "IMG"
 		then
 			Write(pstart-1, y, "┌")
 			Write(pstart + Document.wrapwidth, y, "┐")
 			Write(pstart, y, border)
 		end
-
+		
 		y = y - Document:spaceAbove(pn)
 		pn = pn - 1
 	end
@@ -317,12 +334,28 @@ function RedrawScreen()
 			Write(pstart, y-1, border)
 		end
 
+		if 
+			paragraph.style == "IMG"
+		then
+			Write(pstart-1 ,y+1, "┌")
+			Write(pstart + Document.wrapwidth, y+1, "┐")
+			Write(pstart, y+1, border)
+			Write(pstart-1 ,y-1, "┌")
+			Write(pstart + Document.wrapwidth, y-1, "┐")
+			Write(pstart, y-1, border)
+		end
+
+
 		local lines
 		if 
 			paragraph.style == "TR"  or 
 			paragraph.style == "TRB" 
 		then
 			lines = paragraph:wrapTableRow()
+		elseif 
+			paragraph.style == "IMG"
+		then
+			lines = paragraph:wrapImage()
 		else
 			lines = paragraph:wrap()
 		end
@@ -331,15 +364,24 @@ function RedrawScreen()
 		for ln, l in ipairs(lines) do
 
 			if 
-				paragraph.style == "TRB" 
+				paragraph.style == "TRB" or 
+				paragraph.style == "IMG"
 			then
 				Write(pstart-1, y, "│")
 				Write(pstart + Document.wrapwidth, y, "│")
-				local i
-				local w = 0
-				for i=1,paragraph.cn-1,1 do
-					w = w + paragraph.cellWidth[i]
-					Write(pstart-1 + w, y, "│")
+				if paragraph.style == "TRB" then
+					local i
+					local w = 0
+					for i=1,paragraph.cn-1,1 do
+						w = w + paragraph.cellWidth[i]
+						Write(pstart-1 + w, y, "│")
+					end
+				end
+				if paragraph.style == "IMG" then
+					local row = paragraph.imagedata[ln]
+					if row then
+						WriteRow(pstart, y, row)
+					end
 				end
 			end
 			
@@ -370,7 +412,8 @@ function RedrawScreen()
 		end
 		
 		if 
-			paragraph.style == "TRB" 
+			paragraph.style == "TRB" or
+			paragraph.style == "IMG" 
 		then
 			Write(pstart-1,y, "└")
 			Write(pstart + Document.wrapwidth, y, "┘")

@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -278,6 +278,7 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
         srcfile("src/c/emu/lua-5.1.5/lzio.c")
         srcfile("src/c/emu/lua-5.1.5/winshim.c")
         srcfile("src/c/emu/tmpnam.c")
+        srcfile("src/c/images/stb_image.c")
     end
 
     -- Frontends

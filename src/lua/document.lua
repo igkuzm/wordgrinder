@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -14,6 +14,7 @@ local table_insert = table.insert
 local table_concat = table.concat
 local Write = wg.write
 local WriteStyled = wg.writestyled
+local ParseImage = wg.parseimage
 local ClearToEOL = wg.cleartoeol
 local SetNormal = wg.setnormal
 local SetBold = wg.setbold
@@ -482,6 +483,43 @@ ParagraphClass =
 		return self.lines
 	end,
 
+	wrapImage = function(self, width)
+		local imagedata = {}
+		local lines = {}
+		local xs = {}
+		self.xs = xs
+		
+		local rows = 1
+		imagedata[#imagedata+1] = ""
+		imagedata[#imagedata+1] = ""
+		local writerow = function(row)
+			imagedata[#imagedata+1] = row
+			rows = rows + 1
+		end
+		self.imagedata = imagedata
+		
+		width = width or Document.wrapwidth
+		ParseImage(self[1], width, writerow)
+
+		local i
+		for i=1, rows+1, 1 do
+			local line = {wn=1}
+			if i == 1 then
+				local w = 0
+				for wn, word in ipairs(self) do
+					local ww = GetStringWidth(word) + 1
+					xs[wn] = w
+					w = w + ww
+					line[#line+1] = wn
+				end
+			end
+			lines[#lines+1] = line
+		end
+		
+		self.lines = lines
+		return self.lines
+	end,
+
 	wrap = function(self, width)
 		local sentences = self.sentences
 		if (sentences == nil) then
@@ -917,6 +955,13 @@ function UpdateDocumentStyles()
 		{
 			desc = "Table Row with borders and ';' separeted cells",
 			name = "TRB",
+			indent = 1,
+			above = 1,
+			below = 1
+		},
+		{
+			desc = "Image. Filepath to image is first word",
+			name = "IMG",
 			indent = 1,
 			above = 1,
 			below = 1

@@ -4,6 +4,7 @@
  */
 
 #include "globals.h"
+#include "images/image2ascii.h"
 #include <ctype.h>
 
 /* A 'word' is a string with embedded text style codes.
@@ -470,6 +471,54 @@ static int createstylebyte_cb(lua_State* L)
 	return 1;
 }
 
+
+/* Parse image. */
+static int parseimage_cb_cb(
+		void *userdata, int len, const char *row)
+{
+	lua_State* L = (lua_State*) userdata;
+	/* pos 3 contains the callback function */
+	lua_pushvalue(L, 3);
+	lua_pushlstring(L, row, len);
+	lua_call(L, 1, 0);
+
+	return 0;
+}
+
+static int parseimage_cb(lua_State* L)
+{
+	/* pos 1 contains filepath */
+	size_t size;
+	const char* filepath = luaL_checklstring(L, 1, &size);
+	
+	/* pos 2 contains number of cols */
+	int cols = forceinteger(L, 2);
+
+	image2ascii(filepath, cols, 0,
+		 	(void*)L, parseimage_cb_cb);
+
+	return 0;
+}
+
+/* Draw a row. */
+
+static int writerow_cb(lua_State* L)
+{
+	int x = forceinteger(L, 1);
+	int y = forceinteger(L, 2);
+	size_t size;
+	const char* s = luaL_checklstring(L, 3, &size);
+
+	int i;
+	for (i = 0; i < size; ++i) {
+		dpy_writechar(x, y, s[i]);
+		x += 1;
+	}
+	return 1;
+}
+
+
+
 void word_init(void)
 {
 	const static luaL_Reg funcs[] =
@@ -484,6 +533,8 @@ void word_init(void)
 		{ "applystyletoword",          applystyletoword_cb },
 		{ "getstylefromword",          getstylefromword_cb },
 		{ "createstylebyte",           createstylebyte_cb },
+		{ "parseimage",                parseimage_cb },
+		{ "writerow",                  writerow_cb },
 		{ NULL,                        NULL }
 	};
 
