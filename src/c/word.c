@@ -5,7 +5,9 @@
 
 #include "globals.h"
 #include "images/image2ascii.h"
+#include "images/image2rtf.h"
 #include <ctype.h>
+#include <string.h>
 
 /* A 'word' is a string with embedded text style codes.
  *
@@ -471,6 +473,28 @@ static int createstylebyte_cb(lua_State* L)
 	return 1;
 }
 
+/* Image to RTF. */
+static void imagetortf_cb_cb(
+		void *userdata, const char *rtf)
+{
+	lua_State* L = (lua_State*) userdata;
+	/* pos 2 contains the callback function */
+	lua_pushvalue(L, 2);
+	lua_pushlstring(L, rtf, strlen(rtf));
+	lua_call(L, 1, 0);
+}
+
+static int imagetortf_cb(lua_State* L)
+{
+	/* pos 1 contains filepath */
+	size_t size;
+	const char* filepath = luaL_checklstring(L, 1, &size);
+	
+	image2rtf(filepath, (void*)L,
+		 	imagetortf_cb_cb);
+
+	return 0;
+}
 
 /* Parse image. */
 static int parseimage_cb_cb(
@@ -535,6 +559,7 @@ void word_init(void)
 		{ "createstylebyte",           createstylebyte_cb },
 		{ "parseimage",                parseimage_cb },
 		{ "writerow",                  writerow_cb },
+		{ "imagetortf",                  imagetortf_cb },
 		{ NULL,                        NULL }
 	};
 

@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -65,8 +65,9 @@ local style_tab =
 	["CENTER"] = {false, emit('<text:p text:style-name="CENTER">'), emit('</text:p>') },
 	["RIGHT"]  = {false, emit('<text:p text:style-name="RIGHT">'), emit('</text:p>') },
 	["LEFT"]   = {false, emit('<text:p text:style-name="LEFT">'), emit('</text:p>') },
-	["TR"]    = {false, emit(''), emit('') },
-	["TRB"]   = {false, emit(''), emit('') },
+	["TR"]     = {false, emit(''), emit('') },
+	["TRB"]    = {false, emit(''), emit('') },
+	["IMG"]    = {false, emit('<text:p>'), emit('</text:p>') },
 }
 
 local function callback(writer, document)
@@ -123,7 +124,6 @@ local function callback(writer, document)
 					<office:body><office:text>
 				]]
 			)
-			 
 		end,
 		
 		epilogue = function()
@@ -213,6 +213,10 @@ local function callback(writer, document)
 			writer('</table:table-cell>')
 		end,
 		
+		image_start = function(para)
+		end,
+		image_end = function(para)
+		end,
 	})
 end
 

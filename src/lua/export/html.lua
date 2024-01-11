@@ -2,7 +2,7 @@
 File              : html.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -187,6 +187,11 @@ local function callback(writer, document)
 		tablecell_end = function(para)
 			writer('</p>')
 			writer('</td>')
+		end,
+		
+		image_start = function(para)
+		end,
+		image_end = function(para)
 		end,
 		
 		epilogue = function()

@@ -129,6 +129,11 @@ local function callback(writer, dcument)
 		tablecell_end = function(para)
 		end,
 
+		image_start = function(para)
+		end,
+		image_end = function(para)
+		end,
+		
 		epilogue = function()
 			changepara(nil)
 		end,

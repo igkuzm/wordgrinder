@@ -2,7 +2,7 @@
 File              : latex.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 01.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -115,6 +115,45 @@ local function callback(writer, document)
 		paragraph_end = function(para)
 			writer(style_tab[para.style][2] or "")
 			writer('\n')
+		end,
+		
+		image_start = function(para)
+		end,
+		
+		image_end = function(para)
+			writer(string.format('\n\\includegraphics[]{%s}\n', para.imagename))
+		end,
+
+		table_start = function(para)
+			writer('\\begin{longtable}[]{')
+			for cn, cell in ipairs(para.cells) do
+				if para.style == "TRB" then
+					writer('|')
+				end
+				writer('c')
+				if para.style == "TRB" then
+					writer('|')
+				end
+			end
+			writer('}\n')
+		end,
+		
+		table_end = function(para)
+			writer('\\end{longtable}\n')
+		end,
+		
+		tablerow_start = function(para)
+		end,
+		
+		tablerow_end = function(para)
+			writer('\\\\\n')
+		end,
+		
+		tablecell_start = function(para)
+		end,
+		
+		tablecell_end = function(para)
+			writer('&\n')
 		end,
 		
 		epilogue = function()

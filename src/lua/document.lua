@@ -960,7 +960,7 @@ function UpdateDocumentStyles()
 			below = 1
 		},
 		{
-			desc = "Image. Filepath to image is first word",
+			desc = "Image. First word is image path - then title",
 			name = "IMG",
 			indent = 1,
 			above = 1,

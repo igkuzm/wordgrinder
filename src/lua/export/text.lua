@@ -67,7 +67,12 @@ local function callback(writer, document)
 		
 		tablecell_end = function(para)
 		end,
-	
+		
+		image_start = function(para)
+		end,
+		image_end = function(para)
+		end,
+		
 		epilogue = function()
 		end
 	})

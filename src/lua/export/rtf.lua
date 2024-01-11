@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -11,6 +11,7 @@ Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 
 local NextCharInWord = wg.nextcharinword
 local ReadU8 = wg.readu8
+local ImageToRTF = wg.imagetortf
 local string_len = string.len
 local string_char = string.char
 local string_format = string.format
@@ -65,6 +66,7 @@ local style_tab =
 	["LEFT"]   = {13, '\\fs28\\sb140\\sbasedon5\\ql LEFT'},
 	["RIGHT"]  = {14, '\\fs28\\sb140\\sbasedon5\\qr RIGHT'},
 	["CENTER"] = {15, '\\fs28\\sb140\\sbasedon5\\qc CENTER'},
+	["IMG"]    = {16, '\\fs28\\sb140\\sbasedon5\\qc IMG'},
 }
 
 local function callback(writer, document)
@@ -203,6 +205,19 @@ local function callback(writer, document)
 		
 		tablecell_end = function(para)
 			writer('\\cell\n')
+		end,
+
+		image_start = function(para)
+			writer('\\pard\\s', style_tab[para.style][1])
+		end,
+		
+		image_end = function(para)
+			writer('\\par\n')
+			local rtfimage = function(rtf) 
+				writer(rtf)
+			end
+			ImageToRTF(para.imagename, rtfimage)
+			writer('\\par\n')
 		end,
 
 		epilogue = function()

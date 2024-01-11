@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 10.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -71,6 +71,7 @@ local style_tab =
 	["LEFT"]   = {false, header(), emit('</w:t></w:r></w:p>') },
 	["TR"]    = {false, emit(''), emit('') },
 	["TRB"]   = {false, emit(''), emit('') },
+	["IMG"]   = {false, emit(''), emit('') },
 }
 
 local function callback(writer, document)
@@ -177,6 +178,12 @@ local function callback(writer, document)
 		
 		paragraph_end = function(para)
 		end,
+		
+		image_start = function(para)
+		end,
+		image_end = function(para)
+		end,
+		
 		
 		table_start = function(para)
 			changepara(para)
