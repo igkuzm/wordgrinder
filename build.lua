@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 04.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -393,11 +393,11 @@ function run_wordgrinder_tests(exe, luapackage, frontend, buildstyle, noauto)
         "tests/windows-installdir.lua",
         "tests/xpattern.lua",
     }) do
-        local stampfile = OBJDIR.."/"..name.."/"..test..".stamp"
-        alltests[#alltests+1] = stampfile
+        --local stampfile = OBJDIR.."/"..name.."/"..test..".stamp"
+        --alltests[#alltests+1] = stampfile
 
-        emit("build ", stampfile, ": wordgrindertest ", test, " | ", exe)
-        emit("  exe = ", exe)
+        --emit("build ", stampfile, ": wordgrindertest ", test, " | ", exe)
+        --emit("  exe = ", exe)
     end
 
     emit("build test-", name, ": phony ", table.concat(alltests, " "))

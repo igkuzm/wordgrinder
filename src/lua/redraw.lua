@@ -2,7 +2,7 @@
 File              : redraw.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 04.01.2024
-Last Modified Date: 07.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -222,22 +222,28 @@ function RedrawScreen()
 		local pstart = paragraph:getIndentOfLine(0) +
 			leftpadding + margin
 
-		if (paragraph.style == "TRF") then
+		if 
+			paragraph.style == "TRB" 
+		then
 			Write(pstart-1,y+1, "└")
 			Write(pstart + Document.wrapwidth, y+1, "┘")
 			Write(pstart, y+1, border)
 		end
 		
 		local lines
-		if paragraph.style == "TR" 
-				or paragraph.style == "TRF" then
+		if 
+			paragraph.style == "TR"  or
+			paragraph.style == "TRB" 
+		then
 			lines = paragraph:wrapTableRow()
 		else
 			lines = paragraph:wrap()
 		end
 		
 		for ln = #lines, 1, -1 do
-			if (paragraph.style == "TRF") then
+			if 
+				paragraph.style == "TRB"
+			then
 				Write(pstart-1, y, "│")
 				Write(pstart + Document.wrapwidth, y, "│")
 				local i
@@ -272,7 +278,9 @@ function RedrawScreen()
 			end
 		end
 
-		if (paragraph.style == "TRF") then
+		if 
+			paragraph.style == "TRB" 
+		then
 			Write(pstart-1, y, "┌")
 			Write(pstart + Document.wrapwidth, y, "┐")
 			Write(pstart, y, border)
@@ -301,15 +309,19 @@ function RedrawScreen()
 		local pstart = paragraph:getIndentOfLine(0) +
 			leftpadding + margin
 		
-		if (paragraph.style == "TRF") then
+		if 
+			paragraph.style == "TRB"
+		then
 			Write(pstart-1 ,y-1, "┌")
 			Write(pstart + Document.wrapwidth, y-1, "┐")
 			Write(pstart, y-1, border)
 		end
 
 		local lines
-		if paragraph.style == "TR" 
-				or paragraph.style == "TRF" then
+		if 
+			paragraph.style == "TR"  or 
+			paragraph.style == "TRB" 
+		then
 			lines = paragraph:wrapTableRow()
 		else
 			lines = paragraph:wrap()
@@ -318,7 +330,9 @@ function RedrawScreen()
 		--for ln, l in ipairs(paragraph:wrap()) do
 		for ln, l in ipairs(lines) do
 
-			if (paragraph.style == "TRF") then
+			if 
+				paragraph.style == "TRB" 
+			then
 				Write(pstart-1, y, "│")
 				Write(pstart + Document.wrapwidth, y, "│")
 				local i
@@ -355,7 +369,9 @@ function RedrawScreen()
 			end
 		end
 		
-		if (paragraph.style == "TRF") then
+		if 
+			paragraph.style == "TRB" 
+		then
 			Write(pstart-1,y, "└")
 			Write(pstart + Document.wrapwidth, y, "┘")
 			Write(pstart,  y, border)

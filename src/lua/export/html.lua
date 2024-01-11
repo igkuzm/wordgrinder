@@ -2,7 +2,7 @@
 File              : html.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 01.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -156,6 +156,37 @@ local function callback(writer, document)
 		end,		
 		
 		paragraph_end = function(para)
+		end,
+		
+		table_start = function(para)
+			changepara(para)
+			writer('<table width="100%" cellpadding="4" cellspacing="0">')
+		end,		
+		
+		table_end = function(para)
+			writer('</table>')
+		end,
+		
+		tablerow_start = function(para)
+			writer('<tr valign="top">')
+		end,
+		
+		tablerow_end = function(para)
+			writer('</tr>')
+		end,
+		
+		tablecell_start = function(para)
+			if para.style == "TRB" then
+				writer('<td style="border: 1px solid #000000; padding: 0.1cm">')
+			else
+				writer('<td>')
+			end
+			writer('<p align="justify">')
+		end,		
+		
+		tablecell_end = function(para)
+			writer('</p>')
+			writer('</td>')
 		end,
 		
 		epilogue = function()

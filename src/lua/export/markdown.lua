@@ -2,7 +2,7 @@
 File              : markdown.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 01.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 local function unmarkdown(s)
@@ -33,6 +33,8 @@ local style_tab =
 	["LEFT"]   = {false, '', '\n'},
 	["RIGHT"]  = {false, '', '\n'},
 	["CENTER"] = {false, '', '\n'},
+	["TR"]     = {false, '', '\n'},
+	["TRB"]    = {false, '', '\n'},
 }
 
 local function callback(writer, document)
@@ -117,6 +119,29 @@ local function callback(writer, document)
 
 		epilogue = function()
 			changepara(nil)
+		end,
+
+		table_start = function(para)
+			changepara(para.style)
+			writer('---\n')
+		end,
+		
+		table_end = function(para)
+			writer('---\n')
+		end,
+		
+		tablerow_start = function(para)
+		end,
+		
+		tablerow_end = function(para)
+			writer('\n')
+		end,
+
+		tablecell_start = function(para)
+		end,
+		
+		tablecell_end = function(para)
+			writer('|')
 		end,
 	})
 end

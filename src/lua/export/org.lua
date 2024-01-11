@@ -110,6 +110,25 @@ local function callback(writer, dcument)
 		paragraph_end = function(para)
 		end,
 
+		table_start = function(para)
+			changepara(para.style)
+		end,
+
+		table_end = function(para)
+		end,
+					
+		tablerow_start = function(para)
+		end,
+
+		tablerow_end = function(para)
+		end,
+
+		tablecell_start = function(para)
+		end,
+
+		tablecell_end = function(para)
+		end,
+
 		epilogue = function()
 			changepara(nil)
 		end,

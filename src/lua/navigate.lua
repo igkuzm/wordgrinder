@@ -96,8 +96,18 @@ function Cmd.GotoPreviousWord()
 		-- If that worked, we weren't at the beginning of the word.
 		Document.co = 1
 	else
-		Document.cw = Document.cw - 1
-		Document.co = 1
+		local p = Document[Document.cp]
+		if p.style == "TR" or p.style == "TRB" then
+			local prevw = p.wordp[Document.cw - 1]
+			if prevw then
+				Document.cw = prevw
+				--Document.co = p.xs[prevw]
+				Document.co = 1
+			end
+		else
+			Document.cw = Document.cw - 1
+			Document.co = 1
+		end
 	end
 
 	QueueRedraw()
@@ -112,8 +122,16 @@ function Cmd.GotoNextWord()
 		return false
 	end
 
-	Document.cw = Document.cw + 1
-	Document.co = 1
+	if p.style == "TR" or p.style == "TRB" then
+		local nextw = p.wordp[Document.cw + 1]
+		if nextw then
+			Document.cw = nextw
+			Document.co = 1
+		end
+	else
+		Document.cw = Document.cw + 1
+		Document.co = 1
+	end
 
 	QueueRedraw()
 	return true

@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 06.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -231,14 +231,69 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 	local wgstyle = defaultstyle
 	-- get table 
 	if (element._name == W .. " tbl") then
+		local hasBorders = false
+		local hasIBorders = false
 		for _, element in ipairs(element) do
+			-- table properties
+			if (element._name == W .. " tblPr") then
+				for _, element in ipairs(element) do
+					if (element._name == W .. " tblBorders") then
+						for _, element in ipairs(element) do
+							if 
+								element._name == W .. " top"    or
+								element._name == W .. " start"  or
+								element._name == W .. " bottom" or
+								element._name == W .. " end" 
+							then
+								hasBorders = true
+							end
+							if 
+								element._name == W .. " insideH" or
+								element._name == W .. " insideV"
+							then
+								hasIBorders = true
+							end
+						end
+					end
+				end
+			end
 			-- table row
 			if (element._name == W .. " tr") then
-				wgstyle = "TR"
+				local firstcell = true
 				for _, element in ipairs(element) do
 					-- table cell
 					if (element._name == W .. " tc") then
+						if not firstcell then
+							importer:text(" ; ")
+						end
+						firstcell = false
+						local width = 0
 						for _, element in ipairs(element) do
+							-- table cell properties
+							if (element._name == W .. " tcPr") then
+								for _, element in ipairs(element) do
+									if (element._name == W .. " tcW") then
+										if element[W .. " type"] == "dxa" then
+											local w = element[W .. " w"]
+											width = w * 1440 * 12 / 72
+										end
+									end
+									if (element._name == W .. " tcBorders") then
+										for _, element in ipairs(element) do
+											if 
+												element._name == W .. " top"    or
+												element._name == W .. " start"  or
+												element._name == W .. " left"  or
+												element._name == W .. " bottom" or
+												element._name == W .. " rigth" or
+												element._name == W .. " end" 
+											then
+												hasIBorders = true
+											end
+										end
+									end
+								end
+							end
 							-- paragraph
 							if (element._name == W .. " p") then
 								for _, element in ipairs(element) do
@@ -249,8 +304,12 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 								end
 							end
 						end
-						importer:text("; ")
 					end
+				end
+				if hasIBorders or hasBorders then
+					wgstyle = "TRB"
+				else
+					wgstyle = "TR"
 				end
 				importer:flushparagraph(wgstyle)
 			end

@@ -12,6 +12,7 @@ local bitxor = bit32.bxor
 local bit = bit32.btest
 local string_lower = string.lower
 local time = wg.time
+local GetStringWidth = wg.getstringwidth
 
 -- Renders the document by calling the appropriate functions on the cb
 -- table.
@@ -91,46 +92,162 @@ function ExportFileUsingCallbacks(document, cb)
 
 		rawmode = (name == "RAW")
 
-		cb.paragraph_start(paragraph)
+		if 
+			paragraph.style == "TR" or 
+			paragraph.style == "TRB"
+		then
+			
+			-- gets table cells
+			paragraph:wrapTableRow()
+			
+			-- get previous paragraph
+			local pn = 0 
+			for n, par in ipairs(Document) do
+				if par == paragraph then
+					pn = n - 1
+				end
+			end
+			local pp
+			if pn then
+				pp = Document[pn]
+			end
+			if 
+				 pp and
+				 (pp.style == "TR" or 
+				  pp.style == "TRB")
+			then
+				-- 
+			else
+				-- this is first row
+				cb.table_start(paragraph)
+			end
+			cb.tablerow_start(paragraph)
 
-		if (#paragraph == 1) and (#paragraph[1] == 0) then
-			cb.notext()
 		else
-			firstword = true
-			wordbreak = false
-			olditalic = false
-			oldunderline = false
-			oldbold = false
+			cb.paragraph_start(paragraph)
+		end
 
-			for wn, word in ipairs(paragraph) do
-				if firstword then
-					firstword = false
-				else
-					wordbreak = true
+		if 
+			paragraph.style == "TR" or 
+			paragraph.style == "TRB"
+		then
+				
+			for cn, cell in ipairs(paragraph.cells) do
+				cb.tablecell_start(paragraph)
+				
+				firstword = true
+				wordbreak = false
+				olditalic = false
+				oldunderline = false
+				oldbold = false
+
+				for _, wn in ipairs(cell) do
+					local word = paragraph[wn]
+					if 
+						word:find(";") and  
+						GetStringWidth(word) == 1 
+					then
+						wordwriter(0, "")
+						-- skip ';'
+					else
+						if firstword then
+							firstword = false
+						else
+							wordbreak = true
+						end
+
+						emptyword = true
+						italic = false
+						underline = false
+						bold = false
+						ParseWord(word, 0, wordwriter) -- FIXME
+						if emptyword then
+							wordwriter(0, "")
+						end
+					end
+				end
+				cb.tablecell_end(paragraph)
+			end
+
+				if underline then
+					cb.underline_off()
+				end
+				if bold then
+					cb.bold_off()
+				end
+				if italic then
+					cb.italic_off()
+				end
+				
+		else
+			if (#paragraph == 1) and (#paragraph[1] == 0) then
+				cb.notext()
+			else
+				firstword = true
+				wordbreak = false
+				olditalic = false
+				oldunderline = false
+				oldbold = false
+
+				for wn, word in ipairs(paragraph) do
+					if firstword then
+						firstword = false
+					else
+						wordbreak = true
+					end
+
+					emptyword = true
+					italic = false
+					underline = false
+					bold = false
+					ParseWord(word, 0, wordwriter) -- FIXME
+					if emptyword then
+						wordwriter(0, "")
+					end
 				end
 
-				emptyword = true
-				italic = false
-				underline = false
-				bold = false
-				ParseWord(word, 0, wordwriter) -- FIXME
-				if emptyword then
-					wordwriter(0, "")
+				if underline then
+					cb.underline_off()
 				end
-			end
-
-			if underline then
-				cb.underline_off()
-			end
-			if bold then
-				cb.bold_off()
-			end
-			if italic then
-				cb.italic_off()
+				if bold then
+					cb.bold_off()
+				end
+				if italic then
+					cb.italic_off()
+				end
 			end
 		end
 
-		cb.paragraph_end(paragraph)
+		if 
+			paragraph.style == "TR" or 
+			paragraph.style == "TRB"
+		then
+			-- get next paragraph
+			local pn = 0 
+			for n, par in ipairs(Document) do
+				if par == paragraph then
+					pn = n + 1
+				end
+			end
+			local pp
+			if pn then
+				pp = Document[pn]
+			end
+			if 
+				 pp and
+				 (pp.style == "TR"  or
+				 pp.style == "TRB") 
+			then
+				cb.tablerow_end(paragraph)
+			else
+				-- this is last row
+				cb.tablerow_end(paragraph)
+				cb.table_end(paragraph)
+			end
+		else
+			cb.paragraph_end(paragraph)
+		end
+
 	end
 	if listmode then
 		cb.list_end()

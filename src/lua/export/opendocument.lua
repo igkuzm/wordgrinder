@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 01.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -20,7 +20,7 @@ local function unhtml(s)
 	s = s:gsub("&", "&amp;")
 	s = s:gsub("<", "&lt;")
 	s = s:gsub(">", "&gt;")
-	s = s:gsub("%s", "<text:s/>")
+	--s = s:gsub("%s", "<text:span/>")
 	return s
 end
 
@@ -65,6 +65,8 @@ local style_tab =
 	["CENTER"] = {false, emit('<text:p text:style-name="CENTER">'), emit('</text:p>') },
 	["RIGHT"]  = {false, emit('<text:p text:style-name="RIGHT">'), emit('</text:p>') },
 	["LEFT"]   = {false, emit('<text:p text:style-name="LEFT">'), emit('</text:p>') },
+	["TR"]    = {false, emit(''), emit('') },
+	["TRB"]   = {false, emit(''), emit('') },
 }
 
 local function callback(writer, document)
@@ -103,7 +105,21 @@ local function callback(writer, document)
 					xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
 					xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 					xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
-					xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">
+					xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+					xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"> 
+					<office:automatic-styles>
+									<style:style style:name="TR"
+                		style:family="table-cell">
+										<style:table-cell-properties 
+											fo:border="none"/>
+                	</style:style>
+
+									<style:style style:name="TRB"
+                		style:family="table-cell">
+										<style:table-cell-properties 
+											fo:border="0.5pt solid #000000"/>
+                	</style:style>  
+					</office:automatic-styles>
 					<office:body><office:text>
 				]]
 			)
@@ -161,6 +177,40 @@ local function callback(writer, document)
 		end,		
 		
 		paragraph_end = function(para)
+		end,
+
+		table_start = function(para)
+			changepara(para)
+			writer('<table:table>')
+			--writer(string_format('<table:table-column table:number-columns-repeated="%s"/>', para.cn))
+			for cn, cell in ipairs(para.cells) do
+				writer('<table:table-column>')
+				local width = para.cellWidth[cn] / 7
+				writer(string_format('<table:table-column-properties table:column-width="%d"/>', width))
+				writer('</table:table-column>')
+			end
+		end,
+		
+		table_end = function(para)
+			writer('</table:table>')
+		end,
+		
+		tablerow_start = function(para)
+			writer('<table:table-row>')
+		end,
+		
+		tablerow_end = function(para)
+			writer('</table:table-row>')
+		end,
+		
+		tablecell_start = function(para)
+			writer(string_format('<table:table-cell table:style-name="%s" office:value-type="string">', para.style))
+			writer('<text:p text:style-name="P">')
+		end,
+
+		tablecell_end = function(para)
+			writer('</text:p>')
+			writer('</table:table-cell>')
 		end,
 		
 	})
@@ -227,6 +277,7 @@ local function export_odt_with_ui(filename, title, extension)
 				xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 				xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
 				xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+				xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" 
 				xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
 				xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
 				
@@ -333,8 +384,8 @@ local function export_odt_with_ui(filename, title, extension)
                 			fo:margin-bottom="1.5mm"/>
                 		<style:text-properties style:font-name="serif"/>
                 	</style:style>
-                	
-                	<style:style style:name="Q"
+        
+									<style:style style:name="Q"
                 		style:family="paragraph" style:class="text">
                 		<style:paragraph-properties
 							fo:margin-top="1.5mm"

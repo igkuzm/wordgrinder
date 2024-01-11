@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 07.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -358,7 +358,7 @@ ParagraphClass =
 		local cellWidth = {}
 		local cn = 1
 		local w = 0
-		local aw = 0
+		local allcellswidth = 0
 		for wn, word in ipairs(self) do
 			-- get width of word (including space)
 			local ww = GetStringWidth(word) + 1
@@ -369,28 +369,33 @@ ParagraphClass =
 			end
 
 			w = w + ww
-			aw = aw + ww
 			cell[#cell+1] = wn
 			
-			if word:find(";") or (word == ";") then
+			if word:find(";") and  GetStringWidth(word) == 1 then
 				cells[#cells+1] = cell
 				cellWidth[cn] = w + 1
+				allcellswidth = allcellswidth + cellWidth[cn]
 				w = 0
 				cn = cn + 1
 				cell = {}
 			end
 		end
-		
-		width = width or Document.wrapwidth
-		cellWidth[cn] = width - aw 
-		
+		cellWidth[cn] = Document.wrapwidth - allcellswidth 
+		if cellWidth[cn] <= 0 then 
+			cellWidth[cn] = cellWidth[cn-1]
+		end
 		cells[#cells+1] = cell
 		
+		self.isFirstRow = true
 		self.cn = cn
+		self.cells = cells
 		self.cellWidth = cellWidth
 		if pp then 
-			if pp.style == "TR" or pp.style == "TRF" then
-				if pp.cn >= self.cn then
+			if pp.style == "TR"  or 
+				 pp.style == "TRB" 
+			then
+				isFirstRow = false
+				if pp.cn and pp.cn >= self.cn then
 					self.cn = pp.cn -- cell numbers
 					self.cellWidth = pp.cellWidth
 				end
@@ -440,11 +445,12 @@ ParagraphClass =
 		end
 
 		-- concat cell lines
+		local wordp = {}
 		local lines = {}
 		local l 
 		local xs = {}
 		for l=1,maxlinesize,1 do
-			local newline = {}
+			local newline = {wn = 1}
 			local start = 0
 			for cn, cell in ipairs(cells) do
 				if cn > 1 then
@@ -462,6 +468,7 @@ ParagraphClass =
 							w = w + ww
 							
 							newline[#newline+1] = wn 
+							wordp[#wordp+1] = wn
 						end	
 					end
 				end
@@ -470,6 +477,7 @@ ParagraphClass =
 			self.xs = xs
 		end
 
+		self.wordp = wordp
 		self.lines = lines
 		return self.lines
 	end,
@@ -540,7 +548,9 @@ ParagraphClass =
 
 	renderLine = function(self, line, x, y)
 		local istable = 0; 
-		if (self.style == "TR" or self.style == "TRF") then
+		if self.style == "TR"  or 
+			 self.style == "TRB" 
+		then
 			istable = 1
 		end
 
@@ -565,7 +575,9 @@ ParagraphClass =
 
 	renderMarkedLine = function(self, line, x, y, width, pn)
 		local istable = 0; 
-		if (self.style == "TR" or self.style == "TRF") then
+		if self.style == "TR"  or 
+			 self.style == "TRB" 
+		then
 			istable = 1
 		end
 		
@@ -629,7 +641,12 @@ ParagraphClass =
 
 	-- returns: line number, word number in line
 	getLineOfWord = function(self, wn)
-		local lines = self:wrap()
+		local lines
+		if self.style == "TR" or self.style == "TRF" then
+			lines = self:wrapTableRow()
+		else 
+			lines = self:wrap()
+		end
 		for ln, l in ipairs(lines) do
 			if (wn <= #l) then
 				return ln, wn
@@ -653,13 +670,23 @@ ParagraphClass =
 
 	-- returns: word number
 	getWordOfLine = function(self, ln)
-		local lines = self:wrap()
+		local lines
+		if self.style == "TR" or self.style == "TRF" then
+			lines = self:wrapTableRow()
+		else 
+			lines = self:wrap()
+		end
 		return lines[ln].wn
 	end,
 
 	-- returns: X offset, line number, word number in line
 	getXOffsetOfWord = function(self, wn)
-		local lines = self:wrap()
+		local lines
+		if self.style == "TR" or self.style == "TRF" then
+			lines = self:wrapTableRow()
+		else 
+			lines = self:wrap()
+		end
 		local x = self.xs[wn]
 		local ln, wn = self:getLineOfWord(wn)
 		return x, ln, wn
@@ -888,8 +915,8 @@ function UpdateDocumentStyles()
 			below = 1
 		},
 		{
-			desc = "Table Row framed with ';' separeted cells",
-			name = "TRF",
+			desc = "Table Row with borders and ';' separeted cells",
+			name = "TRB",
 			indent = 1,
 			above = 1,
 			below = 1

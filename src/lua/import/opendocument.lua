@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 03.01.2024
+Last Modified Date: 11.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -26,9 +26,10 @@ local string_gmatch = string.gmatch
 local table_concat = table.concat
 
 local OFFICE_NS = "urn:oasis:names:tc:opendocument:xmlns:office:1.0"
-local STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
-local FO_NS = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
-local TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+local STYLE_NS  = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+local FO_NS     = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+local TEXT_NS   = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+local TABLE_NS  = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
 
 -----------------------------------------------------------------------------
 -- The importer itself.
@@ -36,14 +37,17 @@ local TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 local function parse_style(styles, xml)
 	local NAME = STYLE_NS .. " name"
 	local FAMILY = STYLE_NS .. " family"
-	local PARENT_NAME = STYLE_NS .. " parent-name"
+	local PARENT_NAME = STYLE_NS .. " parent-style-name"
 	local TEXT_PROPERTIES = STYLE_NS .. " text-properties"
 	local PARAGRAPH_PROPERTIES = STYLE_NS .. " paragraph-properties"
+	local TABLE_PROPERTIES = STYLE_NS .. " table-properties"
+	local TABLE_CELL_PROPERTIES = STYLE_NS .. " table-cell-properties"
 	local FONT_STYLE = FO_NS .. " font-style"
 	local FONT_WEIGHT = FO_NS .. " font-weight"
 	local UNDERLINE_STYLE = STYLE_NS .. " text-underline-style"
 	local MARGIN_LEFT = FO_NS .. " margin-left"
 	local TEXT_ALIGN = FO_NS .. " text-align"
+	local LIST_LEVEL_STYLE_NUMBER = TEXT_NS .. " list-level-style-number"
 	
 	local name = xml[NAME]
 	local style =
@@ -63,16 +67,62 @@ local function parse_style(styles, xml)
 				style.underline = true
 			end
 		elseif (element._name == PARAGRAPH_PROPERTIES) then
-			if element[MARGIN_LEFT] then
+			if 
+				element[MARGIN_LEFT] and
+				element[MARGIN_LEFT] ~= "0cm"
+			then
 				style.indented = true
-			elseif (element[TEXT_ALIGN]) then
-				if (element[TEXT_ALIGN] == "right") then
+			end
+			if (element[TEXT_ALIGN]) then
+				if 
+					element[TEXT_ALIGN] == "right" or
+					element[TEXT_ALIGN] == "end"
+				then
 					style.right = true
 				elseif (element[TEXT_ALIGN] == "center") then
 					style.center = true
-				elseif (element[TEXT_ALIGN] == "left") then
+				elseif 
+					element[TEXT_ALIGN] == "left" or
+					element[TEXT_ALIGN] == "start"
+				then
 					style.left = true
 				end
+			end
+		elseif (element._name == TABLE_CELL_PROPERTIES) then
+				if 
+					element[FO_NS .. " border"] and
+					element[FO_NS .. " border"] ~= "none"
+				then
+					style.trb = true
+				end
+
+				if 
+					element[FO_NS .. " border-left"] and
+					element[FO_NS .. " border-left"] ~= "none"
+				then
+					style.trb = true
+				end
+				if 
+					element[FO_NS .. " border-right"] and
+					element[FO_NS .. " border-right"] ~= "none"
+				then
+					style.trb = true
+				end
+				if 
+					element[FO_NS .. " border-top"] and
+					element[FO_NS .. " border-top"] ~= "none"
+				then
+					style.trb = true
+				end
+				if 
+					element[FO_NS .. " border-bottom"] and
+					element[FO_NS .. " border-bottom"] ~= "none"
+				then
+					style.trb = true
+				end
+		elseif (element._name == LIST_LEVEL_STYLE_NUMBER) then
+			if element[STYLE_NS .. " num-format"] == "1" then
+				style.numbers = true
 			end
 		end
 	end
@@ -109,6 +159,9 @@ local function collect_styles(styles, xml)
 		if (element._name == STYLES) or (element._name == AUTOMATIC_STYLES) then
 			for _, element in ipairs(element) do
 				if (element._name == STYLE) then
+					parse_style(styles, element)
+				end
+				if (element._name == TEXT_NS .. " list-style") then
 					parse_style(styles, element)
 				end
 			end
@@ -181,24 +234,52 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 	local STARTVALUE = TEXT_NS .. " start-value"
 	
 	for _, element in ipairs(xml) do
+		if (element._name == TABLE_NS .. " table") then
+			local wgstyle = "TR"
+			for _, element in ipairs(element) do
+				if (element._name == TABLE_NS .. " table-row") then
+					local firstcell = true
+					for _, element in ipairs(element) do
+						if (element._name == TABLE_NS .. " table-cell") then
+							if not firstcell then
+								importer:text(" ; ")
+							end
+							firstcell = false
+							local stylename = element[TABLE_NS .. " style-name"] or ""
+							local style = styles[stylename] or {}
+							if style.trb then
+								wgstyle = "TRB"
+							end
+							for _, element in ipairs(element) do
+								if (element._name == PARAGRAPH) then
+									add_text(styles, importer, element)
+								end
+							end
+						end
+					end
+					importer:flushparagraph(wgstyle)
+				end
+			end
+		end
 		if (element._name == PARAGRAPH) then
 			local stylename = element[STYLENAME] or ""
-			local style = styles[stylename] or {}
+			local style  = styles[stylename] or {}
+			local parent = styles[style.parent] or {}
 			local wgstyle = defaultstyle
 			
-			if style.indented then
+			if style.indented or parent.indented then
 				wgstyle = "Q"
 			end
 			
-			if style.right then
+			if style.right or parent.right then
 				wgstyle = "RIGHT"
 			end
 			
-			if style.left then
+			if style.left or parent.left then
 				wgstyle = "LEFT"
 			end
 			
-			if style.center then
+			if style.center or parent.center then
 				wgstyle = "CENTER"
 			end
 			
@@ -213,11 +294,16 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 			add_text(styles, importer, element)
 			importer:flushparagraph("H"..level)
 		elseif (element._name == LIST) then
+			local stylename = element[STYLENAME] or ""
+			local style = styles[stylename] or {}
 			for _, element in ipairs(element) do
 				local hasnumber = element[STARTVALUE] ~= nil
-				import_paragraphs(styles, importer, element,
-					hasnumber and "LN" or "LB"
-				)
+				if (hasnumber or style.numbers) then
+					wgstyle = "LN"
+				else
+					wgstyle = "LB"
+				end
+				import_paragraphs(styles, importer, element, wgstyle)
 			end
 		end
 	end

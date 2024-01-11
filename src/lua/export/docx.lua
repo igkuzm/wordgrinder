@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 03.01.2024
+Last Modified Date: 10.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -32,7 +32,7 @@ local function header()
 		return string_format('<w:p><w:pPr><w:pStyle w:val="%s"/></w:pPr><w:r><w:t>', para.style)
 	end
 end
-		
+	
 local function simple()
 	return function(para)
 		return string_format('<w:pStyle w:val="%s">', para.style)
@@ -69,6 +69,8 @@ local style_tab =
 	["CENTER"] = {false, header(), emit('</w:t></w:r></w:p>') },
 	["RIGHT"]  = {false, header(), emit('</w:t></w:r></w:p>') },
 	["LEFT"]   = {false, header(), emit('</w:t></w:r></w:p>') },
+	["TR"]    = {false, emit(''), emit('') },
+	["TRB"]   = {false, emit(''), emit('') },
 }
 
 local function callback(writer, document)
@@ -176,6 +178,54 @@ local function callback(writer, document)
 		paragraph_end = function(para)
 		end,
 		
+		table_start = function(para)
+			changepara(para)
+			writer([[
+			<w:tbl>
+			<w:tblPr>
+			</w:tblPr>
+			<w:tblGrid>	
+			]])
+			local cn = 1
+			for _, cell in ipairs(para.cells) do
+				local width = para.cellWidth[cn] * 12 *72
+				writer(string_format('<w:gridCol w:w="%s"/>', width))	
+				cn = cn + 1
+			end
+			writer('</w:tblGrid>')	
+		end,		
+		
+		table_end = function(para)
+			writer('</w:tbl>')
+		end,
+		
+		tablerow_start = function(para)
+			writer('<w:tr>')
+		end,		
+		
+		tablerow_end = function(para)
+			writer('</w:tr>')
+		end,
+
+		tablecell_start = function(para)
+			if para.style == "TRB" then
+				writer([[
+				<w:tc><w:tcPr><w:tcBorders>
+        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+				</w:tcBorders></w:tcPr>
+				<w:p><w:r><w:t>
+				]])
+			else
+				writer('<w:tc><w:r><w:t>')
+			end
+		end,		
+		
+		tablecell_end = function(para)
+			writer('</w:t></w:r></w:p></w:tc>')
+		end,
 	})
 end
 

@@ -49,7 +49,25 @@ local function callback(writer, document)
 		paragraph_end = function(para)
 			writer('\n')
 		end,
+	
+		table_start = function(para)
+		end,
 		
+		table_end = function(para)
+		end,
+
+		tablerow_start = function(para)
+		end,
+		
+		tablerow_end = function(para)
+		end,
+
+		tablecell_start = function(para)
+		end,
+		
+		tablecell_end = function(para)
+		end,
+	
 		epilogue = function()
 		end
 	})
