@@ -2,7 +2,7 @@
 File              : cli.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.01.2024
+Last Modified Date: 12.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2013 David Given.
@@ -31,6 +31,7 @@ local import_table =
 	["html"] = Cmd.ImportHTMLFile,
 	["txt"]  = Cmd.ImportTextFile, 
 	["docx"] = Cmd.ImportDOCXFile, 
+	["rtf"] = Cmd.ImportRTFFile, 
 }
 
 local export_table =

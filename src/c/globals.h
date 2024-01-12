@@ -94,6 +94,9 @@ extern void word_init(void);
 
 extern void zip_init(void);
 
+/* UNRTF */
+extern void unrtf_init(void);
+
 /* --- General utilities ------------------------------------------------- */
 
 extern int getu8bytes(char c);

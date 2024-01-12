@@ -39,6 +39,7 @@ int main(int argc, const char* argv[])
 	utils_init();
 	filesystem_init();
 	zip_init();
+	unrtf_init();
 	#if (LUA_VERSION_NUM < 502)
 		luaopen_lpeg(L);
 	#else

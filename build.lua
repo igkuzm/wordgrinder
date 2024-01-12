@@ -279,6 +279,7 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
         srcfile("src/c/emu/lua-5.1.5/winshim.c")
         srcfile("src/c/emu/tmpnam.c")
         srcfile("src/c/images/stb_image.c")
+        srcfile("src/c/unrtf.c")
     end
 
     -- Frontends
@@ -529,6 +530,7 @@ emit("build ", OBJDIR.."/luascripts.c: luascripts ", table.concat({
     "src/lua/import/text.lua",
     "src/lua/import/opendocument.lua",
     "src/lua/import/docx.lua",
+    "src/lua/import/rtf.lua",
     "src/lua/import/markdown.lua",
     "src/lua/navigate.lua",
     "src/lua/addons/goto.lua",
