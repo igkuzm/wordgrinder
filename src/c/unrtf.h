@@ -702,8 +702,11 @@ unrtf_parse_start:
 				struct str img;
 				str_init(&img, BUFSIZ);
 				while (ch != '}' && ch != EOF) {
-					char c = (char)ch;
-					str_append(&img, &c, 1);
+					// add ony if hex (drop spaces and newlines)
+					if (unrtf_ishex(ch)){
+						char c = (char)ch;
+						str_append(&img, &c, 1);
+					}
 					ch = fgetc(fp);
 				}
 				if (ch == EOF)

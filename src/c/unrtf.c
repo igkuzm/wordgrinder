@@ -10,7 +10,6 @@
 #include "images/stb_image.h"
 #include "images/stb_image_write.h"
 #include <lua.h>
-#include <stdio.h>
 
 static int paragraph_start(void *u){
 	lua_State* L = (lua_State*)u;
@@ -141,7 +140,16 @@ static int text(void *u, const char *s, int len){
 }
 
 static int image(void *u, const unsigned char *s, size_t len){
-	
+	// get image data
+	int x, y, c;
+  stbi_uc *image = 
+		stbi_load_from_memory(s, len,
+			 	&x, &y, 
+				&c, 0);
+
+	if (!image)
+		return 0;
+		
 	lua_State* L = (lua_State*)u;
 	lua_call(L, 0, 1);
 	
@@ -150,12 +158,9 @@ static int image(void *u, const unsigned char *s, size_t len){
 		luaL_checklstring(L, -1, &size);
 
 	if (filename){
-		printf("FILENAME: %s\n", filename);
-		FILE *fp = fopen(filename, "wb");
-		if (fp){
-			fwrite(s, len, 1, fp);
-			fclose(fp);
-		}
+		stbi_write_jpg(filename, x, y,
+			 	c, image, 90);
+		stbi_image_free(image);
 	}
 
 	return 0;
