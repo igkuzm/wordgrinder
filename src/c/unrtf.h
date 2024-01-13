@@ -158,6 +158,8 @@ static int unrtf_isinword(int ch)
 		ch == '\r' ||
 		ch == ' '  ||
 		ch == '\t' ||
+		ch == '}'  ||
+		ch == '{'  ||
 		ch == '\\'
 		)
 		return 0;
@@ -182,12 +184,11 @@ static int unrtf_readword(FILE *fp, char *buf)
 	return ch;
 }
 
-static int unrtf_isservice(char *buf)
+static int unrtf_iscontrol(char *buf)
 {
 	if (
 			(buf[0] >= 'A' && buf[0] <= 'Z') ||
-			(buf[0] >= 'a' && buf[0] <= 'z') ||
-		   buf[0] == '*'	
+			(buf[0] >= 'a' && buf[0] <= 'z')
 		 )
 		return 1;
 	return 0;
@@ -242,13 +243,28 @@ static int unrtf_islist(char *buf)
 	return 0;
 }
 
+static int unrtf_ishex(int ch)
+{
+	if (
+		 ch == 'A' || ch == 'a' ||
+		 ch == 'B' || ch == 'b' ||
+		 ch == 'C' || ch == 'c' ||
+		 ch == 'D' || ch == 'd' ||
+		 ch == 'E' || ch == 'e' ||
+		 ch == 'F' || ch == 'f' ||
+		(ch >= '0' && ch <= '9')
+		)
+		return 1;
+	return 0;
+}
+
 static int unrtf_is8bit(char *buf)
 {
 	if (buf[0] == '\'')
 		if (
-			buf[1] >= '0' || buf[1] <= '9' ||
-			buf[1] >= 'A' || buf[1] <= 'Z' ||
-			buf[1] >= 'a' || buf[1] <= 'z'
+			(buf[1] >= '0' && buf[1] <= '9') ||
+			(buf[1] >= 'A' && buf[1] <= 'Z') ||
+			(buf[1] >= 'a' && buf[1] <= 'z')
 			)
 		return 1;
 	return 0;
@@ -273,41 +289,9 @@ static int unrtf_iscolwidth(char *buf)
 static int unrtf_isvalid(int ch)
 {
 	if ( 	
-		ch == '\n' ||
-		ch == '\r' ||
-		ch == ' '  ||
-		ch == '\t' ||
-		ch == ';'  ||
-		ch == ','  ||
-		ch == ':'  ||
-		ch == '.'  ||
-		ch == '/'  ||
-		ch == '['  ||
-		ch == ']'  ||
-		ch == '#'  ||
-		ch == '@'  ||
-		ch == '!'  ||
-		ch == '$'  ||
-		ch == '%'  ||
-		ch == '^'  ||
-		ch == '*'  ||
-		ch == '('  ||
-		ch == ')'  ||
-		ch == '-'  ||
-		ch == '+'  ||
-		ch == '='  ||
-		ch == '"'  ||
-		ch == '|'  ||
-		ch == '\'' ||
-		ch == '<'  ||
-		ch == '>'  ||
-		ch == '`'  ||
-		ch == '~'  ||
-		ch == '?'  ||
-		(ch >= 'A' && ch <= 'Z') ||
-		(ch >= 'a' && ch <= 'z') ||
-		(ch >= '0' && ch <= '9')
-		)
+		ch != '{' &&
+		ch != '}'
+			)
 		return 1;
 
 	return 0;
@@ -375,6 +359,10 @@ static int unrtf_parse(
 	int row = 0;
 	int cell = 0;
 
+	int inpicture = 0;
+	int shppict = 0;
+	int nonshppict = 0;
+
 	struct str str;
 	str_init(&str, BUFSIZ);
 
@@ -398,10 +386,21 @@ unrtf_parse_start:
 			ch = unrtf_readword(fp, buf);
 
 			// check if not service word
-			if (!unrtf_isservice(buf)){
+			if (!unrtf_iscontrol(buf)){
 				if (unrtf_is8bit(buf)){
 					// handle with codepages
-				} else if (paragraph){
+				} else if (buf[0] == '*'){
+					// \*. This control symbol identifies
+					// destinations whose related text should be
+					// ignored if the RTF reader does not recognize
+					// the destination.
+				} else if (
+						paragraph &&
+						!inpicture &&
+						!shppict &&
+						!nonshppict
+						)
+				{
 				// print it if in paragraph
 						str_append(&str, buf,
 							 	strlen(buf));
@@ -474,13 +473,17 @@ unrtf_parse_start:
 
 			if (strcmp(buf, "pard") == 0)
 			{
+				inpicture = 0;
+				shppict = 0;
+				nonshppict = 0;
+
 				// new paragraph
 				if (paragraph_start)
 					if(paragraph_start(userdata))
 						return 0;
 				paragraph = 1;
 				
-							if (istable){
+				if (istable){
 					colwidthn = 0;
 					if (table_end)
 						if (table_end(userdata))
@@ -489,11 +492,13 @@ unrtf_parse_start:
 			}
 			if (strcmp(buf, "par") == 0)
 			{
-				unrtf_flushstr(&str, userdata, text);
 				// end paragraph
-				if (paragraph_end)
-					if(paragraph_end(userdata))
-						return 0;
+				if (!inpicture && !nonshppict && !shppict){
+					unrtf_flushstr(&str, userdata, text);
+					if (paragraph_end)
+						if(paragraph_end(userdata))
+							return 0;
+				}
 				paragraph = 0;
 			}
 
@@ -649,23 +654,53 @@ unrtf_parse_start:
 				colwidthn++;
 			}
 			
-			if (strcmp(buf, "pict") == 0){
+			if (strcmp(buf, "shppict") == 0){
+				// Specifies a Word 97 picture. This is a
+				// destination control word.
+				shppict = 1;
+			}
+			
+			if (strcmp(buf, "nonshppict") == 0){
+				// Specifies that Word 97 has written a 
+				// {\pict destination that it will not read on
+				// input. This keyword is for compatibility with
+				// other readers.
+				nonshppict = 1;
+			}
+			
+			if (
+					strcmp(buf, "pict") == 0 &&
+					!nonshppict
+					)
+			{
 				// this is picture
+				inpicture = 1;
 				// data will start after space or newline
 				ch = fgetc(fp);
 				while (
-						ch != ' ' && 
 						ch != '\n' && 
 						ch != '\r' && 
 						ch != EOF)
+				{
+					if (ch == ' '){
+						// look if next char is hex
+						ch = fgetc(fp);
+						if (unrtf_ishex(ch))
+							break;
+					}
+
 					ch = fgetc(fp);
+				}
 				if (ch == EOF)
 					break;
+
+				// get next char if not hex
+				if (!unrtf_ishex(ch))
+					ch = fgetc(fp);
 
 				// get image data until '}'
 				struct str img;
 				str_init(&img, BUFSIZ);
-				ch = fgetc(fp);
 				while (ch != '}' && ch != EOF) {
 					char c = (char)ch;
 					str_append(&img, &c, 1);
@@ -707,7 +742,14 @@ unrtf_parse_start:
 			goto unrtf_parse_start;
 
 		} else {
-			if (paragraph && unrtf_isvalid(ch)){
+			if (
+					paragraph && 
+					unrtf_isvalid(ch) && 
+					!inpicture &&
+					!shppict &&
+					!nonshppict
+					)
+			{
 				// callback plain text
 				char s[2] = {(char)ch, 0};
 				str_append(&str, (char*)s, 1);
