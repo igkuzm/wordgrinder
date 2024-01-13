@@ -2,7 +2,7 @@
  * File              : unrtf.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 12.01.2024
- * Last Modified Date: 13.01.2024
+ * Last Modified Date: 14.01.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #ifndef UNRTF_H_
@@ -186,7 +186,8 @@ static int unrtf_isservice(char *buf)
 {
 	if (
 			(buf[0] >= 'A' && buf[0] <= 'Z') ||
-			(buf[0] >= 'a' && buf[0] <= 'z') 
+			(buf[0] >= 'a' && buf[0] <= 'z') ||
+		   buf[0] == '*'	
 		 )
 		return 1;
 	return 0;
@@ -237,6 +238,18 @@ static int unrtf_islist(char *buf)
 		buf[1] == 's' &&
 		(buf[2] >= '0' || buf[2] <= '9')
 		)
+		return 1;
+	return 0;
+}
+
+static int unrtf_is8bit(char *buf)
+{
+	if (buf[0] == '\'')
+		if (
+			buf[1] >= '0' || buf[1] <= '9' ||
+			buf[1] >= 'A' || buf[1] <= 'Z' ||
+			buf[1] >= 'a' || buf[1] <= 'z'
+			)
 		return 1;
 	return 0;
 }
@@ -386,9 +399,12 @@ unrtf_parse_start:
 
 			// check if not service word
 			if (!unrtf_isservice(buf)){
+				if (unrtf_is8bit(buf)){
+					// handle with codepages
+				} else if (paragraph){
 				// print it if in paragraph
-				if (paragraph){
-					str_append(&str, buf, strlen(buf));
+						str_append(&str, buf,
+							 	strlen(buf));
 				}
 				goto unrtf_parse_start;
 			}
