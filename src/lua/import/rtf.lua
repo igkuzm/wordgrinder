@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 13.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -24,19 +24,24 @@ local table_concat = table.concat
 
 -----------------------------------------------------------------------------
 local function add_text(importer, str)
-    local needsflush = false
-    if string_find(str, "^ ") then
-        needsflush = true
-    end
-    for word in string_gmatch(str, "%S+") do
-        if needsflush then
+    if str == " " then
+      -- import empty paragraph
+      importer:text(" ")
+    else
+        local needsflush = false
+        if string_find(str, "^ ") then
+            needsflush = true
+        end
+        for word in string_gmatch(str, "%S+") do
+            if needsflush then
+              importer:flushword(false)
+            end
+            importer:text(word)
+            needsflush = true
+        end
+        if string_find(str, " $") then
             importer:flushword(false)
         end
-        importer:text(word)
-        needsflush = true
-    end
-    if string_find(str, " $") then
-        importer:flushword(false)
     end
 end
 
@@ -57,9 +62,8 @@ function Cmd.ImportRTFFile(filename)
 	importer:reset()
 
     local current_style = "P"
-
     local tablerows = 0
-
+    
     local paragraph_start = function()
     end
         
@@ -127,6 +131,15 @@ function Cmd.ImportRTFFile(filename)
       add_text(importer, txt)
     end
 
+    local image = function()
+      local tmpname = os.tmpname()
+      tmpname = string.format('%s.jpg', tmpname)
+      importer:text(tmpname)
+      importer:flushword(false)
+	  importer:flushparagraph("IMG")
+      return tmpname
+    end
+
     UnRTF(
       filename,
       paragraph_start,
@@ -145,7 +158,8 @@ function Cmd.ImportRTFFile(filename)
       tablecell_start,
       tablecell_end,
       style,
-      text
+      text,
+      image
     )
     
 	if (#document > 1) then

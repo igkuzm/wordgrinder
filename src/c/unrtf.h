@@ -2,7 +2,7 @@
  * File              : unrtf.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 12.01.2024
- * Last Modified Date: 12.01.2024
+ * Last Modified Date: 13.01.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #ifndef UNRTF_H_
@@ -339,7 +339,8 @@ static int unrtf_parse(
 		int (*tablecell_start)(void *userdata, int n),
 		int (*tablecell_end)(void *userdata, int n),
 		int (*style)(void *userdata, const char *style),
-		int (*text)(void *userdata, const char *text, int len)
+		int (*text)(void *userdata, const char *text, int len),
+		int (*image)(void *userdata, const unsigned char *data, size_t len)
 		)
 {
 	FILE *fp = fopen(filename, "r");
@@ -630,6 +631,60 @@ unrtf_parse_start:
 						return 0;
 				
 				colwidthn++;
+			}
+			
+			if (strcmp(buf, "pict") == 0){
+				// this is picture
+				// data will start after space or newline
+				ch = fgetc(fp);
+				while (
+						ch != ' ' && 
+						ch != '\n' && 
+						ch != '\r' && 
+						ch != EOF)
+					ch = fgetc(fp);
+				if (ch == EOF)
+					break;
+
+				// get image data until '}'
+				struct str img;
+				str_init(&img, BUFSIZ);
+				ch = fgetc(fp);
+				while (ch != '}' && ch != EOF) {
+					char c = (char)ch;
+					str_append(&img, &c, 1);
+					ch = fgetc(fp);
+				}
+				if (ch == EOF)
+					break;
+
+				// convert image hex string to binary
+				size_t len = img.len/2;
+				unsigned char *data = 
+					(unsigned char*)malloc(len);
+				if (!data) // not enough memory
+					break;
+				char cur[3];
+				unsigned int val;
+				size_t i, l;
+				for (i = 0, l = 0; i < img.len;) {
+					cur[0] = img.str[i++];
+					cur[1] = img.str[i++];
+					cur[2] = 0;
+					sscanf(cur, "%x", &val);
+					data[l++] = (unsigned char)val;
+				}
+				// callback image data
+				if (image)
+					if(image(userdata, data, len))	
+						return 0;
+
+				// free image data and string
+				free(data);
+				free(img.str);
+
+				// goto next char in RTF
+				continue;
 			}
 			
 			// handle with ch again

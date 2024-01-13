@@ -2,11 +2,13 @@
  * File              : unrtf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 12.01.2024
- * Last Modified Date: 12.01.2024
+ * Last Modified Date: 13.01.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
 #include "unrtf.h"
+#include "images/stb_image.h"
+#include "images/stb_image_write.h"
 #include <lua.h>
 
 static int paragraph_start(void *u){
@@ -137,6 +139,33 @@ static int text(void *u, const char *s, int len){
 	return 0;
 }
 
+static int image(void *u, const unsigned char *s, size_t len){
+	// get image data
+	int x, y, c;
+  stbi_uc *image = 
+		stbi_load_from_memory(s, len,
+			 	&x, &y, 
+				&c, 0);
+
+	if (!image)
+		return 0;
+		
+	lua_State* L = (lua_State*)u;
+	lua_call(L, 0, 1);
+	
+	size_t size;
+	const char* filename = 
+		luaL_checklstring(L, -1, &size);
+
+	if (filename){
+		stbi_write_jpg(filename, x, y,
+			 	c, image, 90);
+		stbi_image_free(image);
+	}
+
+	return 0;
+}
+
 static int unrtf_cb(lua_State* L)
 {
 	size_t size;
@@ -161,7 +190,8 @@ static int unrtf_cb(lua_State* L)
 			tablecell_start, 
 			tablecell_end, 
 			style, 
-			text);
+			text,
+			image);
 	return 0;
 }
 

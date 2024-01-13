@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 13.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -484,6 +484,24 @@ ParagraphClass =
 	end,
 
 	wrapImage = function(self, width)
+		local sentences = self.sentences
+		if (sentences == nil) then
+			local issentence = true
+			sentences = {}
+			for wn, word in ipairs(self) do
+				if issentence then
+					sentences[wn] = true
+					issentence = false
+				end
+
+				if word:find("%.$") then
+					issentence = true
+				end
+			end
+			sentences[#self] = true
+			self.sentences = sentences
+		end
+
 		local imagedata = {}
 		local lines = {}
 		local xs = {}
