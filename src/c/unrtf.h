@@ -11,28 +11,46 @@
 #include <string.h>
 #include <stdint.h>
 
+/* parse RTF file and run callbacks */
+static int unrtf(
+		const char *filename,
+		void *userdata,
+		int (*paragraph_start)(void *userdata),
+		int (*paragraph_end)(void *userdata),
+		int (*bold_start)(void *userdata),
+		int (*bold_end)(void *userdata),
+		int (*italic_start)(void *userdata),
+		int (*italic_end)(void *userdata),
+		int (*underline_start)(void *userdata),
+		int (*underline_end)(void *userdata),
+		int (*table_start)(void *userdata),
+		int (*table_end)(void *userdata),
+		int (*tablerow_width)(void *userdata, int i, int w),
+		int (*tablerow_start)(void *userdata, int n),
+		int (*tablerow_end)(void *userdata, int n),
+		int (*tablecell_start)(void *userdata, int n),
+		int (*tablecell_end)(void *userdata, int n),
+		int (*style)(void *userdata, const char *style),
+		int (*text)(void *userdata, const char *text, int len),
+		int (*image)(void *userdata, const unsigned char *data, size_t len)
+		);
+
+/*
+ *
+ * IMPLIMATION
+ *
+ *
+ */
+
 /* dynamic string structure */
-struct str {
+struct _unrtf_str {
 	char *str;   //null-terminated c string
 	int   len;   //length of string (without last null char)
 	int   size;  //allocated size
 };
 
-/* init string - return non-null on error */
-static int str_init(struct str *s, size_t size);
-
-/* append c string */
-static void str_append(
-		struct str *s, const char *str, int len);
-
-/* append fprint-like formated c string */
-#define str_appendf(s, ...)
-
-/* IMPLIMATION */
-#include <string.h>
-#include <stdlib.h>
-
-int str_init(struct str *s, size_t size)
+static int 
+_unrtf_str_init(struct _unrtf_str *s, size_t size)
 {
 	// allocate data
 	s->str = (char*)malloc(size);
@@ -47,8 +65,8 @@ int str_init(struct str *s, size_t size)
 	return 0;
 }
 
-static int _str_realloc(
-		struct str *s, int new_size)
+static int _unrtf_str_realloc(
+		struct _unrtf_str *s, int new_size)
 {
 	while (s->size < new_size){
 		// do realloc
@@ -61,8 +79,8 @@ static int _str_realloc(
 	return 0;
 }
 
-void str_append(
-		struct str *s, const char *str, int len)
+void _unrtf_str_append(
+		struct _unrtf_str *s, const char *str, int len)
 {
 	if (!str || len < 1)
 		return;
@@ -71,7 +89,7 @@ void str_append(
 	
 	new_size = s->len + len + 1;
 	// realloc if not enough size
-	if (_str_realloc(s, new_size))
+	if (_unrtf_str_realloc(s, new_size))
 		return;
 
 	// append string
@@ -81,77 +99,57 @@ void str_append(
 	s->str[s->len] = 0;
 }
 
-#undef  str_appendf
-#define str_appendf(s, ...)\
-	({\
-	 char str[BUFSIZ];\
-	 snprintf(str, BUFSIZ-1, __VA_ARGS__);\
-	 str[BUFSIZ-1] = 0;\
-	 str_append(s, str, strlen(str));\
-	 })
-
-static uint8_t *_utf32_to_utf8(
-		uint32_t c, uint8_t s[5])
-{
-	//more than 00000000 00000100 00000000 00000000
-	if (c > 0x040000){ //4-byte
-
-		//get first byte - first 3 bit 00000000 00011100 00000000 00000000
-		//and mask with 11110000 
-		s[0] = ((c & 0x1C0000) >> 18) | 0xF0;
-
-		//get second - 00000000 00000011 11110000 00000000
-		//and mask with 10000000 
-		s[1] = ((c & 0x03F000) >> 12) | 0x80;
-		
-		//get third - 00000000 00000000 00001111 11000000
-		//and mask with 10000000 
-		s[2] = ((c & 0x0FC0) >> 6 )   | 0x80;
-
-		//get last - 00000000 00000000 00000000 00111111
-		//and mask with 10000000 
-		s[3] = ( c & 0x3F)            | 0x80;
-
-		s[4] = 0;
+/* convert utf32 char to utf8 multybite char array and 
+ * return number of bytes */ 
+static int _unrtf_c32tomb(char s[6], const uint32_t c32){
+	int i = 0;
+	if (c32 <= 0x7F) {
+		// Plain single-byte ASCII.
+		s[i++] = (char) c32;
 	}
-	//more than 00000000 00000000 00010000 00000000
-	else if (c > 0x1000){ //3-byte
-		
-		//get first byte - first 4 bit 00000000 00000000 11110000 00000000
-		//and mask with 11100000 
-		s[0] = ((c & 0xF000) >> 12) | 0xE0;
-
-		//get second - 00000000 00000000 00001111 11000000
-		//and mask with 10000000 
-		s[1] = ((c & 0x0FC0) >> 6 ) | 0x80;
-		
-		//get last - 00000000 00000000 00000000 00111111
-		//and mask with 10000000 
-		s[2] = ( c & 0x3F)          | 0x80;
-
-		s[3] = 0;
+	else if (c32 <= 0x7FF) {
+		// Two bytes.
+		s[i++] = 0xC0 |  (c32 >> 6);
+		s[i++] = 0x80 | ((c32 >> 0) & 0x3F);
 	}
-	//more than 000000000 00000000 00000000 1000000
-	else if (c > 0x80){ //2-byte
-		//get first byte - first 5 bit 00000000 00000000 00000111 11000000
-		//and mask with 11000000 
-		s[0] = ((c & 0x7C0)>> 6) | 0xC0;
-
-		//get last - 00000000 00000000 00000000 00111111 
-		//and mask with 10000000 
-		s[1] = ( c & 0x3F)       | 0x80;
-
-		s[2] = 0;
+	else if (c32 <= 0xFFFF) {
+		// Three bytes.
+		s[i++] = 0xE0 |  (c32 >> 12);
+		s[i++] = 0x80 | ((c32 >> 6) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 0) & 0x3F);
 	}
-	else { //ANSY
-		s[0] = c;
-		s[1] = 0;
+	else if (c32 <= 0x1FFFFF) {
+		// Four bytes.
+		s[i++] = 0xF0 |  (c32 >> 18);
+		s[i++] = 0x80 | ((c32 >> 12) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 6)  & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 0)  & 0x3F);
 	}
+	else if (c32 <= 0x3FFFFFF) {
+		// Five bytes.
+		s[i++] = 0xF8 |  (c32 >> 24);
+		s[i++] = 0x80 | ((c32 >> 18) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 12) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 6)  & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 0)  & 0x3F);
+	}
+	else if (c32 <= 0x7FFFFFFF) {
+		// Six bytes.
+		s[i++] = 0xFC |  (c32 >> 30);
+		s[i++] = 0x80 | ((c32 >> 24) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 18) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 12) & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 6)  & 0x3F);
+		s[i++] = 0x80 | ((c32 >> 0)  & 0x3F);
+	}
+	else{
+		// Invalid char; don't encode anything.
+	}	
 
-	return s;
+	return i;
 }
 
-static int unrtf_isinword(int ch)
+static int _unrtf_isinword(int ch)
 {
 	if ( 	
 		ch == '\n' ||
@@ -166,7 +164,7 @@ static int unrtf_isinword(int ch)
 	return 1;
 }
 
-static int unrtf_readword(FILE *fp, char *buf)
+static int _unrtf_readword(FILE *fp, char *buf)
 {
 	int ch = 1;
 	int blen = 0;
@@ -175,7 +173,7 @@ static int unrtf_readword(FILE *fp, char *buf)
 		ch = fgetc(fp);
 		if (ch == EOF)
 			break;
-		if (unrtf_isinword(ch))
+		if (_unrtf_isinword(ch))
 			buf[blen++] = ch;
 		else
 			break;;
@@ -184,17 +182,16 @@ static int unrtf_readword(FILE *fp, char *buf)
 	return ch;
 }
 
-static int unrtf_iscontrol(char *buf)
+static int _unrtf_iscontrol(char *buf)
 {
 	if (
-			(buf[0] >= 'A' && buf[0] <= 'Z') ||
 			(buf[0] >= 'a' && buf[0] <= 'z')
 		 )
 		return 1;
 	return 0;
 }
 
-static int unrtf_isutf(char *buf)
+static int _unrtf_isutf(char *buf)
 {
 	if (buf[0] == 'u')
 		if (buf[1] >= '0' && buf[1] <= '9') 
@@ -202,7 +199,7 @@ static int unrtf_isutf(char *buf)
 	return 0;
 }
 
-static int unrtf_isstyle(char *buf)
+static int _unrtf_isstyle(char *buf)
 {
 	if (buf[0] == 's')
 		if (buf[1] >= '0' && buf[1] <= '9') 
@@ -210,7 +207,7 @@ static int unrtf_isstyle(char *buf)
 	return 0;
 }
 
-static int unrtf_isli(char *buf)
+static int _unrtf_isli(char *buf)
 {
 	if (
 		buf[0] == 'l' &&
@@ -221,7 +218,7 @@ static int unrtf_isli(char *buf)
 	return 0;
 }
 
-static int unrtf_isfs(char *buf)
+static int _unrtf_isfs(char *buf)
 {
 	if (
 		buf[0] == 'f' &&
@@ -232,7 +229,7 @@ static int unrtf_isfs(char *buf)
 	return 0;
 }
 
-static int unrtf_islist(char *buf)
+static int _unrtf_islist(char *buf)
 {
 	if (
 		buf[0] == 'l' &&
@@ -243,7 +240,7 @@ static int unrtf_islist(char *buf)
 	return 0;
 }
 
-static int unrtf_ishex(int ch)
+static int _unrtf_ishex(int ch)
 {
 	if (
 		 ch == 'A' || ch == 'a' ||
@@ -258,7 +255,7 @@ static int unrtf_ishex(int ch)
 	return 0;
 }
 
-static int unrtf_is8bit(char *buf)
+static int _unrtf_is8bit(char *buf)
 {
 	if (buf[0] == '\'')
 		if (
@@ -270,7 +267,7 @@ static int unrtf_is8bit(char *buf)
 	return 0;
 }
 
-static int unrtf_iscolwidth(char *buf)
+static int _unrtf_iscolwidth(char *buf)
 {
 	if (
 		buf[0] == 'c' &&
@@ -284,9 +281,7 @@ static int unrtf_iscolwidth(char *buf)
 	return 0;
 }
 
-
-
-static int unrtf_isvalid(int ch)
+static int _unrtf_isvalid(int ch)
 {
 	if ( 	
 		ch != '{' &&
@@ -297,8 +292,8 @@ static int unrtf_isvalid(int ch)
 	return 0;
 }
 
-static int unrtf_flushstr(
-		struct str *str,
+static int _unrtf_flushstr(
+		struct _unrtf_str *str,
 		void *userdata,
 		int (*text)(void *userdata, const char *text, int len))
 {
@@ -308,16 +303,16 @@ static int unrtf_flushstr(
 			return 0;
 
 	free(str->str);
-	str_init(str, BUFSIZ);
+	_unrtf_str_init(str, BUFSIZ);
 	return 0;
 }
 
-struct unrtf_style {
+struct _unrtf_style {
 	int n;
 	char name[32];
 };
 
-static int unrtf_parse(
+int unrtf(
 		const char *filename,
 		void *userdata,
 		int (*paragraph_start)(void *userdata),
@@ -340,31 +335,31 @@ static int unrtf_parse(
 		int (*image)(void *userdata, const unsigned char *data, size_t len)
 		)
 {
+	// open input stream
 	FILE *fp = fopen(filename, "r");
 	if (!fp)
 		return -1;
 
-	int paragraph = 0;
-	int stylesheet = 0;
-	int stylesheetlevel = 0;
-	int level = 0;
-	
-	struct unrtf_style styles[100];
-	int current_style = 0;
+	struct _unrtf_style styles[100]; // styles array
+	int nstyles = 0;                 // array len
 	int current_style_number = 0;
 
-	int istable = 0;
-	int colwidth[100];
-	int colwidthn = 0;
-	int row = 0;
-	int cell = 0;
+	int colwidth[100],               // column width array
+			ncolwidth = 0;               // array len
+	
+	int paragraph       = 0,
+			stylesheet      = 0,
+			stylesheetlevel = 0,
+			level           = 0,         // level of braces
+			istable         = 0,
+			row             = 0,
+			cell            = 0,
+			pict            = 0,
+			shppict         = 0,
+			nonshppict      = 0;
 
-	int inpicture = 0;
-	int shppict = 0;
-	int nonshppict = 0;
-
-	struct str str;
-	str_init(&str, BUFSIZ);
+	struct _unrtf_str str;
+	_unrtf_str_init(&str, BUFSIZ);
 
 	int ch = 1;
 	while(ch != EOF)
@@ -383,26 +378,27 @@ unrtf_parse_start:
 
 		if (ch == '\\'){ // starts with dash
 			char buf[BUFSIZ];	
-			ch = unrtf_readword(fp, buf);
+			ch = _unrtf_readword(fp, buf);
 
 			// check if not service word
-			if (!unrtf_iscontrol(buf)){
-				if (unrtf_is8bit(buf)){
+			if (!_unrtf_iscontrol(buf)){
+				if (_unrtf_is8bit(buf)){
 					// handle with codepages
+					/* TODO: CODEPAGES */
 				} else if (buf[0] == '*'){
 					// \*. This control symbol identifies
 					// destinations whose related text should be
 					// ignored if the RTF reader does not recognize
 					// the destination.
 				} else if (
-						paragraph &&
-						!inpicture &&
-						!shppict &&
+						paragraph  &&
+						!pict      &&
+						!shppict   &&
 						!nonshppict
 						)
 				{
 				// print it if in paragraph
-						str_append(&str, buf,
+						_unrtf_str_append(&str, buf,
 							 	strlen(buf));
 				}
 				goto unrtf_parse_start;
@@ -414,8 +410,11 @@ unrtf_parse_start:
 				stylesheet = 1;
 				stylesheetlevel = level;
 			}
-			
-			if (unrtf_isstyle(buf) && stylesheet){
+
+/*******************************************************/
+/* STYLES */	
+/*******************************************************/
+			if (_unrtf_isstyle(buf) && stylesheet){
 				// handle with table of slyles
 				char *s = buf + 1;
 				current_style_number = atoi(s);
@@ -423,45 +422,53 @@ unrtf_parse_start:
 
 			if (strcmp(buf, "qc") == 0 && stylesheet)
 			{
-				struct unrtf_style style =
+				struct _unrtf_style style =
 					{current_style_number, "CENTER"};
-				styles[current_style++] = style; 
+				styles[nstyles++] = style; 
 			}
 			
 			if (strcmp(buf, "qr") == 0 && stylesheet)
 			{
-				struct unrtf_style style =
+				struct _unrtf_style style =
 					{current_style_number, "RIGHT"};
-				styles[current_style++] = style; 
+				styles[nstyles++] = style; 
 			}
 			
 			if (strcmp(buf, "ql") == 0 && stylesheet)
 			{
-				struct unrtf_style style =
+				struct _unrtf_style style =
 					{current_style_number, "LEFT"};
-				styles[current_style++] = style; 
+				styles[nstyles++] = style; 
 			}
 
-			if (stylesheet && unrtf_isli(buf))
+			if (stylesheet && _unrtf_isli(buf))
 			{
-				struct unrtf_style style =
+				struct _unrtf_style style =
 					{current_style_number, "Q"};
-				styles[current_style++] = style; 
+				styles[nstyles++] = style; 
 			}
 
-			if (stylesheet && unrtf_islist(buf))
+			if (strcmp(buf, "qj") == 0 && stylesheet)
 			{
-				struct unrtf_style style =
-					{current_style_number, "LN"};
-				styles[current_style++] = style; 
+				struct _unrtf_style style =
+					{current_style_number, "P"};
+				styles[nstyles++] = style; 
 			}
 
-			if (unrtf_isstyle(buf) && paragraph){
+			if (stylesheet && _unrtf_islist(buf))
+			{
+				struct _unrtf_style style =
+					{current_style_number, "LN"};
+				styles[nstyles++] = style; 
+			}
+
+			// set style in paragraph
+			if (_unrtf_isstyle(buf) && paragraph){
 				// handle with slyles
 				char *s = buf + 1;
 				int n = atoi(s);
 				int i;
-				for (i = 0; i < current_style; ++i) {
+				for (i = 0; i < nstyles; ++i) {
 					if (n == styles[i].n){
 						if (style)
 							if (style(userdata, styles[i].name))
@@ -471,10 +478,13 @@ unrtf_parse_start:
 				}
 			}
 
+/*******************************************************/
+/* PARAGRAPH */	
+/*******************************************************/
 			if (strcmp(buf, "pard") == 0)
 			{
-				inpicture = 0;
-				shppict = 0;
+				pict       = 0;
+				shppict    = 0;
 				nonshppict = 0;
 
 				// new paragraph
@@ -484,7 +494,7 @@ unrtf_parse_start:
 				paragraph = 1;
 				
 				if (istable){
-					colwidthn = 0;
+					ncolwidth = 0;
 					if (table_end)
 						if (table_end(userdata))
 							return 0;
@@ -493,8 +503,8 @@ unrtf_parse_start:
 			if (strcmp(buf, "par") == 0)
 			{
 				// end paragraph
-				if (!inpicture && !nonshppict && !shppict){
-					unrtf_flushstr(&str, userdata, text);
+				if (!pict && !nonshppict && !shppict){
+					_unrtf_flushstr(&str, userdata, text);
 					if (paragraph_end)
 						if(paragraph_end(userdata))
 							return 0;
@@ -502,39 +512,15 @@ unrtf_parse_start:
 				paragraph = 0;
 			}
 
-			// UTF
-			if (unrtf_isutf(buf)){
-				// handle utf
-				char unicode[5] = 
-				{
-					buf[1], 
-					buf[2], 
-					buf[3], 
-					buf[4], 
-					0
-				};
-				
-				uint32_t u;
-				sscanf(unicode, "%u", &u);			
-				uint8_t s[5];
-				_utf32_to_utf8(u, s);					
-				str_append(&str, (char*)s,
-					 	strlen((char*)s));
-				
-				// if next char is space or ? - drop it
-				if (ch == ' ' || ch == '?')
-					continue;
-			}
-
 			// bold
 			if (strcmp(buf, "b") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (bold_start)
 					if (bold_start(userdata))
 						return 0;
 			}
 			if (strcmp(buf, "b0") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (bold_end)
 					if (bold_end(userdata))
 						return 0;
@@ -542,13 +528,13 @@ unrtf_parse_start:
 
 			// italic
 			if (strcmp(buf, "i") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (italic_start)
 					if (italic_start(userdata))
 						return 0;
 			}
 			if (strcmp(buf, "i0") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (italic_end)
 					if (italic_end(userdata))
 						return 0;
@@ -556,13 +542,13 @@ unrtf_parse_start:
 			
 			// underline
 			if (strcmp(buf, "ul") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (underline_start)
 					if (underline_start(userdata))
 						return 0;
 			}
 			if (strcmp(buf, "ul0") == 0 && paragraph){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (underline_end)
 					if (underline_end(userdata))
 						return 0;
@@ -583,22 +569,52 @@ unrtf_parse_start:
 					if (style(userdata, "RIGHT"))
 						return 0;
 
-			if (unrtf_isli(buf) && paragraph)
+			if (_unrtf_isli(buf) && paragraph)
 				if (style)
 					if (style(userdata, "Q"))
 						return 0;
 
-			if (unrtf_islist(buf) && paragraph)
+			if (_unrtf_islist(buf) && paragraph)
 				if (style)
 					if (style(userdata, "LN"))
 						return 0;
 
+/*******************************************************/
+/* UNICODE */	
+/*******************************************************/
+			if (_unrtf_isutf(buf)){
+				// handle utf
+				char unicode[5] = 
+				{
+					buf[1], 
+					buf[2], 
+					buf[3], 
+					buf[4], 
+					0
+				};
+				
+				uint32_t u;
+				sscanf(unicode, "%u", &u);			
+				char s[7];
+				int l = _unrtf_c32tomb(s, u);
+				s[l] = 0;
+				_unrtf_str_append(&str, (char*)s,
+					 	strlen((char*)s));
+				
+				// if next char is space or ? - drop it
+				if (ch == ' ' || ch == '?')
+					continue;
+			}
+
+/*******************************************************/
+/* TABLES */	
+/*******************************************************/
 			if (strcmp(buf, "trowd") == 0){
 				paragraph = 1;
 				istable = 1;
 				row = 0;
 				cell = 0;
-				colwidthn = 0;
+				ncolwidth = 0;
 				if (table_start)
 					if(table_start(userdata))
 						return 0;
@@ -609,7 +625,7 @@ unrtf_parse_start:
 			
 			if (strcmp(buf, "lastrow") == 0){
 				istable = 0;
-				colwidthn = 0;
+				ncolwidth = 0;
 				if (table_end)
 					if (table_end(userdata))
 						return 0;
@@ -636,24 +652,27 @@ unrtf_parse_start:
 			}
 			
 			if (strcmp(buf, "cell") == 0){
-				unrtf_flushstr(&str, userdata, text);
+				_unrtf_flushstr(&str, userdata, text);
 				if (tablecell_end)
 					if (tablecell_end(userdata, cell))
 						return 0;
 				cell++;
 			}
 
-			if (unrtf_iscolwidth(buf)){
+			if (_unrtf_iscolwidth(buf)){
 				char *s = buf + 5;
-				colwidth[colwidthn] = atoi(s);
+				colwidth[ncolwidth] = atoi(s);
 				if (tablerow_width)
 					if (tablerow_width(userdata, 
-								colwidthn, colwidth[colwidthn]))
+								ncolwidth, colwidth[ncolwidth]))
 						return 0;
 				
-				colwidthn++;
+				ncolwidth++;
 			}
 			
+/*******************************************************/
+/* PICTURES */	
+/*******************************************************/
 			if (strcmp(buf, "shppict") == 0){
 				// Specifies a Word 97 picture. This is a
 				// destination control word.
@@ -674,7 +693,7 @@ unrtf_parse_start:
 					)
 			{
 				// this is picture
-				inpicture = 1;
+				pict = 1;
 				// data will start after space or newline
 				ch = fgetc(fp);
 				while (
@@ -685,7 +704,7 @@ unrtf_parse_start:
 					if (ch == ' '){
 						// look if next char is hex
 						ch = fgetc(fp);
-						if (unrtf_ishex(ch))
+						if (_unrtf_ishex(ch))
 							break;
 					}
 
@@ -695,17 +714,17 @@ unrtf_parse_start:
 					break;
 
 				// get next char if not hex
-				if (!unrtf_ishex(ch))
+				if (!_unrtf_ishex(ch))
 					ch = fgetc(fp);
 
 				// get image data until '}'
-				struct str img;
-				str_init(&img, BUFSIZ);
+				struct _unrtf_str img;
+				_unrtf_str_init(&img, BUFSIZ);
 				while (ch != '}' && ch != EOF) {
 					// add ony if hex (drop spaces and newlines)
-					if (unrtf_ishex(ch)){
+					if (_unrtf_ishex(ch)){
 						char c = (char)ch;
-						str_append(&img, &c, 1);
+						_unrtf_str_append(&img, &c, 1);
 					}
 					ch = fgetc(fp);
 				}
@@ -745,21 +764,25 @@ unrtf_parse_start:
 			goto unrtf_parse_start;
 
 		} else {
+/*******************************************************/
+/* ASCII */	
+/*******************************************************/
 			if (
 					paragraph && 
-					unrtf_isvalid(ch) && 
-					!inpicture &&
+					_unrtf_isvalid(ch) && 
+					!pict &&
 					!shppict &&
 					!nonshppict
 					)
 			{
 				// callback plain text
 				char s[2] = {(char)ch, 0};
-				str_append(&str, (char*)s, 1);
+				_unrtf_str_append(&str, (char*)s, 1);
 			}
 		}
 	}
 
+	fclose(fp);
 	return 0;
 }
 #define UNRTF_H_

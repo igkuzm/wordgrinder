@@ -171,7 +171,7 @@ static int unrtf_cb(lua_State* L)
 	size_t size;
 	const char* filename = luaL_checklstring(L, 1, &size);
 
-	unrtf_parse(
+	unrtf(
 			filename, 
 			(void *)L, 
 			paragraph_start, 
