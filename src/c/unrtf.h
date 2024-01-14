@@ -79,7 +79,7 @@ static int _unrtf_str_realloc(
 	return 0;
 }
 
-void _unrtf_str_append(
+static void _unrtf_str_append(
 		struct _unrtf_str *s, const char *str, int len)
 {
 	if (!str || len < 1)
