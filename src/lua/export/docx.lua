@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 15.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -11,10 +11,38 @@ Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 
 local table_concat = table.concat
 local writezip = wg.writezip
+local addimagetozip = wg.addimagetozip
+local getimagesize = wg.getimagesize
 local string_format = string.format
 
 -----------------------------------------------------------------------------
 -- The exporter itself.
+
+local relations = {[[<?xml version="1.0" encoding="UTF-8"?>
+		<Relationships 
+			xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+			<Relationship 
+				Id="rId1" 
+				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" 
+				Target="styles.xml"/>
+			<Relationship
+				Id="rId2" 
+				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+			<Relationship 
+				Id="rId3" 
+				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" 
+				Target="fontTable.xml"/>
+			<Relationship 
+				Id="rId4" 
+				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" 
+				Target="settings.xml"/>
+				]]}
+
+local function add_relation(s)
+	relations[#relations+1] = s
+end
+
+local images = {}
 
 local function unhtml(s)
 	s = s:gsub("&", "&amp;")
@@ -61,7 +89,7 @@ local style_tab =
 	["P"]      = {false, header(), emit('</w:t></w:r></w:p>') },
 	["L"]      = {false, header(), emit('</w:t></w:r></w:p>') },
 	["LB"]     = {false, header(), emit('</w:t></w:r></w:p>') },
-	["LN"]     = {false, list(), emit('</w:t></w:r></w:p>') },
+	["LN"]     = {false, list(),   emit('</w:t></w:r></w:p>') },
 	["Q"]      = {false, header(), emit('</w:t></w:r></w:p>') },
 	["V"]      = {false, header(), emit('</w:t></w:r></w:p>') },
 	["RAW"]    = {false, header(), emit('</w:t></w:r></w:p>') },
@@ -69,9 +97,9 @@ local style_tab =
 	["CENTER"] = {false, header(), emit('</w:t></w:r></w:p>') },
 	["RIGHT"]  = {false, header(), emit('</w:t></w:r></w:p>') },
 	["LEFT"]   = {false, header(), emit('</w:t></w:r></w:p>') },
-	["TR"]    = {false, emit(''), emit('') },
-	["TRB"]   = {false, emit(''), emit('') },
-	["IMG"]   = {false, emit(''), emit('') },
+	["TR"]     = {false, emit(''), emit('') },
+	["TRB"]    = {false, emit(''), emit('') },
+	["IMG"]    = {false, emit(''), emit('') },
 }
 
 local function callback(writer, document)
@@ -100,6 +128,9 @@ local function callback(writer, document)
 			writer("\n")
 		end
 	end
+
+	local rId = 5 
+	local imageid = 1
 		
 	return ExportFileUsingCallbacks(document,
 	{
@@ -180,10 +211,84 @@ local function callback(writer, document)
 		end,
 		
 		image_start = function(para)
-		end,
-		image_end = function(para)
+			changepara(nil)
 		end,
 		
+		image_end = function(para)
+			local X = 0
+			local Y = 0
+			local imagesize = function(x, y)
+				X = x
+				Y = y
+			end
+			if getimagesize(para.imagename, imagesize) then
+			
+				add_relation(string_format('<Relationship Id="rId%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image%d.jpeg"\n/>', rId, imageid))
+				local image = {rId, imageid, para.imagename}
+				images[#images+1] = image
+
+				writer('<w:p><w:pPr><w:pStyle w:val="CENTER"/></w:pPr><w:r><w:t>')
+				for _, wn in ipairs(para.imagetitle) do
+					writer(para[wn])
+					writer(' ')
+				end
+				writer('</w:t></w:r></w:p>')
+
+				writer(string_format([[
+				<w:p>
+					<w:pPr>
+						<w:pStyle w:val="IMG"/>
+						<w:bidi w:val="0"/>
+						<w:spacing w:before="0" w:after="0"/>
+						<w:rPr>
+							<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+							<w:sz w:val="24"/>
+						</w:rPr>
+					</w:pPr>
+					<w:r>
+						<w:rPr/>
+						<w:drawing>
+							<wp:inline distT="0" distB="0" distL="0" distR="0">
+								<wp:docPr id="%s" name="Image%s" descr="" title="%s"/>
+								<wp:cNvGraphicFramePr>
+									<a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+								</wp:cNvGraphicFramePr>
+								<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+									<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+										<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+											<pic:nvPicPr>
+												<pic:cNvPr id="%s" name="Image%s" descr="" title="%s"/>
+												<pic:cNvPicPr>
+													<a:picLocks noChangeAspect="1" noChangeArrowheads="1"/>
+												</pic:cNvPicPr>
+											</pic:nvPicPr>
+											<pic:blipFill>
+												<a:blip r:embed="rId%s"/>
+												<a:stretch>
+													<a:fillRect/>
+												</a:stretch>
+											</pic:blipFill>
+											<pic:spPr bwMode="auto">
+												<a:xfrm>
+													<a:off x="0" y="0"/>
+													<a:ext cx="5878830" cy="%d"/>
+												</a:xfrm>
+												<a:prstGeom prst="rect">
+													<a:avLst/>
+												</a:prstGeom>
+											</pic:spPr>
+										</pic:pic>
+									</a:graphicData>
+								</a:graphic>
+							</wp:inline>
+						</w:drawing>
+					</w:r>
+				</w:p>
+				]], imageid, imageid, para.imagename, imageid, imageid, para.imagename, rId, Y/X*5878830))
+				rId = rId + 1
+				imageid = imageid + 1
+			end
+		end,
 		
 		table_start = function(para)
 			changepara(para)
@@ -268,6 +373,9 @@ local function export_docx_with_ui(filename, title, extension)
 	callback(writer, Document)
 	content = table_concat(content)
 	
+	add_relation('</Relationships>\n')
+	relations = table_concat(relations)
+	
 	local xml =
 	{
 		["_rels/.rels"] = [[<?xml version="1.0" encoding="UTF-8"?>
@@ -319,25 +427,7 @@ local function export_docx_with_ui(filename, title, extension)
 			<dc:title/>
 		</cp:coreProperties>]],
 
-		["word/_rels/document.xml.rels"] = [[<?xml version="1.0" encoding="UTF-8"?>
-		<Relationships 
-			xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-			<Relationship 
-				Id="rId1" 
-				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" 
-				Target="styles.xml"/>
-			<Relationship
-				Id="rId2" 
-				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
-			<Relationship 
-				Id="rId3" 
-				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" 
-				Target="fontTable.xml"/>
-			<Relationship 
-				Id="rId4" 
-				Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" 
-				Target="settings.xml"/>
-		</Relationships>]],
+		["word/_rels/document.xml.rels"] = relations,
 		
 		["word/fontTable.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
 		<w:fonts 
@@ -707,11 +797,18 @@ local function export_docx_with_ui(filename, title, extension)
 
 		 ["word/document.xml"] = content
 	}
-	
+
+
 	if not writezip(filename, xml) then
 		ModalMessage(nil, "Unable to open the output file "..e..".")
 		QueueRedraw()
 		return false
+	end
+	
+	for _, image in ipairs(images) do
+		local file = image[3]
+		local key = string_format('word/media/image%d.jpeg', image[2])
+		addimagetozip(filename, key, file)
 	end
 		
 	QueueRedraw()

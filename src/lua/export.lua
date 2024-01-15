@@ -135,7 +135,7 @@ function ExportFileUsingCallbacks(document, cb)
 		then
 				
 			for cn, cell in ipairs(paragraph.cells) do
-				cb.tablecell_start(paragraph)
+				cb.tablecell_start(paragraph, cn)
 				
 				firstword = true
 				wordbreak = false
@@ -168,7 +168,7 @@ function ExportFileUsingCallbacks(document, cb)
 						end
 					end
 				end
-				cb.tablecell_end(paragraph)
+				cb.tablecell_end(paragraph, cn)
 			end
 
 				if underline then
@@ -182,44 +182,16 @@ function ExportFileUsingCallbacks(document, cb)
 				end
 				
 		elseif paragraph.style == "IMG" then
-			local title = {}
+			local imagetitle = {}
 			for wn, word in ipairs(paragraph) do
 				if wn == 1 then
 					paragraph.imagename = word
-					cb.image_start(paragraph)
 				else
-					firstword = true
-					wordbreak = false
-					olditalic = false
-					oldunderline = false
-					oldbold = false
-
-					if firstword then
-						firstword = false
-					else
-						wordbreak = true
-					end
-
-					emptyword = true
-					italic = false
-					underline = false
-					bold = false
-					ParseWord(word, 0, wordwriter) -- FIXME
-					if emptyword then
-						wordwriter(0, "")
-					end
-
-					if underline then
-						cb.underline_off()
-					end
-					if bold then
-						cb.bold_off()
-					end
-					if italic then
-						cb.italic_off()
-					end
+					imagetitle[#imagetitle + 1] = wn			
 				end
 			end
+			paragraph.imagetitle = imagetitle
+			cb.image_start(paragraph)
 			cb.image_end(paragraph)
 		else
 			if (#paragraph == 1) and (#paragraph[1] == 0) then

@@ -51,26 +51,55 @@ local function callback(writer, document)
 		end,
 	
 		table_start = function(para)
+			writer('+')
+			for cn, cell in ipairs(para.cells) do
+				writer(string.rep("─", para.cellWidth[cn]))
+				writer('+')
+			end
+			writer('\n')
 		end,
 		
 		table_end = function(para)
+			writer('\n')
 		end,
 
 		tablerow_start = function(para)
+			writer('\n')
+			writer('+')
+			for cn, cell in ipairs(para.cells) do
+				writer(string.rep("─", para.cellWidth[cn]))
+				writer('+')
+			end
+			writer('\n')
 		end,
 		
 		tablerow_end = function(para)
+			writer('\n')
+			writer('+')
+			for cn, cell in ipairs(para.cells) do
+				writer(string.rep("─", para.cellWidth[cn]))
+				writer('+')
+			end
+			writer('\n')
 		end,
 
 		tablecell_start = function(para)
 		end,
 		
 		tablecell_end = function(para)
+			writer('|')
 		end,
 		
 		image_start = function(para)
+			writer(para.imagename)
+			writer(' ')
+			for _, wn in ipairs(para.imagetitle) do
+					writer(para[wn])
+					writer(' ')
+			end
 		end,
 		image_end = function(para)
+			writer('\n')
 		end,
 		
 		epilogue = function()

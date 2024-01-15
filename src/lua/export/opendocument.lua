@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 15.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -12,9 +12,20 @@ Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 local table_concat = table.concat
 local writezip = wg.writezip
 local string_format = string.format
+local addimagetozip = wg.addimagetozip
+local getimagesize = wg.getimagesize
 
 -----------------------------------------------------------------------------
 -- The exporter itself.
+
+local content = {}
+local images = {}
+local imageid = 1
+local tableid = 1
+
+local function add_style(s)
+	styles[#styles+1] = s
+end
 
 local function unhtml(s)
 	s = s:gsub("&", "&amp;")
@@ -67,7 +78,7 @@ local style_tab =
 	["LEFT"]   = {false, emit('<text:p text:style-name="LEFT">'), emit('</text:p>') },
 	["TR"]     = {false, emit(''), emit('') },
 	["TRB"]    = {false, emit(''), emit('') },
-	["IMG"]    = {false, emit('<text:p>'), emit('</text:p>') },
+	["IMG"]    = {false, emit(''), emit('') },
 }
 
 local function callback(writer, document)
@@ -107,6 +118,9 @@ local function callback(writer, document)
 					xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 					xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
 					xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+					xmlns:xlink="http://www.w3.org/1999/xlink" 
+					xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" 
+					xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" 
 					xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"> 
 					<office:automatic-styles>
 									<style:style style:name="TR"
@@ -120,10 +134,44 @@ local function callback(writer, document)
 										<style:table-cell-properties 
 											fo:border="0.5pt solid #000000"/>
                 	</style:style>  
-					</office:automatic-styles>
+
+									 <style:style style:name="IMG" 
+										style:family="graphic" 
+										style:parent-style-name="Graphics">
+										<style:graphic-properties 
+											fo:margin-left="0cm" 
+											fo:margin-right="0cm" 
+											fo:margin-top="0cm" 
+											fo:margin-bottom="0cm" 
+											style:vertical-pos="top" 
+											style:vertical-rel="baseline" 
+											fo:background-color="transparent" 
+											draw:fill="none" 
+											draw:fill-color="#ffffff" 
+											fo:padding="0cm" 
+											fo:border="none" 
+											style:mirror="none" 
+											fo:clip="rect(0cm, 0cm, 0cm, 0cm)" 
+											draw:luminance="0%" 
+											draw:contrast="0%" 
+											draw:red="0%" 
+											draw:green="0%" 
+											draw:blue="0%" 
+											draw:gamma="100%" 
+											draw:color-inversion="false" 
+											draw:image-opacity="100%" 
+											draw:color-mode="standard"/>
+									 </style:style>
+				]])
+
+				-- leave space here to insert rows - number 2
+				writer('')
+
+				writer(
+				[[	
+				</office:automatic-styles>
 					<office:body><office:text>
-				]]
-			)
+				]])
 		end,
 		
 		epilogue = function()
@@ -184,15 +232,19 @@ local function callback(writer, document)
 			writer('<table:table>')
 			--writer(string_format('<table:table-column table:number-columns-repeated="%s"/>', para.cn))
 			for cn, cell in ipairs(para.cells) do
-				writer('<table:table-column>')
-				local width = para.cellWidth[cn] / 7
-				writer(string_format('<table:table-column-properties table:column-width="%d"/>', width))
-				writer('</table:table-column>')
+				local w = para.cellWidth[cn] / 7
+
+				table.insert(content, 2, string_format('<style:style style:name="Table%d.Column%d" style:family="table-column">\n', tableid, cn))
+				table.insert(content, 3, string_format('<style:table-column-properties style:column-width="%dpt"/>\n', w*5))
+				table.insert(content, 4, ('</style:style>'))
+
+				writer(string_format('<table:table-column table:style-name="Table%d.Column%d"/>', tableid, cn))
 			end
 		end,
 		
 		table_end = function(para)
 			writer('</table:table>')
+			tableid = tableid + 1
 		end,
 		
 		tablerow_start = function(para)
@@ -214,8 +266,36 @@ local function callback(writer, document)
 		end,
 		
 		image_start = function(para)
+			changepara(para)
 		end,
+		
 		image_end = function(para)
+			local X = 0
+			local Y = 0
+			local imagesize = function(x, y)
+				X = x
+				Y = y
+			end
+			if getimagesize(para.imagename, imagesize) then
+				local image = {imageid, para.imagename}
+				images[#images+1] = image
+				
+				writer('<text:p text:style-name="CENTER">')
+				for _, wn in ipairs(para.imagetitle) do
+					writer(para[wn])
+					writer(' ')
+				end
+				writer('</text:p>')
+
+				writer('<text:p>')
+				writer(string_format([[
+					<draw:frame draw:style-name="IMG" draw:name="Image%d" text:anchor-type="as-char" svg:width="16.85cm" svg:height="%dcm" draw:z-index="0">
+						<draw:image xlink:href="Pictures/Image%d.jpg" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="image/jpeg"/>
+					</draw:frame>
+				]], imageid, Y/X*16.85, imageid))
+				writer('</text:p>')
+				imageid = imageid + 1
+			end
 		end,
 	})
 end
@@ -245,13 +325,13 @@ local function export_odt_with_ui(filename, title, extension)
 	
 	ImmediateMessage("Exporting...")
 	
-	local content = {}
 	local writer = function(s)
 		content[#content+1] = s
 	end
+
 	callback(writer, Document)
 	content = table_concat(content)
-	
+
 	local xml =
 	{
 		["mimetype"] = "application/vnd.oasis.opendocument.text",
@@ -282,6 +362,7 @@ local function export_odt_with_ui(filename, title, extension)
 				xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
 				xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
 				xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" 
+				xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" 
 				xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
 				xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
 				
@@ -291,6 +372,13 @@ local function export_odt_with_ui(filename, title, extension)
 				</office:font-face-decls>
 				 
 				<office:styles>
+<style:default-style style:family="graphic">
+      <style:graphic-properties svg:stroke-color="#3465a4" draw:fill-color="#729fcf" fo:wrap-option="no-wrap" draw:shadow-offset-x="0.3cm" draw:shadow-offset-y="0.3cm" draw:start-line-spacing-horizontal="0.283cm" draw:start-line-spacing-vertical="0.283cm" draw:end-line-spacing-horizontal="0.283cm" draw:end-line-spacing-vertical="0.283cm" style:flow-with-text="false"/>
+      <style:paragraph-properties style:text-autospace="ideograph-alpha" style:line-break="strict" style:writing-mode="lr-tb" style:font-independent-line-spacing="false">
+        <style:tab-stops/>
+      </style:paragraph-properties>
+      <style:text-properties style:use-window-font-color="true" style:font-name="Nimbus Roman" fo:font-size="12pt" fo:language="ru" fo:country="RU" style:letter-kerning="true" style:font-name-asian="Nimbus Sans1" style:font-size-asian="12pt" style:language-asian="zh" style:country-asian="CN" style:font-name-complex="FreeSans" style:font-size-complex="12pt" style:language-complex="hi" style:country-complex="IN"/>
+    </style:default-style>
 					<style:style style:name="B" style:family="text">
 	              		<style:text-properties fo:font-weight="bold"
 	              			style:font-weight-complex="bold"
@@ -438,8 +526,7 @@ local function export_odt_with_ui(filename, title, extension)
 								text:min-label-width="5mm"/>
 						</text:list-level-style-bullet>
                 	</text:list-style>
-				</office:styles>
-			</office:document-styles>
+						</office:styles></office:document-styles>
 		]],
 		
 		["settings.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
@@ -461,6 +548,12 @@ local function export_odt_with_ui(filename, title, extension)
 		return false
 	end
 		
+	for _, image in ipairs(images) do
+		local file = image[2]
+		local key = string_format('Pictures/Image%d.jpg', image[1])
+		addimagetozip(filename, key, file)
+	end
+	
 	QueueRedraw()
 	return true
 end

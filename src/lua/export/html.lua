@@ -2,7 +2,7 @@
 File              : html.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -52,8 +52,11 @@ local style_tab =
 	["LEFT"] =  {pre=false, list=false,
 		on='<p style="text-align:left;">', off='</p>'},
 	["RIGHT"] =  {pre=false, list=false,
-		on='<p style="text-align:left;">', off='</p>'},
+		on='<p style="text-align:right;">', off='</p>'},
+	["IMG"]   =  {pre=false, list=false,
+		on='', off=''},
 }
+
 
 local function callback(writer, document)
 	local settings = DocumentSet.addons.htmlexport
@@ -190,8 +193,18 @@ local function callback(writer, document)
 		end,
 		
 		image_start = function(para)
+			changepara(nil, nil)
+			writer('<p style="text-align:center;">\n')
+			for _, wn in ipairs(para.imagetitle) do
+				writer(para[wn])
+				writer(' ')
+			end
+			writer('</p>\n')
 		end,
 		image_end = function(para)
+			writer('<img\n')
+			writer(string_format('src="%s" ', para.imagename))
+			writer(string_format('alt="%s"/>\n', para.imagename))
 		end,
 		
 		epilogue = function()

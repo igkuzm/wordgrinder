@@ -4,6 +4,9 @@
  */
 
 #include "globals.h"
+#include <lua.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <zlib.h>
 #include "unzip.h"
 #include "zip.h"
@@ -158,7 +161,7 @@ static int writezip_cb(lua_State* L)
 		{
 			const char* key = lua_tostring(L, -2);
 			size_t valuelen;
-			const char* value = lua_tolstring(L, -1, &valuelen);
+			const void* value = lua_tolstring(L, -1, &valuelen);
 
 			int i = zipOpenNewFileInZip(zf, key, NULL,
 					NULL, 0,
@@ -198,6 +201,67 @@ static int writezip_cb(lua_State* L)
 	return 1;
 }
 
+static int addimagetozip_cb(lua_State* L)
+{
+	const char* zipname  = luaL_checkstring(L, 1);
+	const char* key      = luaL_checkstring(L, 2);
+	const char* filename = luaL_checkstring(L, 3);
+
+	zipFile zf = zipOpen(zipname, APPEND_STATUS_ADDINZIP);
+	if (zf)
+	{
+		// open image file
+		FILE *fp = fopen(filename, "r");
+		if (!fp){
+			return 1;
+		}
+
+		fseek(fp, 0, SEEK_END);
+		int size = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		// read data to buffer
+		void *data = malloc(size);
+		if (!data){
+			fclose(fp);
+			return 1;
+		}
+		fread(data, size, 1, fp);
+		fclose(fp);
+
+		int i = zipOpenNewFileInZip(zf, key, NULL,
+				NULL, 0,
+				NULL, 0,
+				NULL,
+				Z_DEFLATED,
+				Z_DEFAULT_COMPRESSION);
+		if (i != ZIP_OK)
+		{
+			return 1;
+		}
+
+		i = zipWriteInFileInZip(zf, data, size);
+		if (i != ZIP_OK)
+		{
+			return 1;
+		}
+
+		i = zipCloseFileInZip(zf);
+		if (i != ZIP_OK)
+		{
+			return 1;
+		}
+
+		free(data);
+	}
+
+	zipClose(zf, NULL);
+
+	lua_pushboolean(L, true);
+	return 0;
+}
+
+
 void zip_init(void)
 {
 	const static luaL_Reg funcs[] =
@@ -206,6 +270,7 @@ void zip_init(void)
 		{ "decompress",                decompress_cb },
 		{ "readfromzip",               readfromzip_cb },
 		{ "writezip",                  writezip_cb },
+		{ "addimagetozip",             addimagetozip_cb },
 		{ NULL,                        NULL }
 	};
 

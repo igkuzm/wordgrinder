@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 15.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -12,6 +12,7 @@ Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 local NextCharInWord = wg.nextcharinword
 local ReadU8 = wg.readu8
 local ImageToRTF = wg.imagetortf
+local getimagesize = wg.getimagesize
 local string_len = string.len
 local string_char = string.char
 local string_format = string.format
@@ -183,7 +184,7 @@ local function callback(writer, document)
 					writer('\\clbrdrt\\brdrs\\clbrdrl\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs')
 				end
 				width = width + para.cellWidth[cn]
-				writer(string_format('\\cellx%d\n', width*200))
+				writer(string_format('\\cellx%d\n', width*117))
 			end
 			writer('\n')
 		end,
@@ -208,16 +209,35 @@ local function callback(writer, document)
 		end,
 
 		image_start = function(para)
-			writer('\\pard\\s', style_tab[para.style][1])
+			writer('\\pard\\qc ')
+			for _, wn in ipairs(para.imagetitle) do
+				writer(unrtf(para[wn]))
+				writer(' ')
+			end
+			writer('\\par\n')
 		end,
 		
 		image_end = function(para)
-			writer('\\par\n')
-			local rtfimage = function(rtf) 
-				writer(rtf)
+			local X = 0
+			local Y = 0
+			
+			local imagesize = function(x, y)
+				X = x
+				Y = y
 			end
-			ImageToRTF(para.imagename, rtfimage)
-			writer('\\par\n')
+			
+			local rtfimage = function(rtf) 
+
+				writer(rtf)
+				writer('}\n')
+			end
+
+			if getimagesize(para.imagename, imagesize) then
+			writer('\\pard\\s', style_tab[para.style][1])
+			writer(string_format('{\\pict\\picwgoal9258\\pichgoal%d\\jpegblip\n', Y/X*9258))
+				ImageToRTF(para.imagename, rtfimage)
+				writer('\\par\n')
+			end
 		end,
 
 		epilogue = function()

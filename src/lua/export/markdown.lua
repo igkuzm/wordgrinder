@@ -2,7 +2,7 @@
 File              : markdown.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 local function unmarkdown(s)
@@ -35,6 +35,7 @@ local style_tab =
 	["CENTER"] = {false, '', '\n'},
 	["TR"]     = {false, '', '\n'},
 	["TRB"]    = {false, '', '\n'},
+	["IMG"]    = {false, '', '\n'},
 }
 
 local function callback(writer, document)
@@ -123,24 +124,29 @@ local function callback(writer, document)
 
 		table_start = function(para)
 			changepara(para.style)
+			writer('+')
 			for cn, cell in ipairs(para.cells) do
-				if cn ~= 1 then
-					writer('|')
-				end
-				writer('-')
+				writer(string.rep("─", para.cellWidth[cn]))
+				writer('+')
 			end
 			writer('\n')
-			writer('---\n')
 		end,
 		
 		table_end = function(para)
-			writer('---\n')
+			writer('\n')
 		end,
 		
 		tablerow_start = function(para)
+			writer('|')
 		end,
 		
 		tablerow_end = function(para)
+			writer('\n')
+			writer('+')
+			for cn, cell in ipairs(para.cells) do
+				writer(string.rep("─", para.cellWidth[cn]))
+				writer('+')
+			end
 			writer('\n')
 		end,
 
@@ -152,7 +158,12 @@ local function callback(writer, document)
 		end,
 		
 		image_start = function(para)
+			changepara(para.style)
 			writer('![')
+			for _, wn in ipairs(para.imagetitle) do
+					writer(para[wn])
+					writer(' ')
+			end
 		end,
 		
 		image_end = function(para)

@@ -2,7 +2,7 @@
  * File              : image2rtf.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 05.09.2023
- * Last Modified Date: 12.01.2024
+ * Last Modified Date: 15.01.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -114,9 +114,7 @@ static int image2rtf(
 {
 	unsigned char *str = image2hex(filename);
 	if (str){
-		callback(userdata, "{\\pict\\picw0\\pich0\\picwgoal10254\\pichgoal6000\\jpegblip\n");
 		callback(userdata, (char *)str);
-		callback(userdata, "}\n");
 		free(str);
 	}
 	return 0;

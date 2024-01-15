@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 13.01.2024
+Last Modified Date: 15.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -321,6 +321,13 @@ ParagraphClass =
 	end,
 
 	wrapTableRow = function(self, width)
+
+		width = width or Document.wrapwidth
+
+		if with == nil then
+			width = 80
+		end
+		
 		local sentences = self.sentences
 		if (sentences == nil) then
 			local issentence = true
@@ -372,7 +379,9 @@ ParagraphClass =
 			w = w + ww
 			cell[#cell+1] = wn
 			
-			if word:find(";") and  GetStringWidth(word) == 1 then
+			if 
+				word:find(';') and GetStringWidth(word) < 2
+			then
 				cells[#cells+1] = cell
 				cellWidth[cn] = w + 1
 				allcellswidth = allcellswidth + cellWidth[cn]
@@ -381,7 +390,7 @@ ParagraphClass =
 				cell = {}
 			end
 		end
-		cellWidth[cn] = Document.wrapwidth - allcellswidth 
+		cellWidth[cn] = width - allcellswidth 
 		if cellWidth[cn] <= 0 then 
 			cellWidth[cn] = cellWidth[cn-1]
 		end
@@ -423,7 +432,8 @@ ParagraphClass =
 				end
 
 				w = w + ww
-				if (w >= self.cellWidth[cn]) then
+				local cell_width = self.cellWidth[cn] or width
+				if (w >= width) then
 					lines[#lines+1] = line
 					i = i+1
 					line = {wn = wn}

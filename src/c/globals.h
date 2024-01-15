@@ -97,6 +97,9 @@ extern void zip_init(void);
 /* UNRTF */
 extern void unrtf_init(void);
 
+/* IMAGES */
+extern void image_init(void);
+
 /* --- General utilities ------------------------------------------------- */
 
 extern int getu8bytes(char c);
