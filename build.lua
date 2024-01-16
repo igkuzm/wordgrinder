@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -520,11 +520,11 @@ emit("build ", OBJDIR.."/luascripts.c: luascripts ", table.concat({
     "src/lua/export/text.lua",
     "src/lua/export/html.lua",
     "src/lua/export/rtf.lua",
+    "src/lua/export/org.lua",
     "src/lua/export/latex.lua",
     "src/lua/export/troff.lua",
     "src/lua/export/opendocument.lua",
     "src/lua/export/docx.lua",
-    "src/lua/export/org.lua",
     "src/lua/export/markdown.lua",
     "src/lua/import.lua",
     "src/lua/import/html.lua",

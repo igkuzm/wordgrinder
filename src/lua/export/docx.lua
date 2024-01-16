@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -212,39 +212,39 @@ local function callback(writer, document)
 		
 		image_start = function(para)
 			changepara(nil)
+			
+			add_relation(string_format('<Relationship Id="rId%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image%d.jpeg"\n/>', rId, imageid))
+			local image = {rId, imageid, para.imagename}
+			images[#images+1] = image
+
+			writer([[
+			<w:p>
+				<w:pPr>
+					<w:pStyle w:val="IMG"/>
+					<w:bidi w:val="0"/>
+					<w:spacing w:before="0" w:after="0"/>
+					<w:rPr>
+						<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+						<w:sz w:val="24"/>
+					</w:rPr>
+				</w:pPr>
+			]])
+
+			writer('<w:r><w:t>')
 		end,
 		
 		image_end = function(para)
+				writer('</w:t></w:r>')
+
 			local X = 0
 			local Y = 0
 			local imagesize = function(x, y)
 				X = x
 				Y = y
 			end
-			if getimagesize(para.imagename, imagesize) then
+			getimagesize(para.imagename, imagesize)
 			
-				add_relation(string_format('<Relationship Id="rId%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image%d.jpeg"\n/>', rId, imageid))
-				local image = {rId, imageid, para.imagename}
-				images[#images+1] = image
-
-				writer('<w:p><w:pPr><w:pStyle w:val="CENTER"/></w:pPr><w:r><w:t>')
-				for _, wn in ipairs(para.imagetitle) do
-					writer(para[wn])
-					writer(' ')
-				end
-				writer('</w:t></w:r></w:p>')
-
 				writer(string_format([[
-				<w:p>
-					<w:pPr>
-						<w:pStyle w:val="IMG"/>
-						<w:bidi w:val="0"/>
-						<w:spacing w:before="0" w:after="0"/>
-						<w:rPr>
-							<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
-							<w:sz w:val="24"/>
-						</w:rPr>
-					</w:pPr>
 					<w:r>
 						<w:rPr/>
 						<w:drawing>
@@ -283,11 +283,12 @@ local function callback(writer, document)
 							</wp:inline>
 						</w:drawing>
 					</w:r>
-				</w:p>
 				]], imageid, imageid, para.imagename, imageid, imageid, para.imagename, rId, Y/X*5878830))
+
+				writer('</w:p>')
+
 				rId = rId + 1
 				imageid = imageid + 1
-			end
 		end,
 		
 		table_start = function(para)
@@ -395,20 +396,20 @@ local function export_docx_with_ui(filename, title, extension)
 				Target="word/document.xml"/>
 		</Relationships>]],
 
-		["docProps/app.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
+		["docProps/app.xml"] = string_format([[<?xml version="1.0" encoding="UTF-8"?>
 		<Properties 
 			xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" 
 			xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
 			<Template/>
 			<TotalTime>1</TotalTime>
 			<Application>WordGrinder</Application>
-			<AppVersion>0.8</AppVersion>
+			<AppVersion>%s</AppVersion>
 			<Pages>1</Pages>
 			<Words>178</Words>
 			<Characters>1061</Characters>
 			<CharactersWithSpaces>1299</CharactersWithSpaces>
 			<Paragraphs>14</Paragraphs>
-		</Properties>]],
+		</Properties>]], VERSION),
 
 		["docProps/core.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
 		<cp:coreProperties 
@@ -694,6 +695,21 @@ local function export_docx_with_ui(filename, title, extension)
 			</w:style>
 			<w:style w:type="paragraph" w:styleId="CENTER">
 				<w:name w:val="CENTER"/>
+				<w:qFormat/>
+				<w:pPr>
+					<w:widowControl w:val="false"/>
+					<w:bidi w:val="0"/>
+					<w:spacing w:before="85" w:after="85"/>
+					<w:jc w:val="center"/>
+				</w:pPr>
+				<w:rPr>
+					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
+					<w:sz w:val="24"/>
+					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
+				</w:rPr>
+			</w:style>
+			<w:style w:type="paragraph" w:styleId="IMG">
+				<w:name w:val="IMG"/>
 				<w:qFormat/>
 				<w:pPr>
 					<w:widowControl w:val="false"/>

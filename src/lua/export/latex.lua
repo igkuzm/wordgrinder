@@ -2,7 +2,7 @@
 File              : latex.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -124,17 +124,14 @@ local function callback(writer, document)
 		end,
 		
 		image_start = function(para)
-			writer('\n')
-			writer('\\begin{center}\n')
-			for _, wn in ipairs(para.imagetitle) do
-				writer(para[wn])
-				writer(' ')
-			end
-			writer('\\end{center}\n')
+			writer('\\begin{figure}[h]\n')
+			writer('\\centering\n')
 		end,
 		
 		image_end = function(para)
-			writer(string.format('\\noindent\\includegraphics[width=\\textwidth]{%s}\n\n', para.imagename))
+			writer('\n')
+			writer(string.format('\\includegraphics[width=\\textwidth]{%s}\n\n', para.imagename))
+			writer('\\end{figure}\n')
 		end,
 
 		table_start = function(para)

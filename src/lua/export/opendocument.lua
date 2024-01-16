@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -267,6 +267,7 @@ local function callback(writer, document)
 		
 		image_start = function(para)
 			changepara(para)
+			writer('<text:p text:style-name="CENTER">')
 		end,
 		
 		image_end = function(para)
@@ -276,26 +277,17 @@ local function callback(writer, document)
 				X = x
 				Y = y
 			end
-			if getimagesize(para.imagename, imagesize) then
-				local image = {imageid, para.imagename}
-				images[#images+1] = image
-				
-				writer('<text:p text:style-name="CENTER">')
-				for _, wn in ipairs(para.imagetitle) do
-					writer(para[wn])
-					writer(' ')
-				end
-				writer('</text:p>')
-
-				writer('<text:p>')
-				writer(string_format([[
-					<draw:frame draw:style-name="IMG" draw:name="Image%d" text:anchor-type="as-char" svg:width="16.85cm" svg:height="%dcm" draw:z-index="0">
-						<draw:image xlink:href="Pictures/Image%d.jpg" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="image/jpeg"/>
-					</draw:frame>
-				]], imageid, Y/X*16.85, imageid))
-				writer('</text:p>')
-				imageid = imageid + 1
-			end
+			getimagesize(para.imagename, imagesize)
+			local image = {imageid, para.imagename}
+			images[#images+1] = image
+			
+			writer(string_format([[
+				<draw:frame draw:style-name="IMG" draw:name="Image%d" text:anchor-type="as-char" svg:width="16.85cm" svg:height="%dcm" draw:z-index="0">
+					<draw:image xlink:href="Pictures/Image%d.jpg" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="image/jpeg"/>
+				</draw:frame>
+			]], imageid, Y/X*16.85, imageid))
+			writer('</text:p>')
+			imageid = imageid + 1
 		end,
 	})
 end

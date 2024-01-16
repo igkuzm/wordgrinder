@@ -2,7 +2,7 @@
 File              : redraw.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 04.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.

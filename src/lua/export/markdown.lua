@@ -160,20 +160,16 @@ local function callback(writer, document)
 		image_start = function(para)
 			changepara(para.style)
 			writer('![')
-			for _, wn in ipairs(para.imagetitle) do
-					writer(para[wn])
-					writer(' ')
-			end
 		end,
 		
 		image_end = function(para)
-			writer(string.format('](%s)\n', para.imagename))
+			writer(string.format('](%s){width="6.43in"}\n', para.imagename))
 		end,
 	})
 end
 
 function Cmd.ExportMarkdownFile(filename)
-	return ExportFileWithUI(filename, "Export Markdown File", ".md", callback)
+	return ExportFileWithUI(filename, "Export Markdown File", ".md", callba)
 end
 
 function Cmd.ExportToMarkdownString()

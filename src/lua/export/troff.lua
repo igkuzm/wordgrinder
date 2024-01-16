@@ -2,7 +2,7 @@
 File              : troff.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -183,26 +183,42 @@ local function callback(writer, document)
 		end,
 		
 		table_start = function(para)
+			writer('\n')
+			writer('.TS\n')
+			for cn, cell in ipairs(para.cells) do
+				writer('c')
+			end
+			writer('.\n')
 		end,
 		
 		table_end = function(para)
+			writer('.TE\n')
 		end,
 
 		tablerow_start = function(para)
 		end,
 		
 		tablerow_end = function(para)
+			writer('\n')
 		end,
 
-		tablecell_start = function(para)
+		tablecell_start = function(para, cn)
+			if cn ~= 1 then 
+				writer('\t')
+			end
 		end,
 		
 		tablecell_end = function(para)
 		end,
 
 		image_start = function(para)
+			writer('\n')
 		end,
 		image_end = function(para)
+			writer('\n')
+			writer(string.format('[%s]', para.imagename))
+			writer('\n')
+			writer('\n')
 		end,
 		
 		epilogue = function()

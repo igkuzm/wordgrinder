@@ -4,8 +4,6 @@
  */
 
 #include "globals.h"
-#include "images/image2ascii.h"
-#include "images/image2rtf.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -473,57 +471,6 @@ static int createstylebyte_cb(lua_State* L)
 	return 1;
 }
 
-/* Image to RTF. */
-static void imagetortf_cb_cb(
-		void *userdata, const char *rtf)
-{
-	lua_State* L = (lua_State*) userdata;
-	/* pos 2 contains the callback function */
-	lua_pushvalue(L, 2);
-	lua_pushlstring(L, rtf, strlen(rtf));
-	lua_call(L, 1, 0);
-}
-
-static int imagetortf_cb(lua_State* L)
-{
-	/* pos 1 contains filepath */
-	size_t size;
-	const char* filepath = luaL_checklstring(L, 1, &size);
-	
-	image2rtf(filepath, (void*)L,
-		 	imagetortf_cb_cb);
-
-	return 0;
-}
-
-/* Parse image. */
-static int parseimage_cb_cb(
-		void *userdata, int len, const char *row)
-{
-	lua_State* L = (lua_State*) userdata;
-	/* pos 3 contains the callback function */
-	lua_pushvalue(L, 3);
-	lua_pushlstring(L, row, len);
-	lua_call(L, 1, 0);
-
-	return 0;
-}
-
-static int parseimage_cb(lua_State* L)
-{
-	/* pos 1 contains filepath */
-	size_t size;
-	const char* filepath = luaL_checklstring(L, 1, &size);
-	
-	/* pos 2 contains number of cols */
-	int cols = forceinteger(L, 2);
-
-	image2ascii(filepath, cols, 0,
-		 	(void*)L, parseimage_cb_cb);
-
-	return 0;
-}
-
 /* Draw a row. */
 
 static int writerow_cb(lua_State* L)
@@ -557,9 +504,7 @@ void word_init(void)
 		{ "applystyletoword",          applystyletoword_cb },
 		{ "getstylefromword",          getstylefromword_cb },
 		{ "createstylebyte",           createstylebyte_cb },
-		{ "parseimage",                parseimage_cb },
 		{ "writerow",                  writerow_cb },
-		{ "imagetortf",                  imagetortf_cb },
 		{ NULL,                        NULL }
 	};
 

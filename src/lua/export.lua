@@ -192,6 +192,30 @@ function ExportFileUsingCallbacks(document, cb)
 			end
 			paragraph.imagetitle = imagetitle
 			cb.image_start(paragraph)
+
+			firstword = true
+			wordbreak = false
+			olditalic = false
+			oldunderline = false
+			oldbold = false
+
+			for _, wn in ipairs(imagetitle) do
+				local word = paragraph[wn]
+				if firstword then
+					firstword = false
+				else
+					wordbreak = true
+				end
+
+				emptyword = true
+				italic = false
+				underline = false
+				bold = false
+				ParseWord(word, 0, wordwriter) -- FIXME
+				if emptyword then
+					wordwriter(0, "")
+				end
+			end
 			cb.image_end(paragraph)
 		else
 			if (#paragraph == 1) and (#paragraph[1] == 0) then

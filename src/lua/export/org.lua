@@ -27,6 +27,9 @@ local style_tab  =
 	["CENTER"] = {false, '', '\n'},
 	["RIGHT"]  = {false, '', '\n'},
 	["LEFT"]   = {false, '', '\n'},
+	["TR"]     = {false, '', '\n'},
+	["TRB"]    = {false, '', '\n'},
+	["IMG"]    = {false, '', '\n'},
 }
 
 local function callback(writer, dcument)
@@ -118,20 +121,26 @@ local function callback(writer, dcument)
 		end,
 					
 		tablerow_start = function(para)
+			writer('|')
 		end,
 
 		tablerow_end = function(para)
+			writer('\n-\n')
 		end,
 
 		tablecell_start = function(para)
 		end,
 
 		tablecell_end = function(para)
+			writer('|')
 		end,
 
 		image_start = function(para)
+			changepara(para.style)
 		end,
+		
 		image_end = function(para)
+			writer(string.format('[[%s]]', para.imagename))
 		end,
 		
 		epilogue = function()
@@ -145,6 +154,6 @@ function Cmd.ExportOrgFile(filename)
 end
 
 function Cmd.ExportToOrgString()
-	return ExportToString(currentDocument, callback)
+	return ExportToString(Document, callback)
 end
 

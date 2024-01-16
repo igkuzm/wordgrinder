@@ -3,6 +3,9 @@
 -- file in this distribution for the full text.
 
 local function callback(writer, document)
+
+	local pos = 0
+
 	return ExportFileUsingCallbacks(document,
 	{
 		prologue = function()
@@ -44,6 +47,12 @@ local function callback(writer, document)
 		end,
 		
 		paragraph_start = function(para)
+			if para.style == "RIGHT" then
+				writer(string.rep(' ', 50))
+			end
+			if para.style == "CENTER" then
+				writer(string.rep(' ', 30))
+			end
 		end,		
 		
 		paragraph_end = function(para)
@@ -60,17 +69,10 @@ local function callback(writer, document)
 		end,
 		
 		table_end = function(para)
-			writer('\n')
 		end,
 
 		tablerow_start = function(para)
-			writer('\n')
-			writer('+')
-			for cn, cell in ipairs(para.cells) do
-				writer(string.rep("─", para.cellWidth[cn]))
-				writer('+')
-			end
-			writer('\n')
+			writer('| ')
 		end,
 		
 		tablerow_end = function(para)
@@ -87,18 +89,16 @@ local function callback(writer, document)
 		end,
 		
 		tablecell_end = function(para)
-			writer('|')
+			writer('; ')
 		end,
 		
 		image_start = function(para)
-			writer(para.imagename)
-			writer(' ')
-			for _, wn in ipairs(para.imagetitle) do
-					writer(para[wn])
-					writer(' ')
-			end
+			writer('\n')
 		end,
 		image_end = function(para)
+			writer('\n')
+			writer(string.format('[%s]', para.imagename))
+			writer('\n')
 			writer('\n')
 		end,
 		

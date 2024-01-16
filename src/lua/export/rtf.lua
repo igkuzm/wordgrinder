@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.01.2024
+Last Modified Date: 16.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -209,12 +209,7 @@ local function callback(writer, document)
 		end,
 
 		image_start = function(para)
-			writer('\\pard\\qc ')
-			for _, wn in ipairs(para.imagetitle) do
-				writer(unrtf(para[wn]))
-				writer(' ')
-			end
-			writer('\\par\n')
+			writer('\\pard\\s', style_tab[para.style][1])
 		end,
 		
 		image_end = function(para)
@@ -227,17 +222,15 @@ local function callback(writer, document)
 			end
 			
 			local rtfimage = function(rtf) 
-
 				writer(rtf)
 				writer('}\n')
 			end
 
-			if getimagesize(para.imagename, imagesize) then
-			writer('\\pard\\s', style_tab[para.style][1])
+			getimagesize(para.imagename, imagesize)
 			writer(string_format('{\\pict\\picwgoal9258\\pichgoal%d\\jpegblip\n', Y/X*9258))
-				ImageToRTF(para.imagename, rtfimage)
-				writer('\\par\n')
-			end
+			ImageToRTF(para.imagename, rtfimage)
+			
+			writer('\\par\n')
 		end,
 
 		epilogue = function()

@@ -195,16 +195,13 @@ local function callback(writer, document)
 		image_start = function(para)
 			changepara(nil, nil)
 			writer('<p style="text-align:center;">\n')
-			for _, wn in ipairs(para.imagetitle) do
-				writer(para[wn])
-				writer(' ')
-			end
-			writer('</p>\n')
 		end,
+		
 		image_end = function(para)
 			writer('<img\n')
 			writer(string_format('src="%s" ', para.imagename))
 			writer(string_format('alt="%s"/>\n', para.imagename))
+			writer('</p>\n')
 		end,
 		
 		epilogue = function()
