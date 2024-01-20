@@ -209,7 +209,6 @@ int char_cb(void *d, int ch, CHP *p)
 		
 		if (t->fBold != p->fBold){
 			t->fBold = p->fBold;
-			printf("%d\n", t->fBold);
 			STY = DPY_BOLD;
 			if (p->fBold == 1)
 				flushstyle(t, STY, true);
