@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 16.01.2024
+Last Modified Date: 20.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -81,7 +81,7 @@ local function callback(writer, document)
 			writer('\\deflang1033\\widowctrl')
 			writer('\\uc0\\n')
 			
-			writer('{\\listtable\n')
+			writer('{\\*\\listtable\n')
 			writer('{\\list\\listtemplateid2\\listsimple')
 			writer('{\\listlevel\\levelnfc0\\fi-300\\li500}')
 			writer('\\listid2\\listname LN;}\n')

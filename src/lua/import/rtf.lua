@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 13.01.2024
+Last Modified Date: 20.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -61,77 +61,42 @@ function Cmd.ImportRTFFile(filename)
 	local importer = CreateImporter(document)
 	importer:reset()
 
-    local current_style = "P"
-    local tablerows = 0
-    
-    local paragraph_start = function()
-    end
-        
-    local paragraph_end = function()
-	  importer:flushparagraph(current_style)
-      current_style = "P"
+    local cell = 1;
+
+    local paragraph = function(pstyle)
+	  importer:flushparagraph(pstyle)
     end
 
-    local bold_start = function()
-	  importer:style_on(BOLD)
-    end
-    
-    local bold_end = function()
-	  importer:style_off(BOLD)
-    end
-	
-    local italic_start = function()
-	  importer:style_on(ITALIC)
-    end
-    
-    local italic_end = function()
-	  importer:style_off(ITALIC)
-    end
-	
-    local underline_start = function()
-	  importer:style_on(UNDERLINE)
-    end
-    
-    local underline_end = function()
-	  importer:style_off(UNDERLINE)
-    end
-	
-    local table_start = function()
-      tablerows = 0
-    end
-    
-    local table_end = function()
-    end
-    
-    local tablerow_width = function(i, w)
-      tablerows = tablerows + 1
-    end
-
-    local tablerow_start = function(n)
-    end
-    
-    local tablerow_end = function(n)
-	  importer:flushparagraph("TRB")
-    end
-    
-    local tablecell_start = function(n)
-      if n ~= 0 then
-        importer:text(" ; ")
+    local style = function(cstyle, on)
+      if on then
+		importer:style_on(cstyle)
+      else
+		importer:style_off(cstyle)
       end
     end
     
-    local tablecell_end = function(n)
+    local tablerow = function(bordered)
+      local pstyle = "TR"
+      if bordered then
+          pstyle = "TRB"
+      end
+	  importer:flushparagraph(pstyle)
+      cell = 1;
     end
     
-    local style = function(stl)
-      current_style = stl
+    local tablecell = function(ncells)
+      if cell < ncells then
+        importer:text(" ; ")
+      end
+      cell = cell + 1
     end
     
     local text = function(txt)
       add_text(importer, txt)
     end
 
-    local image = function()
+    local image = function(pstyle)
+	  importer:flushparagraph(pstyle)
       local tmpname = os.tmpname()
       tmpname = string.format('%s.jpg', tmpname)
       importer:text(tmpname)
@@ -142,22 +107,10 @@ function Cmd.ImportRTFFile(filename)
 
     UnRTF(
       filename,
-      paragraph_start,
-      paragraph_end,
-      bold_start,
-      bold_end,
-      italic_start,
-      italic_end,
-      underline_start,
-      underline_end,
-      table_start,
-      table_end,
-      tablerow_width,
-      tablerow_start,
-      tablerow_end,
-      tablecell_start,
-      tablecell_end,
+      paragraph,
       style,
+      tablerow,
+      tablecell,
       text,
       image
     )
