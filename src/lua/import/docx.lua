@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 22.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -165,6 +165,8 @@ local function collect_lists(lists, xml)
 	end
 end
 
+local textwidth = 0;
+
 local function add_text(styles, importer, xml)
 	for _, element in ipairs(xml) do
 		if (type(element) == "string") then
@@ -176,6 +178,7 @@ local function add_text(styles, importer, xml)
 				if needsflush then
 					importer:flushword(false)
 				end
+				textwidth = textwidth + string.len(word) + 1
 				importer:text(word)
 				needsflush = true
 			end
@@ -263,6 +266,7 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 				for _, element in ipairs(element) do
 					-- table cell
 					if (element._name == W .. " tc") then
+						textwidth = 0
 						if not firstcell then
 							importer:text(" ; ")
 						end
@@ -275,7 +279,7 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 									if (element._name == W .. " tcW") then
 										if element[W .. " type"] == "dxa" then
 											local w = element[W .. " w"]
-											width = w * 1440 * 12 / 72
+											width = w/20/72 * 12
 										end
 									end
 									if (element._name == W .. " tcBorders") then
@@ -300,6 +304,10 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 									-- run
 									if (element._name == W .. " r") then
 										import_run(styles, lists, importer, element, wgstyle)
+										local i 
+										for i=textwidth,width, 1 do
+											importer:text(" ")
+										end
 									end
 								end
 							end
@@ -339,6 +347,21 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 							wgstyle = style.iheader
 						end
 					end
+					-- justification
+					if (element._name == W .. " jc") then
+						if (element[VAL] == "left") or  (element[VAL] == "start") then
+							wgstyle = "LEFT"
+						end
+						if (element[VAL] == "right") or  (element[VAL] == "end") then
+							wgstyle = "RIGHT"
+						end
+						if (element[VAL] == "center") then
+							wgstyle = "CENTER"
+						end
+						if (element[VAL] == "both") then
+							wgstyle = "P"
+						end
+					end
 					--get numbering
 					if (element._name == W .. " numPr") then
 						for _, element in ipairs(element) do
@@ -357,6 +380,23 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 			-- get run
 			if (element._name == W .. " r") then
 				import_run(styles, lists, importer, element, wgstyle)
+				--- get drawing 
+				for _, element in ipairs(element) do
+					if (element._name == W .. " drawing") then
+						for _, element in ipairs(element) do
+							-- inline or anchor
+							if (element._name == W .. " docPr") then
+									print("DOC PR")
+								end
+
+							for _, element in ipairs(element) do
+								if (element._name == W .. " docPr") then
+									print("DOC PR")
+								end
+							end
+						end
+					end
+				end
 			end
 		end
 	end
