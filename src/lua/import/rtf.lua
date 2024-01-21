@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 20.01.2024
+Last Modified Date: 21.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -62,6 +62,7 @@ function Cmd.ImportRTFFile(filename)
 	importer:reset()
 
     local cell = 1;
+    local stringlen = 0;
 
     local paragraph = function(pstyle)
 	  importer:flushparagraph(pstyle)
@@ -84,14 +85,19 @@ function Cmd.ImportRTFFile(filename)
       cell = 1;
     end
     
-    local tablecell = function(ncells)
+    local tablecell = function(ncells, len)
       if cell < ncells then
+        local s
+        for s=stringlen,len/1440*12,1 do
+          importer:text(" ")
+        end
         importer:text(" ; ")
       end
       cell = cell + 1
     end
     
     local text = function(txt)
+      stringlen = string.len(txt)
       add_text(importer, txt)
     end
 

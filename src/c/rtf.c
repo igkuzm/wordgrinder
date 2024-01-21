@@ -2,7 +2,7 @@
  * File              : rtf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 20.01.2024
+ * Last Modified Date: 21.01.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -20,12 +20,17 @@ struct unrtf_t {
 	char fBold;
 	char fUnderline;
 	char fItalic;
-	char incell;
+	int  cell;
 	int  ncells;
 	bool bordered;
 	STYLE styles[32];
 	int nstyles;
 };
+
+int command_cb(
+		void *udata, const char *s, int param, char fParam){
+	return 0;
+}
 
 void flushstring(struct unrtf_t *t)
 {
@@ -43,15 +48,13 @@ int style_cb(void *d, STYLE *s)
 	return 0;
 }
 
-int info_cb(void *d, INFO_T t, const char *s)
+int info_cb(void *d, tINFO t, const char *s)
 {
 
 	return 0;
 }
 
-int row_cb(void *d, TRP *rp){
-	struct unrtf_t *t = d;
-
+void flushrow(struct unrtf_t *t, TRP *rp){
 	if (
 			rp->bordB ||
 			rp->bordH ||
@@ -66,37 +69,40 @@ int row_cb(void *d, TRP *rp){
 	lua_pushboolean(t->L, t->bordered);
 	lua_call(t->L, 1, 0);
 
-	t->incell = false;
-	return 0;
+	t->cell = 0;
 }
 
-int cell_cb(void *d, TRP *rp, TCP *cp){
-	struct unrtf_t *t = d;
-	t->incell = true;
-
+void flushcell(struct unrtf_t *t, prop_t *p){
 	if (
-			cp->bordB ||
-			cp->bordL ||
-			cp->bordR ||
-			cp->bordT
+			p->tcp.bordB ||
+			p->tcp.bordL ||
+			p->tcp.bordR ||
+			p->tcp.bordT
 		 )
 		t->bordered = true;
 
-	if (rp->ncellx)
-		t->ncells = rp->ncellx;
+	if (p->trp.ncellx)
+		t->ncells = p->trp.ncellx;
+
+	int len = 0;
+	if (t->cell < p->trp.ncellx)
+		len = p->trp.cellx[t->cell];
+
+	t->cell++;
 
 	flushstring(t);
 
 	lua_pushvalue(t->L, 5);
 	lua_pushnumber(t->L, t->ncells);
-	lua_call(t->L, 1, 0);
-	return 0;
+	lua_pushnumber(t->L, len);
+	lua_call(t->L, 2, 0);
 }
 
 void par_get_style(struct unrtf_t *t, PAP *p, char style[32])
 {
 	// handle with paragraph style
 	strcpy(style, "P");
+
 	if (p->just == justC)
 		strcpy(style, "CENTER");
 
@@ -131,11 +137,11 @@ void par_get_style(struct unrtf_t *t, PAP *p, char style[32])
 	}
 }
 
-int par_cb(void *d, PAP *p)
+void flushparagraph(struct unrtf_t *t, PAP *p)
 {
-	struct unrtf_t *t = d;
-	if (t->incell)
-		return 0;
+	// skip if in table
+	if (p->fIntbl == 1)
+		return;
 
 	flushstring(t);
 	
@@ -146,16 +152,15 @@ int par_cb(void *d, PAP *p)
 	lua_pushvalue(t->L, 2);
 	lua_pushstring(t->L, style);
 	lua_call(t->L, 1, 0);
-	return 0;
 }
 
-int pict_cb(void *d, PICT *pict, PAP *p)
+int pict_cb(void *d, prop_t *p, PICT *pict)
 {
 	struct unrtf_t *t = d;
 	flushstring(t);
 	
 	char style[32];
-	par_get_style(t, p, style);
+	par_get_style(t, &p->pap, style);
 	style[31] = 0;
 	
 	// get image data
@@ -193,42 +198,63 @@ void flushstyle(struct unrtf_t *t, int STY, bool val){
 	lua_call(t->L, 2, 0);
 }
 
-int char_cb(void *d, int ch, CHP *p)
+int char_cb(void *d, STREAM s, prop_t *p, int ch)
 {
 	struct unrtf_t *t = d;
+	if (s != sMain)
+		return 0;
+
+	if (ch > 256) {
+		switch (ch) {
+			case PAR:
+				flushparagraph(t, &p->pap);
+				break;
+			case ROW:
+				flushrow(t, &p->trp);
+				break;
+			case CELL:
+				flushcell(t, p);
+				break;
+			
+			default:
+				break;	
+		}
+
+		return 0;
+	}
 	
 	if (
-			t->fBold != p->fBold           ||
-		  t->fUnderline != p->fUnderline ||
-		  t->fItalic != p->fItalic       
+			t->fBold != p->chp.fBold           ||
+			t->fUnderline != p->chp.fUnderline ||
+			t->fItalic != p->chp.fItalic       
 			)
 	{
 		flushstring(t);
 			
 		int STY; 
 		
-		if (t->fBold != p->fBold){
-			t->fBold = p->fBold;
+		if (t->fBold != p->chp.fBold){
+			t->fBold = p->chp.fBold;
 			STY = DPY_BOLD;
-			if (p->fBold == 1)
+			if (p->chp.fBold == 1)
 				flushstyle(t, STY, true);
 			else
 				flushstyle(t, STY, false);
 		}
 		
-		if (t->fUnderline != p->fUnderline){
-			t->fUnderline = p->fUnderline;
+		if (t->fUnderline != p->chp.fUnderline){
+			t->fUnderline = p->chp.fUnderline;
 			STY = DPY_UNDERLINE;
-			if (p->fUnderline == 1)
+			if (p->chp.fUnderline == 1)
 				flushstyle(t, STY, true);
 			else 
 				flushstyle(t, STY, false);
 		}
 		
-		if (t->fItalic != p->fItalic){
-			t->fItalic = p->fItalic;
+		if (t->fItalic != p->chp.fItalic){
+			t->fItalic = p->chp.fItalic;
 			STY = DPY_ITALIC;
-			if (p->fItalic == 1)
+			if (p->chp.fItalic == 1)
 				flushstyle(t, STY, true);
 			else
 				flushstyle(t, STY, false);
@@ -250,7 +276,7 @@ static int unrtf_cb(lua_State* L)
 	if (!fp)
 		return 1;
 
-	rprop_t p;
+	prop_t p;
 	rnotify_t n;
 	memset(&(n), 0, sizeof(rnotify_t));
 
@@ -261,10 +287,8 @@ static int unrtf_cb(lua_State* L)
 
 	n.udata = &t;
 	n.char_cb = char_cb;
-	n.par_cb = par_cb;
-	n.row_cb = row_cb;
-	n.cell_cb = cell_cb;
 	n.style_cb = style_cb;
+	//n.command_cb = command_cb;
 	n.pict_cb = pict_cb;
 	//n.info_cb = info_cb;
 	//n.date_cb = date_cb;
