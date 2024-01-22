@@ -15,6 +15,7 @@ local BOLD = wg.BOLD
 local ParseWord = wg.parseword
 local WriteU8 = wg.writeu8
 local ReadFromZip = wg.readfromzip
+local UnzipFile = wg.unzipfile
 local bitand = bit32.band
 local bitor = bit32.bor
 local bitxor = bit32.bxor
@@ -25,8 +26,15 @@ local string_sub = string.sub
 local string_gmatch = string.gmatch
 local table_concat = table.concat
 
-local W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+local R   = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+local W   = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+local WP  = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+local A   = "http://schemas.openxmlformats.org/drawingml/2006/main"
+local PIC = "http://schemas.openxmlformats.org/drawingml/2006/picture"
 local VAL = W .. " val"
+
+local relations = {}
+local zipfile
 
 -----------------------------------------------------------------------------
 -- The importer itself.
@@ -144,6 +152,15 @@ local function parse_style(styles, xml)
 		end
 	end
 	styles[name] = style
+end
+
+local function get_relations(xml)
+	local R   = "http://schemas.openxmlformats.org/package/2006/relationships"
+	for _, element in ipairs(xml) do
+		if (element._name == R .. " Relationship") then
+			relations[element[R .. " Id"]] = element[R .. " Target"]
+		end
+	end
 end
 
 local function collect_styles(styles, xml)
@@ -385,13 +402,36 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 					if (element._name == W .. " drawing") then
 						for _, element in ipairs(element) do
 							-- inline or anchor
-							if (element._name == W .. " docPr") then
-									print("DOC PR")
-								end
-
 							for _, element in ipairs(element) do
-								if (element._name == W .. " docPr") then
-									print("DOC PR")
+								if (element._name == A .. " graphic") then
+									for _, element in ipairs(element) do
+										if (element._name == A .. " graphicData") then
+											for _, element in ipairs(element) do
+												if (element._name == PIC .. " pic") then
+													for _, element in ipairs(element) do
+														if (element._name == PIC .. " blipFill") then
+															for _, element in ipairs(element) do
+																if (element._name == A .. " blip") then
+																	-- get image relation
+																	local r = element[R .." embed"]
+																	local target = relations[r]
+																	if target then
+																		local image = string.format("word/%s", target)
+																		local tmpname = os.tmpname()
+																		UnzipFile(zipfile, image, tmpname)
+																		-- add image to WG
+																		importer:text(tmpname)
+																		importer:flushword(false)
+																		importer:flushparagraph("IMG")
+																	end
+																end
+															end
+														end
+													end
+												end
+											end
+										end
+									end
 								end
 							end
 						end
@@ -414,7 +454,9 @@ function Cmd.ImportDOCXFile(filename)
 	ImmediateMessage("Importing...")	
 
 	-- Load the styles and content subdocuments.
+	zipfile = filename
 	
+	local relationsxml  = ReadFromZip(filename, "word/_rels/document.xml.rels")
 	local stylesxml     = ReadFromZip(filename, "word/styles.xml")
 	local numberingxml  = ReadFromZip(filename, "word/numbering.xml")
 	local contentxml    = ReadFromZip(filename, "word/document.xml")
@@ -428,6 +470,11 @@ function Cmd.ImportDOCXFile(filename)
 	contentxml     = ParseXML(contentxml)
 	if (numberingxml) then
 		numberingxml = ParseXML(numberingxml) 
+	end
+
+	if relationsxml then
+		relationsxml = ParseXML(relationsxml) 
+		get_relations(relationsxml)
 	end
 
 	-- Find out what text styles the document creates (so we can identify

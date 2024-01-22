@@ -261,6 +261,49 @@ static int addimagetozip_cb(lua_State* L)
 	return 0;
 }
 
+static int unzipfile_cb(lua_State* L)
+{
+	const char* zipname  = luaL_checkstring(L, 1);
+	const char* subname  = luaL_checkstring(L, 2);
+	const char* filename = luaL_checkstring(L, 3);
+	int result = 0;
+
+	unzFile zf = unzOpen(zipname);
+	if (zf)
+	{
+		int i = unzLocateFile(zf, subname, 0);
+		if (i == UNZ_OK)
+		{
+			unz_file_info fi;
+			unzGetCurrentFileInfo(zf, &fi,
+				NULL, 0, NULL, 0, NULL, 0);
+
+			char* buffer = malloc(fi.uncompressed_size);
+			if (buffer)
+			{
+				unzOpenCurrentFile(zf);
+				i = unzReadCurrentFile(zf, buffer, fi.uncompressed_size);
+				if (i == fi.uncompressed_size)
+				{
+					FILE *fp = fopen(filename, "wb");
+					if (!fp){
+						free(buffer);
+						unzClose(zf);
+						return 0;
+					}
+					fwrite(buffer, fi.uncompressed_size, 1, fp);
+					fclose(fp);
+					result = 1;
+				}
+				free(buffer);
+			}
+		}
+
+		unzClose(zf);
+	}
+
+	return result;
+}
 
 void zip_init(void)
 {
@@ -271,6 +314,7 @@ void zip_init(void)
 		{ "readfromzip",               readfromzip_cb },
 		{ "writezip",                  writezip_cb },
 		{ "addimagetozip",             addimagetozip_cb },
+		{ "unzipfile",                 unzipfile_cb },
 		{ NULL,                        NULL }
 	};
 
