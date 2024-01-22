@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 11.01.2024
+Last Modified Date: 22.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -15,6 +15,7 @@ local BOLD = wg.BOLD
 local ParseWord = wg.parseword
 local WriteU8 = wg.writeu8
 local ReadFromZip = wg.readfromzip
+local UnzipFile = wg.unzipfile
 local bitand = bit32.band
 local bitor = bit32.bor
 local bitxor = bit32.bxor
@@ -30,7 +31,10 @@ local STYLE_NS  = "urn:oasis:names:tc:opendocument:xmlns:style:1.0"
 local FO_NS     = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
 local TEXT_NS   = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 local TABLE_NS  = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+local DRAW_NS   = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+local XLINK_NS  = "http://www.w3.org/1999/xlink"
 
+local zipfile
 -----------------------------------------------------------------------------
 -- The importer itself.
 
@@ -41,6 +45,7 @@ local function parse_style(styles, xml)
 	local TEXT_PROPERTIES = STYLE_NS .. " text-properties"
 	local PARAGRAPH_PROPERTIES = STYLE_NS .. " paragraph-properties"
 	local TABLE_PROPERTIES = STYLE_NS .. " table-properties"
+	local TABLE_COLUMN_PROPERTIES = STYLE_NS .. " table-column-properties"
 	local TABLE_CELL_PROPERTIES = STYLE_NS .. " table-cell-properties"
 	local FONT_STYLE = FO_NS .. " font-style"
 	local FONT_WEIGHT = FO_NS .. " font-weight"
@@ -86,8 +91,18 @@ local function parse_style(styles, xml)
 					element[TEXT_ALIGN] == "start"
 				then
 					style.left = true
+				elseif 
+					element[TEXT_ALIGN] == "justify" or
+					element[TEXT_ALIGN] == "both"
+				then
+					style.justify = true
 				end
 			end
+		elseif (element._name == TABLE_COLUMN_PROPERTIES) then
+				local w = element[STYLE_NS .. " column-width"]
+				if w then
+					style.width = w
+				end
 		elseif (element._name == TABLE_CELL_PROPERTIES) then
 				if 
 					element[FO_NS .. " border"] and
@@ -169,6 +184,8 @@ local function collect_styles(styles, xml)
 	end
 end
 
+local textwidth = 0;
+
 local function add_text(styles, importer, xml)
 	local SPACE = TEXT_NS .. " s"
 	local SPACECOUNT = TEXT_NS .. " c"
@@ -185,6 +202,7 @@ local function add_text(styles, importer, xml)
 				if needsflush then
 					importer:flushword(false)
 				end
+				textwidth = textwidth + string.len(word) + 1
 				importer:text(word)
 				needsflush = true
 			end
@@ -236,11 +254,18 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 	for _, element in ipairs(xml) do
 		if (element._name == TABLE_NS .. " table") then
 			local wgstyle = "TR"
-			for _, element in ipairs(element) do
+			local width = {}
+			for en, element in ipairs(element) do
+				if (element._name == TABLE_NS .. " table-column") then
+					local stylename = element[TABLE_NS .. " style-name"] or ""
+					local style = styles[stylename] or {}
+					width[en] = style.width
+				end
 				if (element._name == TABLE_NS .. " table-row") then
 					local firstcell = true
-					for _, element in ipairs(element) do
+					for en, element in ipairs(element) do
 						if (element._name == TABLE_NS .. " table-cell") then
+							textwidth = 0
 							if not firstcell then
 								importer:text(" ; ")
 							end
@@ -253,6 +278,24 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 							for _, element in ipairs(element) do
 								if (element._name == PARAGRAPH) then
 									add_text(styles, importer, element)
+									local w = width[en];
+									if w then
+										local width = tonumber(string.match(w, "%d+"))
+										if string.match(w, "cm") then
+											width = width * 5
+										end
+										if string.match(w, "in") then
+											width = width * 5 * 2.5
+										end
+										if string.match(w, "dxa") then
+											width = width/20/72 * 12
+										end
+										print(width)
+										local i 
+										for i=textwidth,width, 1 do
+											importer:text(" ")
+										end
+									end
 								end
 							end
 						end
@@ -281,6 +324,29 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 			
 			if style.center or parent.center then
 				wgstyle = "CENTER"
+			end
+			
+			if style.justify or parent.justify then
+				wgstyle = "P"
+			end
+
+			-- find drawing
+			for _, element in ipairs(element) do
+				if (element._name == DRAW_NS .. " frame") then
+					for _, element in ipairs(element) do
+						if (element._name == DRAW_NS .. " image") then
+							local image = element[XLINK_NS .. " href"]
+							if image then
+								local tmpname = os.tmpname()
+								UnzipFile(zipfile, image, tmpname)
+								-- add image to WG
+								importer:text(tmpname)
+								importer:flushword(false)
+								importer:flushparagraph("IMG")
+							end
+						end
+					end
+				end
 			end
 			
 			add_text(styles, importer, element)
@@ -321,6 +387,8 @@ function Cmd.ImportODTFile(filename)
 
 	-- Load the styles and content subdocuments.
 	
+	zipfile = filename
+
 	local stylesxml = ReadFromZip(filename, "styles.xml")
 	local contentxml = ReadFromZip(filename, "content.xml")
 	if not stylesxml or not contentxml then
