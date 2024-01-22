@@ -148,11 +148,13 @@ end
 local function resolve_parent_styles(styles)
 	local function recursively_fetch(name, attr)
 		local style = styles[name]
-		if style[attr] then
-			return true
-		end
-		if style.parent then
-			return recursively_fetch(style.parent, attr)
+		if style then
+			if style[attr] then
+				return true
+			end
+			if style.parent then
+				return recursively_fetch(style.parent, attr)
+			end
 		end
 		return nil
 	end
@@ -290,7 +292,6 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 										if string.match(w, "dxa") then
 											width = width/20/72 * 12
 										end
-										print(width)
 										local i 
 										for i=textwidth,width, 1 do
 											importer:text(" ")
