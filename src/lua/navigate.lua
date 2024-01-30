@@ -417,7 +417,14 @@ end
 
 function Cmd.GotoXPosition(pos)
 	local paragraph = Document[Document.cp]
-	local lines = paragraph:wrap(Document.wrapwidth)
+	local lines
+	if 
+		paragraph.style == "TR" or paragraph.style == "TRF" 
+	then
+		lines = paragraph:wrapTableRow(Document.wrapwidth)
+	else
+		lines = paragraph:wrap(Document.wrapwidth)
+	end
 	local ln = paragraph:getLineOfWord(Document.cw)
 
 	local line = lines[ln]
@@ -453,7 +460,15 @@ end
 
 local function getpos()
 	local paragraph = Document[Document.cp]
-	local lines = paragraph:wrap()
+	local lines
+	if 
+		paragraph.style == "TR" or paragraph.style == "TRF" 
+	then
+		lines = paragraph:wrapTableRow()
+	else
+		lines = paragraph:wrap()
+	end
+
 	local cw = Document.cw
 	local word = paragraph[cw]
 	local x, ln, wn = paragraph:getXOffsetOfWord(cw)

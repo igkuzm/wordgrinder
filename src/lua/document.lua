@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 16.01.2024
+Last Modified Date: 30.01.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -433,7 +433,7 @@ ParagraphClass =
 
 				w = w + ww
 				local cell_width = self.cellWidth[cn] or width
-				if (w >= width) then
+				if (w >= cell_width) then
 					lines[#lines+1] = line
 					i = i+1
 					line = {wn = wn}
@@ -462,6 +462,7 @@ ParagraphClass =
 		local xs = {}
 		for l=1,maxlinesize,1 do
 			local newline = {wn = 1}
+			local hasstart = false
 			local start = 0
 			for cn, cell in ipairs(cells) do
 				if cn > 1 then
@@ -470,7 +471,11 @@ ParagraphClass =
 				local w = start
 				for ln, line in ipairs(cell.lines) do
 					if ln == l then
-						for _, wn in ipairs(line) do
+						for n, wn in ipairs(line) do
+							if not hasstart then
+								newline.wn = wn
+								hasstart = true
+							end
 							local word = self[wn]	
 							-- get width of word (including space)
 							local ww = GetStringWidth(word) + 1
@@ -485,9 +490,8 @@ ParagraphClass =
 				end
 			end
 			lines[#lines+1] = newline
-			self.xs = xs
 		end
-
+		self.xs = xs
 		self.wordp = wordp
 		self.lines = lines
 		return self.lines
