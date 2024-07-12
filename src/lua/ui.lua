@@ -127,6 +127,12 @@ function PromptForYesNo(title, message)
 		["y"] = rtrue,
 		["Y"] = rtrue,
 
+		-- russian keys
+		["т"] = rfalse,
+		["Т"] = rfalse,
+		["н"] = rtrue,
+		["Н"] = rtrue,
+
 		Form.WrappedLabel {
 			value = message,
 			x1 = 1, y1 = 1, x2 = -1, y2 = -3,
