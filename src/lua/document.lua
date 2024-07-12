@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 30.01.2024
+Last Modified Date: 13.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -355,8 +355,8 @@ ParagraphClass =
 				pn = n - 1
 			end
 		end
-		local pp
-		if pn then
+		local pp = nil
+		if pn > 0 then
 			pp = Document[pn]
 		end
 
@@ -400,7 +400,7 @@ ParagraphClass =
 		self.cn = cn
 		self.cells = cells
 		self.cellWidth = cellWidth
-		if pp then 
+		if pp ~= nil then 
 			if pp.style == "TR"  or 
 				 pp.style == "TRB" 
 			then
@@ -712,11 +712,21 @@ ParagraphClass =
 	-- returns: line number, word number in line
 	getLineOfWord = function(self, wn)
 		local lines
-		if self.style == "TR" or self.style == "TRF" then
+		if self.style == "TR" or self.style == "TRB" 
+		then
 			lines = self:wrapTableRow()
+			for ln, l in ipairs(lines) do
+				for _, wnn in ipairs(l) do
+					if (wn == wnn) then
+						return ln, wn
+					end
+				end
+			end
+			return nil, nil
 		else 
 			lines = self:wrap()
 		end
+		
 		for ln, l in ipairs(lines) do
 			if (wn <= #l) then
 				return ln, wn
@@ -741,18 +751,21 @@ ParagraphClass =
 	-- returns: word number
 	getWordOfLine = function(self, ln)
 		local lines
-		if self.style == "TR" or self.style == "TRF" then
+		if self.style == "TR" or self.style == "TRB" 
+		then
 			lines = self:wrapTableRow()
-		else 
+		else
 			lines = self:wrap()
-		end
+		end 
+		
 		return lines[ln].wn
 	end,
 
 	-- returns: X offset, line number, word number in line
 	getXOffsetOfWord = function(self, wn)
 		local lines
-		if self.style == "TR" or self.style == "TRF" then
+		if self.style == "TR" or self.style == "TRB" 
+		then
 			lines = self:wrapTableRow()
 		else 
 			lines = self:wrap()

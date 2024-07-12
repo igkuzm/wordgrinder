@@ -97,17 +97,8 @@ function Cmd.GotoPreviousWord()
 		Document.co = 1
 	else
 		local p = Document[Document.cp]
-		if p.style == "TR" or p.style == "TRB" then
-			local prevw = p.wordp[Document.cw - 1]
-			if prevw then
-				Document.cw = prevw
-				--Document.co = p.xs[prevw]
-				Document.co = 1
-			end
-		else
 			Document.cw = Document.cw - 1
 			Document.co = 1
-		end
 	end
 
 	QueueRedraw()
@@ -122,16 +113,8 @@ function Cmd.GotoNextWord()
 		return false
 	end
 
-	if p.style == "TR" or p.style == "TRB" then
-		local nextw = p.wordp[Document.cw + 1]
-		if nextw then
-			Document.cw = nextw
-			Document.co = 1
-		end
-	else
 		Document.cw = Document.cw + 1
 		Document.co = 1
-	end
 
 	QueueRedraw()
 	return true
@@ -419,7 +402,7 @@ function Cmd.GotoXPosition(pos)
 	local paragraph = Document[Document.cp]
 	local lines
 	if 
-		paragraph.style == "TR" or paragraph.style == "TRF" 
+		paragraph.style == "TR" or paragraph.style == "TRB" 
 	then
 		lines = paragraph:wrapTableRow(Document.wrapwidth)
 	else
@@ -462,7 +445,7 @@ local function getpos()
 	local paragraph = Document[Document.cp]
 	local lines
 	if 
-		paragraph.style == "TR" or paragraph.style == "TRF" 
+		paragraph.style == "TR" or paragraph.style == "TRB" 
 	then
 		lines = paragraph:wrapTableRow()
 	else
