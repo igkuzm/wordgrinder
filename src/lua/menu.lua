@@ -2,7 +2,7 @@
 File              : menu.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 12.01.2024
+Last Modified Date: 15.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -96,7 +96,8 @@ local ImportMenu = CreateMenu("Import new document",
 	{"FImd",   "M", "Import Markdown file...",   nil,         Cmd.ImportMarkdownFile},
 	{"FItxt",  "T", "Import text file...",       nil,         Cmd.ImportTextFile},
 	{"FIdocx", "D", "Import MS DOCX file...",    nil,         Cmd.ImportDOCXFile},
-	{"FIrtf", "R", "Import RTF file...",    nil,         Cmd.ImportRTFFile},
+	{"FIdoc",  "C", "Import MS DOC file...",     nil,         Cmd.ImportDOCFile},
+	{"FIrtf",  "R", "Import RTF file...",        nil,         Cmd.ImportRTFFile},
 })
 
 local ExportMenu = CreateMenu("Export current document",

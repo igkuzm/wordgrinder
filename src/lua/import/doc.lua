@@ -1,5 +1,5 @@
 --[[--
-File              : rtf.lua
+File              : doc.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
 Last Modified Date: 15.07.2024
@@ -10,7 +10,7 @@ local ITALIC = wg.ITALIC
 local UNDERLINE = wg.UNDERLINE
 local BOLD = wg.BOLD
 local ParseWord = wg.parseword
-local UnRTF = wg.unrtf
+local UnDOC = wg.undoc
 local WriteU8 = wg.writeu8
 local bitand = bit32.band
 local bitor = bit32.bor
@@ -47,9 +47,9 @@ end
 
 
 -- The importer itself.
-function Cmd.ImportRTFFile(filename)
+function Cmd.ImportDOCFile(filename)
 	if not filename then
-		filename = FileBrowser("Import RTF File", "Import from:", false)
+		filename = FileBrowser("Import DOC File", "Import from:", false)
 		if not filename then
 			return false
 		end
@@ -111,7 +111,7 @@ function Cmd.ImportRTFFile(filename)
       return tmpname
     end
 
-    UnRTF(
+    UnDOC(
       filename,
       paragraph,
       style,

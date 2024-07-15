@@ -97,6 +97,9 @@ extern void zip_init(void);
 /* UNRTF */
 extern void unrtf_init(void);
 
+/* UNDOC */
+extern void undoc_init(void);
+
 /* IMAGES */
 extern void image_init(void);
 
