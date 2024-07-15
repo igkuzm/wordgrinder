@@ -47,6 +47,16 @@ static void flushstring(struct undoc_t *t)
 static void par_get_style(struct undoc_t *t, PAP *p, char style[32])
 {
 	strcpy(style, "P");
+
+	if (p->just == justC)
+		strcpy(style, "CENTER");
+
+	if (p->just == justR)
+		strcpy(style, "RIGHT");
+	
+	if (p->just == justL)
+		strcpy(style, "LEFT");
+
 }
 
 static void flushparagraph(struct undoc_t *t, PAP *p)
