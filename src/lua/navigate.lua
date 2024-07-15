@@ -434,7 +434,8 @@ function Cmd.GotoXPosition(pos)
 	local wordx = paragraph.xs[wn]
 	wo = GetOffsetFromWidth(word, pos - wordx)
 
-	Document.cw = paragraph:getWordOfLine(ln) + wordofline - 1
+	Document.cw = wn
+	-- paragraph:getWordOfLine(ln) + wordofline - 1
 	Document.co = wo
 
 	QueueRedraw()
