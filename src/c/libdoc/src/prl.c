@@ -2,7 +2,7 @@
  * File              : prl.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 28.05.2024
+ * Last Modified Date: 16.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -47,8 +47,7 @@ static struct Prl * prl_new(MEM *mem)
 				if (SprmSgc(sprm) == sgcTab &&
 						SprmIspmd(sprm) == sprmTDefTable)
 				{
-					uint16_t cb;
-					memread(&cb, 2, 1, mem);
+					USHORT cb = *(USHORT *)(mem->buffer);
 					bytes = cb + 1;
 					alloc += 2;
 					break;
@@ -56,8 +55,7 @@ static struct Prl * prl_new(MEM *mem)
 				if (SprmSgc(sprm) == sgcPar &&
 						SprmIspmd(sprm) == sprmPChgTabs)
 				{
-					uint8_t cb;
-					memread(&cb, 1, 1, mem);
+					BYTE cb = *(mem->buffer);
 					if (cb >1 && cb < 255)
 						bytes = cb;
 					else if (cb == 255){
