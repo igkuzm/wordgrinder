@@ -2,12 +2,13 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 15.07.2024
+ * Last Modified Date: 16.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
 #include "libdoc/include/libdoc.h"
-#include "str.h"
+#include "libdoc/include/libdoc/str.h"
+#include <stdio.h>
 
 static int main_document(void *, ldp_t*, int);
 static int footnotes(void *, ldp_t*, int);
@@ -41,7 +42,7 @@ static void flushstring(struct undoc_t *t)
 	lua_pushlstring(t->L, t->str.str, t->str.len);
 	lua_call(t->L, 1, 0);
 	free(t->str.str);
-	str_init(&t->str);
+	str_init(&t->str, BUFSIZ);
 }
 
 static void par_get_style(struct undoc_t *t, PAP *p, char style[32])
@@ -76,6 +77,53 @@ static void flushparagraph(struct undoc_t *t, PAP *p)
 	lua_call(t->L, 1, 0);
 }
 
+static void flushrow(struct undoc_t *t, TRP *rp){
+	fprintf(stderr, "FLUSHROW\n");
+	if (
+			rp->bordB ||
+			rp->bordH ||
+			rp->bordL ||
+			rp->bordR ||
+			rp->bordT ||
+			rp->bordV
+		 )
+		t->bordered = true;
+
+	lua_pushvalue(t->L, 4);
+	lua_pushboolean(t->L, t->bordered);
+	lua_call(t->L, 1, 0);
+
+	t->cell = 0;
+}
+
+static void flushcell(struct undoc_t *t, TCP *tcp, TRP *trp){
+	fprintf(stderr, "FLUSHCELL\n");
+	if (
+			tcp->bordB ||
+			tcp->bordL ||
+			tcp->bordR ||
+			tcp->bordT
+		 )
+		t->bordered = true;
+
+	if (trp->ncellx)
+		t->ncells = trp->ncellx;
+
+	int len = 0;
+	if (t->cell < trp->ncellx)
+		len = trp->cellx[t->cell];
+
+	t->cell++;
+
+	flushstring(t);
+
+	lua_pushvalue(t->L, 5);
+	lua_pushnumber(t->L, t->ncells);
+	lua_pushnumber(t->L, len);
+	lua_call(t->L, 2, 0);
+}
+
+
 static void flushstyle(struct undoc_t *t, int STY, bool val){
 	lua_pushvalue(t->L, 3);
 	lua_pushnumber(t->L, STY);
@@ -88,35 +136,34 @@ int main_document(void *d, ldp_t *p, int ch){
 
 	char c = ch;
 	
-/* Following symbols below 32 are allowed inside paragraph:
-0x000D - return - marks an end of paragraph
-0x000B - hard return
-0x0002 - footnote mark
-0x0007 - table separator (converted to tabmode)
-0x0009 - Horizontal tab ( printed as is)
-0x000B - hard return
-0x000C - page break
-0x001E - IS2 for some reason means short defis in Word.
-0x001F - soft hyphen in Word
-0x0013 - start embedded hyperlink
-0x0014 - separate hyperlink URL from text
-0x0015 - end embedded hyperlink
-*/
-
 	switch (ch) {
-		case 0x0D: case 0x07:
+		case LINEBREAK: 
 			flushparagraph(t, &p->pap);
 			return 0;
+		case PARAGRAPH_MARK:
+			if (p->pap.ITTP)
+				flushrow(t, &p->trp);
+			else if (p->pap.ITC)
+				flushcell(t, &p->tcp, &p->trp);
+			else
+				flushparagraph(t, &p->pap);
+			return 0;
+		case CELL_MARK:
+			if (p->pap.TTP)
+				flushrow(t, &p->trp);
+			else
+				flushcell(t, &p->tcp, &p->trp);
+			return 0;
 		
-		case 0x1E: c= '-' ; break;
-		case 0x09: c= '\t'; break;
-		case 0x13: c= ' ' ; break;
-		case 0x15: c= ' ' ; break;
-		case 0x0C: c= ch  ; break;
-		case 0x1F: c= 0xAD; break;
-		case 0x0B: c= 0x0A; break;
-		case 0x08: 
-		case 0x01: c=' '  ; break;
+		case HORIZONTALTAB:      c= '\t' ; break;
+		case HYPERLINK_START:    c= ' '  ; break;
+		case HYPERLINK_SEPARATE: c= ' '  ; break;
+		case HYPERLINK_END:      c= ' '  ; break;
+		case PAGEBREAK:          c= ch   ; break;
+		case SOFT_HYPEN:
+		case HYPHEN:             c= '-'  ; break;
+		case INLINE_PICTURE:
+		case FLOATING_PICTURE:   c= ' '  ; break;
 		
 		default: break;	
 	}
@@ -176,7 +223,7 @@ static int undoc_cb(lua_State* L)
 	struct undoc_t t;
 	memset(&(t), 0, sizeof(struct undoc_t));
 	t.L = L;
-	str_init(&t.str);
+	str_init(&t.str, BUFSIZ);
 
 	int ret = doc_parse(
 			filename, 

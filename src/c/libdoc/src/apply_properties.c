@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 30.05.2024
+ * Last Modified Date: 16.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -152,6 +152,35 @@ int apply_paragraph_property(
 		return 0;
 	}
 
+	// table terminating paragraph mark
+	if (ismpd == sprmPFTtp){
+		BYTE *n = prl->operand;	
+		if (*n)
+			doc->prop.pap.TTP = fTrue;
+		else
+			doc->prop.pap.TTP = fFalse;
+		return 0;
+	}
+
+	// inner table terminating paragraph mark
+	if (ismpd == sprmPFInnerTtp){
+		BYTE *n = prl->operand;	
+		if (*n)
+			doc->prop.pap.ITTP = fTrue;
+		else
+			doc->prop.pap.ITTP = fFalse;
+		return 0;
+	}
+
+	// inner table cell mark
+	if (ismpd == sprmPFInnerTableCell){
+		BYTE *n = prl->operand;	
+		if (*n)
+			doc->prop.pap.ITC = fTrue;
+		else
+			doc->prop.pap.ITC = fFalse;
+		return 0;
+	}
 
 #ifdef DEBUG
 	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
@@ -183,7 +212,10 @@ int apply_table_property(
 #endif
 	
 	// table justification
-	if (ismpd == sprmTJc90){
+	if (
+			ismpd == sprmTJc90 ||
+			ismpd == sprmTJc)
+	{
 		USHORT *n = (USHORT*)(prl->operand);
 		switch (*n) {
 			case 0:  doc->prop.trp.just = justL; break;
@@ -191,6 +223,112 @@ int apply_table_property(
 			case 2:  doc->prop.trp.just = justR; break;
 			default: doc->prop.trp.just = justL; break;
 		}
+		return 0;
+	}
+
+	// table header
+	if (ismpd == sprmTTableHeader){
+		BYTE *n = prl->operand;	
+		if (*n)
+			doc->prop.trp.header = fTrue;
+		else
+			doc->prop.trp.header = fFalse;
+		return 0;
+	}
+
+	// table borders
+	if (ismpd == sprmTTableBorders){
+		struct TableBordersOperand *n = 
+			(struct TableBordersOperand *)prl->operand;
+
+		if (n->brcBottom.brcType)
+			doc->prop.trp.bordB = fTrue;
+		else
+			doc->prop.trp.bordB = fFalse;
+		
+		if (n->brcTop.brcType)
+			doc->prop.trp.bordT = fTrue;
+		else
+			doc->prop.trp.bordT = fFalse;
+		
+		if (n->brcLeft.brcType)
+			doc->prop.trp.bordL = fTrue;
+		else
+			doc->prop.trp.bordL = fFalse;
+		
+		if (n->brcRight.brcType)
+			doc->prop.trp.bordR = fTrue;
+		else
+			doc->prop.trp.bordR = fFalse;
+
+		if (n->brcHorizontalInside.brcType)
+			doc->prop.trp.bordH = fTrue;
+		else
+			doc->prop.trp.bordH = fFalse;
+
+		if (n->brcVerticalInside.brcType)
+			doc->prop.trp.bordV = fTrue;
+		else
+			doc->prop.trp.bordV = fFalse;
+		
+		return 0;
+	}
+
+	if (ismpd == sprmTTableBorders80){
+		struct TableBordersOperand80 *n = 
+			(struct TableBordersOperand80 *)prl->operand;
+
+		if (n->cb != 0xFF &&
+				n->brcBottom.brcType)
+			doc->prop.trp.bordB = fTrue;
+		else
+			doc->prop.trp.bordB = fFalse;
+		
+		if (n->cb != 0xFF &&
+				n->brcTop.brcType)
+			doc->prop.trp.bordT = fTrue;
+		else
+			doc->prop.trp.bordT = fFalse;
+		
+		if (n->cb != 0xFF &&
+				n->brcLeft.brcType)
+			doc->prop.trp.bordL = fTrue;
+		else
+			doc->prop.trp.bordL = fFalse;
+		
+		if (n->cb != 0xFF &&
+				n->brcRight.brcType)
+			doc->prop.trp.bordR = fTrue;
+		else
+			doc->prop.trp.bordR = fFalse;
+
+		if (n->cb != 0xFF &&
+				n->brcHorizontalInside.brcType)
+			doc->prop.trp.bordH = fTrue;
+		else
+			doc->prop.trp.bordH = fFalse;
+
+		if (n->cb != 0xFF &&
+				n->brcVerticalInside.brcType)
+			doc->prop.trp.bordV = fTrue;
+		else
+			doc->prop.trp.bordV = fFalse;
+		
+		return 0;
+	}
+
+	// table defaults
+	if (ismpd == sprmTDefTable){
+		struct TDefTableOperand *t = TDefTableOperandInit(prl);	
+		if (t){
+			doc->prop.trp.ncellx = t->NumberOfColumns;
+			int i;
+			for (i = 0; i < t->NumberOfColumns; ++i) {
+				XAS xas = t->rgdxaCenter[i];
+				doc->prop.trp.cellx[i] = xas;
+			}
+		}
+		
 		return 0;
 	}
 
