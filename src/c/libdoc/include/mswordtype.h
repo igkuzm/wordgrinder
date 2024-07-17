@@ -2,7 +2,7 @@
  * File              : mswordtype.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 17.01.2024
- * Last Modified Date: 16.07.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -79,6 +79,7 @@ typedef enum {
 typedef struct para_prop
 {
 	char fIntbl;			 // if in table paragraph
+	int  Itap;				 // table depth of paragraph 
   int  xaLeft;        // left indent in twips
   int  xaRight;       // right indent in twips
 	int  xaFirst;       // first line indent in twips
@@ -88,8 +89,8 @@ typedef struct para_prop
 	int  after;				 // spacing after paragraph
 	// special marks
 	char TTP;  // table terminating paragraph mark 
-	char ITC;  // inner table cell mark
 	char ITTP; // inner table terminating paragraph mark
+	char ITC;  // inner table cell mark
 }  PAP;               // PAragraph Properties
 
 /* Section break type */

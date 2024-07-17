@@ -2,11 +2,22 @@
  * File              : retrieving_text.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 30.05.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc/retrieving_text.h"
 #include "../include/libdoc/direct_character_formatting.h"
+
+static void check_marks(cfb_doc_t *doc, int ch)
+{
+	// check if CELL_MARK - drop props
+	if (ch == CELL_MARK){
+		//if (doc->prop.trp.TTP || doc->prop.trp.ITTP)
+			//memset(&(doc->prop.trp), 0, sizeof(TRP));
+		//memset(&(doc->prop.tcp), 0, sizeof(TCP));
+		//memset(&(doc->prop.pap), 0, sizeof(PAP));
+	}
+}
 
 void get_char_for_cp(cfb_doc_t *doc, CP cp,
 		void *user_data,
@@ -57,18 +68,17 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 
 		fseek(doc->WordDocument, off, SEEK_SET);	
 		int ch;
-		if (fread(&ch, 1, 1, 
-					doc->WordDocument) != 1)
-		{
-			ERR("fread");
-			return;
-		}
+		fread(&ch, 1, 1, 
+					doc->WordDocument);
+		
 		// check special chars
 		int sch = FcCompressedSpecialChar_get(ch);
 		if (sch)
 			callback(user_data, &doc->prop, sch);
 		else
 			callback(user_data, &doc->prop, ch);
+		
+		//check_marks(doc, ch);
 
 	} else {
 /*
@@ -89,12 +99,8 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 		
 		fseek(doc->WordDocument, off, SEEK_SET);	
 		WORD u;
-		if (fread(&u, 2, 1, 
-					doc->WordDocument) != 1)
-		{
-			ERR("fread");
-			return;
-		}
+		fread(&u, 2, 1, 
+					doc->WordDocument);
 		if (doc->biteOrder){
 			u = bswap_16(u);
 		}
@@ -109,16 +115,14 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 			if (u > 0x1f && u < 0x7f) {
 				//simple ANSI
 				int ch;
-				if (fread(&ch, 1, 1,
-						doc->WordDocument) != 1)
-				{
-					ERR("fread");
-					return;
-				}
+				fread(&ch, 1, 1,
+						doc->WordDocument);
+		
 				callback(user_data, &doc->prop, ch);
 			} else {
 				//this is a mark
 				callback(user_data, &doc->prop, u);
+				//check_marks(doc, u);
 			}
 		} else if (u != 0xfeff) {
 			char utf8[4]={0};

@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 15.07.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -13,7 +13,6 @@
 extern "C"{
 #endif
 
-/*#define DEBUG*/
 
 #include <stdint.h>
 #include <stdio.h>

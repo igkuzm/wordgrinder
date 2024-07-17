@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 16.07.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -77,15 +77,14 @@ static void flushparagraph(struct undoc_t *t, PAP *p)
 	lua_call(t->L, 1, 0);
 }
 
-static void flushrow(struct undoc_t *t, TRP *rp){
-	fprintf(stderr, "FLUSHROW\n");
+static void flushrow(struct undoc_t *t, TRP *trp){
 	if (
-			rp->bordB ||
-			rp->bordH ||
-			rp->bordL ||
-			rp->bordR ||
-			rp->bordT ||
-			rp->bordV
+			trp->bordB ||
+			trp->bordH ||
+			trp->bordL ||
+			trp->bordR ||
+			trp->bordT ||
+			trp->bordV
 		 )
 		t->bordered = true;
 
@@ -97,7 +96,6 @@ static void flushrow(struct undoc_t *t, TRP *rp){
 }
 
 static void flushcell(struct undoc_t *t, TCP *tcp, TRP *trp){
-	fprintf(stderr, "FLUSHCELL\n");
 	if (
 			tcp->bordB ||
 			tcp->bordL ||
@@ -122,7 +120,6 @@ static void flushcell(struct undoc_t *t, TCP *tcp, TRP *trp){
 	lua_pushnumber(t->L, len);
 	lua_call(t->L, 2, 0);
 }
-
 
 static void flushstyle(struct undoc_t *t, int STY, bool val){
 	lua_pushvalue(t->L, 3);

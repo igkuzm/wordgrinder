@@ -2,7 +2,7 @@
  * File              : direct_paragraph_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 30.05.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 */
 
@@ -13,31 +13,16 @@
 #include "memread.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 static void set_to_default(cfb_doc_t *doc){
 	
 	PAP *pap = &(doc->prop.pap);
-
-	pap->fIntbl  = 0;
-	pap->xaLeft  = 0;
-	pap->xaRight = 0;
-	pap->xaFirst = 0;
-	pap->just    = 0;
-	pap->s       = 0;
-	pap->before  = 0;
-	pap->after   = 0;
+	memset(pap, 0, sizeof(PAP));
 
 	CHP *chp = &(doc->prop.pap_chp);
+	memset(chp, 0, sizeof(CHP));
 	
-	chp->fBold      = 0;
-	chp->fUnderline = 0;
-	chp->fItalic    = 0;
-	chp->font       = 0;
-	chp->size       = 0;
-	chp->fcolor     = 0;
-	chp->bcolor     = 0;
-	chp->allCaps    = 0;
-
 }
 
 static int callback(void *userdata, struct Prl *prl);
@@ -87,12 +72,7 @@ void direct_paragraph_formatting(
 
 	int size = 0;
 	BYTE cb;
-	if (!fread(&cb, 1, 1,
-				doc->WordDocument))
-	{
-		ERR("fread");
-		return;
-	};	
+	fread(&cb, 1, 1,doc->WordDocument);
 #ifdef DEBUG
 	LOG("PapxInFkp cb: %d", cb);
 #endif
@@ -102,12 +82,8 @@ void direct_paragraph_formatting(
 	} else {
 		// cb is 0
 		BYTE cb_;
-		if (fread(&cb_, 1, 1,
-				doc->WordDocument) != 1)
-		{
-			ERR("fread");
-			return;
-		};	
+		fread(&cb_, 1, 1,
+				doc->WordDocument);
 #ifdef DEBUG
 	LOG("PapxInFkp cb': %d", cb_);
 #endif
@@ -121,12 +97,8 @@ void direct_paragraph_formatting(
 
 	struct GrpPrlAndIstd *grpPrlAndIstd = MALLOC(size, 
 			ERR("malloc"); return);
-	if (fread(grpPrlAndIstd, size, 1,
-			doc->WordDocument) != 1)
-	{
-		ERR("fread");
-		return;
-	}
+	fread(grpPrlAndIstd, size, 1,
+			doc->WordDocument);
 
 #ifdef DEBUG
 	LOG("Istd: %d", grpPrlAndIstd->istd);

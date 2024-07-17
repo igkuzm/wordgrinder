@@ -2,17 +2,52 @@
  * File              : doc_parse.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 30.05.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc.h"
 #include "../include/libdoc/paragraph_boundaries.h"
 #include "../include/libdoc/retrieving_text.h"
 #include "../include/libdoc/direct_character_formatting.h"
+#include "../include/libdoc/direct_paragraph_formatting.h"
 
 int callback(void *d, struct Prl *prl){
 	printf("PRL with sprm: %d \n", prl->sprm);	
 	return 0;
+}
+
+CP parse_range_cp(cfb_doc_t *doc, CP cp, CP lcp,
+		void *user_data,
+		int (*callback)(void *user_data, ldp_t *p, int ch))
+{
+	while (cp <= lcp && cp < doc->fib.rgLw97->ccpText){
+		get_char_for_cp(doc, cp, user_data,
+				callback);
+		cp++;
+	}
+	return cp;
+}
+
+CP parse_table_row(cfb_doc_t *doc, CP cp, CP lcp,
+		void *user_data,
+		int (*callback)(void *user_data, ldp_t *p, int ch))
+{
+	while (cp <= lcp && cp < doc->fib.rgLw97->ccpText){
+		//get cell
+		CP clcp = last_cp_in_row(doc, cp);
+		if (clcp == CPERROR)
+			return cp;
+		
+		// parse cell
+		while (cp <= clcp && cp < doc->fib.rgLw97->ccpText){
+
+			// parse paragraph
+			CP lcp = last_cp_in_paragraph(doc, cp); 
+			cp = parse_range_cp(doc, cp, lcp, user_data, 
+					callback);
+		}
+	}
+	return cp;
 }
 
 int doc_parse(const char *filename, void *user_data,
@@ -50,14 +85,20 @@ int doc_parse(const char *filename, void *user_data,
  * paragraph mark (Unicode 0x000D).*/
 for (cp = 0; cp < doc.fib.rgLw97->ccpText; ) {
 	
-	// get paragraph boundaries
-	CP lcp = last_cp_in_paragraph(&doc, cp); 
-
-	// iterate cp
-	while (cp <= lcp && cp < doc.fib.rgLw97->ccpText){
-		get_char_for_cp(&doc, cp, user_data,
+	// get table row and cell boundaries and apply props
+	CP lcp = last_cp_in_row(&doc, cp);
+	if (lcp != CPERROR){
+		// this CP is in table
+		cp = parse_table_row(&doc, cp, lcp, user_data, 
 				main_document);
-		cp++;
+
+	} else {
+		// get paragraph boundaries and apply props
+		CP lcp = last_cp_in_paragraph(&doc, cp); 
+		
+		// iterate cp
+		cp = parse_range_cp(&doc, cp, lcp, user_data, 
+				main_document);
 	}
 }
 

@@ -682,7 +682,7 @@ TDefTableOperandInit(struct Prl *prl)
 	t->cb = *(USHORT *)(prl->operand);
 	t->NumberOfColumns = *(&(prl->operand[2]));
 	t->rgdxaCenter = &(prl->operand[3]);
-	t->rgTc80 = &(prl->operand[3 + t->NumberOfColumns + 1]);
+	t->rgTc80 = &(prl->operand[3 + t->NumberOfColumns * 2 + 2]);
 
 	return t;
 };

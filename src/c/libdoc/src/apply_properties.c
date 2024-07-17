@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 16.07.2024
+ * Last Modified Date: 17.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -181,6 +181,15 @@ int apply_paragraph_property(
 			doc->prop.pap.ITC = fFalse;
 		return 0;
 	}
+	
+	// in table depth
+	if (ismpd == sprmPItap || ismpd == sprmPDtap){
+		LONG *n = (LONG* )(prl->operand);
+		if (n > 0)
+			doc->prop.pap.Itap = *n;
+		else
+			doc->prop.pap.Itap = 0;
+	}
 
 #ifdef DEBUG
 	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
@@ -319,13 +328,23 @@ int apply_table_property(
 
 	// table defaults
 	if (ismpd == sprmTDefTable){
+#ifdef DEBUG
+	LOG("Size of TDefTableOperand: %d", *((SHORT *)(prl->operand))); 
+	LOG("NumberOfColumns: %d", prl->operand[2]); 
+#endif
 		struct TDefTableOperand *t = TDefTableOperandInit(prl);	
 		if (t){
 			doc->prop.trp.ncellx = t->NumberOfColumns;
+			XAS *axas = (SHORT *)(t->rgdxaCenter);
+			// first cell left indent = axas[0];
+			/*! TODO: first cell left indent */
 			int i;
-			for (i = 0; i < t->NumberOfColumns; ++i) {
-				XAS xas = t->rgdxaCenter[i];
-				doc->prop.trp.cellx[i] = xas;
+			for (i = 1; i < t->NumberOfColumns+1; ++i) {
+				XAS xas = axas[i];
+#ifdef DEBUG
+	LOG("Column %d has XAS: %d", i-1, xas); 
+#endif
+				doc->prop.trp.cellx[i-1] = xas;
 			}
 		}
 		
