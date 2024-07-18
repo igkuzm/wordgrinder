@@ -726,12 +726,14 @@ TDefTableOperandInit(struct Prl *prl)
 	if (t->NumberOfColumns > 0){
 		int size = t->cb - ((t->NumberOfColumns + 1)*2) - 1; 
 		int len  = t->NumberOfColumns * sizeof(struct TC80);
-		t->rgTc80 = MALLOC(len, return t);
-		memset(t->rgTc80, 0xFF, len);
-		int i;
-		for (i=0; i < size; i++){
-			t->rgTc80[i] = 
-				prl->operand[3 + t->NumberOfColumns * 2 + 2 + i];
+		if (size > sizeof(struct TC80)){
+			t->rgTc80 = MALLOC(len, return t);
+			memset(t->rgTc80, 0xFF, len);
+			int i;
+			for (i=0; i < size; i++){
+				t->rgTc80[i] = 
+					prl->operand[3 + t->NumberOfColumns * 2 + 2 + i];
+			}
 		}
 	}
 	return t;
