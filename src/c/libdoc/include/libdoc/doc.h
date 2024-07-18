@@ -13,7 +13,7 @@
 extern "C"{
 #endif
 
-#define DEBUG
+//#define DEBUG
 
 #include <stdint.h>
 #include <stdio.h>
