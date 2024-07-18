@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 18.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -20,9 +20,6 @@ static int apply_table_property(cfb_doc_t *doc, struct Prl *prl);
 int apply_property(cfb_doc_t *doc, int l, struct Prl *prl)
 {
 	BYTE sgc = SprmSgc(prl->sprm);
-#ifdef DEBUG
-	LOG("sgc: 0x%02x", sgc); 
-#endif
 	switch (sgc) {
 		case sgcCha:
 			return apply_char_property(doc, l, prl);
@@ -47,7 +44,8 @@ int apply_char_property(
 {
 	USHORT ismpd = SprmIspmd(prl->sprm);
 #ifdef DEBUG
-	LOG("ismpd: 0x%04x", ismpd); 
+	BYTE sgc = SprmSgc(prl->sprm);
+	LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd); 
 #endif
 
 	CHP *chp = &(doc->prop.chp);
@@ -106,7 +104,7 @@ int apply_char_property(
 	}
 
 #ifdef DEBUG
-	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
+	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
 #endif
 	return 1;
 }
@@ -116,7 +114,8 @@ int apply_paragraph_property(
 {
 	USHORT ismpd = SprmIspmd(prl->sprm);
 #ifdef DEBUG
-	LOG("ismpd: 0x%04x", ismpd); 
+	BYTE sgc = SprmSgc(prl->sprm);
+	LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd); 
 #endif
 
 	if (ismpd == sprmPIstd){
@@ -189,10 +188,18 @@ int apply_paragraph_property(
 			doc->prop.pap.Itap = *n;
 		else
 			doc->prop.pap.Itap = 0;
+
+		return 0;
 	}
 
+	// spacing between lines
+	if (ismpd == sprmPDyaLine){
+		/* TODO:  spacing */
+		return 0;
+	};
+
 #ifdef DEBUG
-	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
+	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
 #endif
 	return 1;
 }
@@ -202,12 +209,13 @@ int apply_section_property(
 {
 	USHORT ismpd = SprmIspmd(prl->sprm);
 #ifdef DEBUG
-	LOG("ismpd: 0x%04x", ismpd); 
+	BYTE sgc = SprmSgc(prl->sprm);
+	LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd); 
 #endif
 
 
 #ifdef DEBUG
-	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
+	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
 #endif
 	return 1;
 }
@@ -217,7 +225,8 @@ int apply_table_property(
 {
 	USHORT ismpd = SprmIspmd(prl->sprm);
 #ifdef DEBUG
-	LOG("ismpd: 0x%04x", ismpd); 
+	BYTE sgc = SprmSgc(prl->sprm);
+	LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd); 
 #endif
 	
 	// table justification
@@ -326,6 +335,126 @@ int apply_table_property(
 		return 0;
 	}
 
+	// table cell borders
+	if (ismpd == sprmTSetBrc||
+			ismpd == sprmTSetBrc80)
+	{
+#ifdef DEBUG
+	LOG("Table Cell Borders, ismpd: 0x%02x", ismpd); 
+#endif
+		struct TableBrc80Operand *n = 
+			(struct TableBrc80Operand *)prl->operand;
+
+		if (
+				n->brc.brcType != 0xFF &&
+				n->brc.brcType )
+		{
+				doc->prop.tcp.bordT = fFalse;
+				doc->prop.tcp.bordL = fFalse;
+				doc->prop.tcp.bordB = fFalse;
+				doc->prop.tcp.bordR = fFalse;
+				
+				if ((n->bordersToApply & BordersToApplyTop) ==
+						BordersToApplyTop)
+					doc->prop.tcp.bordT = fTrue;
+
+				if ((n->bordersToApply & BordersToApplyLeft) ==
+						BordersToApplyLeft)
+					doc->prop.tcp.bordL = fTrue;
+				
+				if ((n->bordersToApply & BordersToApplyBottom) ==
+						BordersToApplyBottom)
+					doc->prop.tcp.bordB = fTrue;
+
+				if ((n->bordersToApply & BordersToApplyRight) ==
+						BordersToApplyRight)
+					doc->prop.tcp.bordR = fTrue;
+		}
+		
+		return 0;
+	}
+
+
+	if (ismpd == sprmTCellBrcType){
+#ifdef DEBUG
+	LOG("Table Cell Borders: sprmTCellBrcType"); 
+#endif
+		struct TCellBrcTypeOperand *n = 
+			(struct TCellBrcTypeOperand *)prl->operand;
+		
+		int cells = n->cb / 4; 
+		int i;
+		for (i = 0; i < cells; ++i) {
+			/* TODO: handle cells */	
+			if (n->rgBrcType[i])
+					doc->prop.tcp.bordT = fTrue;
+			if (n->rgBrcType[i+1])
+					doc->prop.tcp.bordL = fTrue;
+			if (n->rgBrcType[i+2])
+					doc->prop.tcp.bordB = fTrue;
+			if (n->rgBrcType[i+3])
+					doc->prop.tcp.bordR = fTrue;
+		}
+
+		return 0;
+	};
+
+	if (ismpd == sprmTCellBrcTopStyle)
+	{
+#ifdef DEBUG
+	LOG("Table Cell Borders: sprmTCellBrcTopStyle"); 
+#endif
+		struct BrcOperand *n = 
+			(struct BrcOperand *)prl->operand;
+		
+			if (n->brc.brcType)
+					doc->prop.tcp.bordT = fTrue;
+
+		return 0;
+	};
+
+	if (ismpd == sprmTCellBrcBottomStyle)
+	{
+#ifdef DEBUG
+	LOG("Table Cell Borders: sprmTCellBrcBottomStyle"); 
+#endif
+		struct BrcOperand *n = 
+			(struct BrcOperand *)prl->operand;
+		
+			if (n->brc.brcType)
+					doc->prop.tcp.bordB = fTrue;
+
+		return 0;
+	};
+
+	if (ismpd == sprmTCellBrcLeftStyle)
+	{
+#ifdef DEBUG
+	LOG("Table Cell Borders: sprmTCellBrcLeftStyle"); 
+#endif
+		struct BrcOperand *n = 
+			(struct BrcOperand *)prl->operand;
+		
+			if (n->brc.brcType)
+					doc->prop.tcp.bordL = fTrue;
+
+		return 0;
+	};
+
+	if (ismpd == sprmTCellBrcRightStyle)
+	{
+#ifdef DEBUG
+	LOG("Table Cell Borders: sprmTCellBrcRightStyle"); 
+#endif
+		struct BrcOperand *n = 
+			(struct BrcOperand *)prl->operand;
+		
+			if (n->brc.brcType)
+					doc->prop.tcp.bordR = fTrue;
+
+		return 0;
+	};
+
 	// table defaults
 	if (ismpd == sprmTDefTable){
 #ifdef DEBUG
@@ -334,17 +463,44 @@ int apply_table_property(
 #endif
 		struct TDefTableOperand *t = TDefTableOperandInit(prl);	
 		if (t){
+			struct TC80 *rgTc80 = 
+				(struct TC80 *)t->rgTc80;
 			doc->prop.trp.ncellx = t->NumberOfColumns;
 			XAS *axas = (SHORT *)(t->rgdxaCenter);
 			// first cell left indent = axas[0];
 			/*! TODO: first cell left indent */
 			int i;
-			for (i = 1; i < t->NumberOfColumns+1; ++i) {
-				XAS xas = axas[i];
+			for (i = 0; i < t->NumberOfColumns; ++i) {
+				XAS xas = axas[i+1];
+				doc->prop.trp.cellx[i] = xas;
+
+				// set borders
+				bool bT = fFalse;
+				bool bL = fFalse;
+				bool bB= fFalse;
+				bool bR = fFalse;
+				if (t->rgTc80){	
+					if (rgTc80[i].brcTop.brcType != 0xFF &&
+					    rgTc80[i].brcTop.brcType > 0)
+						bT = fTrue;
+					if (rgTc80[i].brcLeft.brcType != 0xFF &&
+					    rgTc80[i].brcLeft.brcType > 0)
+						bL = fTrue;
+					if (rgTc80[i].brcBottom.brcType != 0xFF &&
+					    rgTc80[i].brcBottom.brcType > 0)
+						bB = fTrue;
+					if (rgTc80[i].brcRight.brcType != 0xFF &&
+					    rgTc80[i].brcRight.brcType > 0)
+						bR = fTrue;
+				}
+				doc->prop.trp.cbordT[i] = bT;
+				doc->prop.trp.cbordL[i] = bL;
+				doc->prop.trp.cbordB[i] = bB;
+				doc->prop.trp.cbordR[i] = bR;
+
 #ifdef DEBUG
-	LOG("Column %d has XAS: %d", i-1, xas); 
+	LOG("Column %d has XAS: %d, borders: %d:%d:%d:%d", i-1, xas, bT, bL, bB, bR); 
 #endif
-				doc->prop.trp.cellx[i-1] = xas;
 			}
 		}
 		
@@ -353,7 +509,7 @@ int apply_table_property(
 
 
 #ifdef DEBUG
-	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
+	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
 #endif
 	return 1;
 }
@@ -363,12 +519,12 @@ int apply_picture_property(
 {
 	USHORT ismpd = SprmIspmd(prl->sprm);
 #ifdef DEBUG
-	LOG("ismpd: 0x%04x", ismpd); 
+	LOG("ismpd: 0x%02x", ismpd); 
 #endif
 
 
 #ifdef DEBUG
-	LOG("no rule to parse ismpd: 0x%04x", ismpd); 
+	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
 #endif
 	return 1;
 }

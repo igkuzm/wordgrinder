@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 18.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -96,6 +96,14 @@ static void flushrow(struct undoc_t *t, TRP *trp){
 }
 
 static void flushcell(struct undoc_t *t, TCP *tcp, TRP *trp){
+	if (
+			trp->cbordB[t->cell] ||
+			trp->cbordL[t->cell] ||
+			trp->cbordR[t->cell] ||
+			trp->cbordT[t->cell]
+		 )
+		t->bordered = true;
+
 	if (
 			tcp->bordB ||
 			tcp->bordL ||

@@ -2,7 +2,7 @@
  * File              : operands.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 16.07.2024
+ * Last Modified Date: 18.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -12,6 +12,9 @@
 #include "doc.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* The ToggleOperand structure is an operand to an SPRM
  * whose spra is 0 and whose sgc is 2. It
@@ -623,6 +626,42 @@ struct TableBordersOperand80 {
  * to 31680. */
 typedef SHORT XAS;
 
+/* 2.9.313 TC80
+ * The TC80 structure specifies the border and other
+ * formatting for a single cell in a table.*/
+struct TC80 {
+	SHORT tcgrf;      //(2 bytes): A TCGRF that specifies
+										//table cell formatting
+	SHORT wWidth;     //(2 bytes): An integer that specifies
+										//the preferred width of the cell. The
+										//width includes cell margins, but does
+										//not include cell spacing. This value
+										//MUST be a non-negative number. The
+										//unit of measurement depends on
+										//tcgrf.ftsWidth. If tcgrf.ftsWidth is
+										//set to ftsPercent, the value is a
+										//fraction of the width of the entire
+										//table.
+	Brc80MayBeNil brcTop; 
+										//(4 bytes): A Brc80MayBeNil structure
+										//that specifies the border to be used
+										//on the top side of the table cell.
+	Brc80MayBeNil brcLeft;
+										//(4 bytes): A Brc80MayBeNil structure
+										//that specifies the border to be used
+										//on the logical left side of the table
+										//cell.
+	Brc80MayBeNil brcBottom;
+										//(4 bytes): A Brc80MayBeNil that
+										//specifies the border to be used on
+										//the bottom side of the table cell.
+	Brc80MayBeNil brcRight; 
+										//(4 bytes): A Brc80MayBeNil that
+										//specifies the border to be used on
+										//the logical right side of the table
+										//cell.
+};
+
 /* 2.9.321 TDefTableOperand
  * The TDefTableOperand structure is the operand that is
  * used by the sprmTDefTable value. It
@@ -638,7 +677,7 @@ struct TDefTableOperand {
 												//this table. The number MUST be at
 												//least zero, and MUST NOT exceed
 												//63.
-	BYTE *rgdxaCenter;    //(variable): An array of XAS. There
+	BYTE *rgdxaCenter;    //(variable): An array of cAS. There
 												//MUST be exactly one XAS value in
 												//this array for every column
 												//specified in NumberOfColumns,
@@ -682,9 +721,177 @@ TDefTableOperandInit(struct Prl *prl)
 	t->cb = *(USHORT *)(prl->operand);
 	t->NumberOfColumns = *(&(prl->operand[2]));
 	t->rgdxaCenter = &(prl->operand[3]);
-	t->rgTc80 = &(prl->operand[3 + t->NumberOfColumns * 2 + 2]);
+	t->rgTc80 = NULL;
 
+	if (t->NumberOfColumns > 0){
+		int size = t->cb - ((t->NumberOfColumns + 1)*2) - 1; 
+		int len  = t->NumberOfColumns * sizeof(struct TC80);
+		t->rgTc80 = MALLOC(len, return t);
+		memset(t->rgTc80, 0xFF, len);
+		int i;
+		for (i=0; i < size; i++){
+			t->rgTc80[i] = 
+				prl->operand[3 + t->NumberOfColumns * 2 + 2 + i];
+		}
+	}
 	return t;
+};
+
+static void 
+TDefTableOperandFree(struct TDefTableOperand *t)
+{
+	if (t){
+		if (t->rgTc80)
+			free(t->rgTc80);
+		free(t);
+	}
+}
+
+enum BordersToApply {
+	BordersToApplyTop    = 0x01, //Top border.
+	BordersToApplyLeft   = 0x02, //Logical left border.
+	BordersToApplyBottom = 0x04, //Bottom border.
+	BordersToApplyRight  = 0x08, //Logical right border.
+	BordersToApplyiTLBR  = 0x10, //Border line from top left
+															 //to bottom right.
+	BordersToApplyTRBL   = 0x20, //Border line from top right
+															 //to bottom left.
+};
+
+/* 2.9.305 TableBrcOperand
+ * The TableBrcOperand structure is an operand that
+ * specifies borders for a range of cells in a table
+ * row */
+struct TableBrcOperand {
+	BYTE cb;             //(1 byte): An unsigned 
+											 //integer that
+											 //specifies the size, in bytes, of
+											 //the remainder of this structure.
+											 //This value MUST be 11.
+	struct ItcFirstLim itc;
+											 //(2 bytes): An ItcFirstLim
+											 //structure that specifies the range
+											 //of cell columns to which the
+											 //border type format is applied.
+	BYTE bordersToApply; //(1 byte): An unsigned integer that
+											 //specifies which borders are
+											 //affected. The value MUST be the
+											 //result of the bitwise OR of any
+											 //subset of the following values
+											 //that specifies an edge to be
+											 //formatted:
+											 //0x01: Top border.
+											 //0x02: Logical left border.
+											 //0x04: Bottom border.
+											 //0x08: Logical right border.
+											 //0x10: Border line from top left to
+											 //bottom right.
+											 //0x20: Border line from top right
+											 //to bottom left.
+	Brc80MayBeNil brc;   //(8 bytes): A BrcMayBeNil structure
+											 //that specifies the border type
+											 //that is applied to the edges
+											 //which are indicated by
+											 //bordersToApply.
+};
+
+/* 2.9.304 TableBrc80Operand
+ * The TableBrc80Operand structure is an operand that
+ * specifies borders for a range of cells in a table
+ * row. */
+struct TableBrc80Operand {
+	BYTE cb;             //(1 byte): An unsigned integer that
+											 //specifies the size, in bytes, of
+											 //the remainder of this structure.
+											 //The value MUST be 7.
+	struct ItcFirstLim itc; 
+											//(2 bytes): An ItcFirstLim structure
+											//that specifies the range of cell
+											//columns to apply the border
+											//type format.
+	BYTE bordersToApply;//(1 byte): An unsigned integer that
+											//specifies which borders are
+											//affected. The value
+											//MUST be the result of the bitwise
+											//OR of any subset of the following
+											//values that specifies an edge
+											//to be formatted:
+											//0x01: Top border.
+											//0x02: Logical left border.
+											//0x04: Bottom border.
+											//0x08: Logical right border.
+	Brc80MayBeNil brc;  //(4 bytes): A Brc80MayBeNil
+											//structure that specifies the border
+											//type that is applied to the edges
+											//which are indicated by
+											//bordersToApply.
+};
+
+/* 2.9.314 TCellBrcTypeOperand
+ * A TCellBrcTypeOperand structure specifies an array of
+ * border types for table cells. */
+struct TCellBrcTypeOperand {
+	BYTE cb;            //(1 byte): cb (1 byte): An unsigned
+											//integer that specifies the size, in
+											//bytes, of rgBrcType. This
+											//value MUST be evenly divisible by
+											//four.
+	BYTE rgBrcType[];   //(variable): An array of BrcType
+											//that specifies border types for a
+											//set of table cells. Each
+											//cell corresponds to four bytes.
+											//Every four bytes specify the border
+											//types of the top, left, bottom
+											//and right borders, in that order.
+};
+
+/* 2.9.21 BrcOperand
+ * The BrcOperand structure is the operand to several
+ * SPRMs that control borders.*/
+struct BrcOperand {
+	BYTE cb;            //(1 byte): An unsigned integer value
+											//that specifies the size of this
+											//BrcOperand, not including this
+											//byte. The cb MUST be 8.
+	struct Brc brc;     //(8 bytes): A BRC that specifies the
+											//border to be applied.
+};
+
+/* 2.9.146 LSPD
+ * The LSPD structure specifies the spacing between lines
+ * in a paragraph. */
+struct LSPD {
+	SHORT dyaLine;     //(16 bits): An integer that specifies
+										 //the spacing between lines, based on
+										 //the following rules:
+										 //dyaLine MUST either be between
+										 //0x0000 and 0x7BC0 or between 0x8440
+										 //and 0xFFFF.
+										 //When dyaLine is between 0x8440 and
+										 //0xFFFF, the line spacing, in twips,
+										 //is exactly 0x10000 minus dyaLine.
+										 //When fMultLinespace is 0x0001 and
+										 //dyaLine is between 0x0000 and
+										 //0x7BC0, a spacing
+										 //multiplier is used to determine line
+										 //spacing for this paragraph. The
+										 //spacing multiplier is
+										 //dyaLine/240. For example, a spacing
+										 //multiplier value of 1 specifies
+										 //single spacing; a spacing multiplier
+										 //value of 2 specifies double spacing;
+										 //and so on. The actual line spacing,
+										 //in twips, is the spacing multiplier
+										 //times the font size, in twips
+										 //When fMultLinespace is 0x0000 and
+										 //dyaLine is between 0x0000 and
+										 //0x7BC0, the line spacing, in twips,
+										 //is dyaLine or the number of twips
+										 //necessary for single spacing,
+										 //whichever value isgreater.
+	SHORT fMultLinespace; 
+										//(16 bits): An integer which MUST be
+										//either 0x0000 or 0x0001.
 };
 
 #endif /* ifndef OPERANDS_H */

@@ -2,7 +2,7 @@
  * File              : mswordtype.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 17.01.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 18.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -150,9 +150,9 @@ typedef	enum tbc_alignment {
 /* table row properties */
 typedef struct tbr_prop {
 	JUST just;
-	int  trgaph[32];  // space bitwin cells
+	int  trgaph[64];  // space bitwin cells
 	int  ntrgaph;     // number of items in trgaph
-	int  cellx[32];   // size of cell (right boundary)
+	int  cellx[64];   // size of cell (right boundary)
 	int  ncellx;      // number of items in cellx
 	int  trrh;        // table row height
 	int  trleft;      // Position of the leftmost edge of the 
@@ -164,6 +164,11 @@ typedef struct tbr_prop {
 	char bordR;       // border right
 	char bordH;       // border Horizontal
 	char bordV;       // border Vertical
+	
+	char cbordT[64];  // cells border top 
+	char cbordB[64];  // cells border bottom
+	char cbordL[64];  // cells border left
+	char cbordR[64];  // cells border right
 	
 	char header;      // this row is header
 	char keep;        // keep this row from pagebreak

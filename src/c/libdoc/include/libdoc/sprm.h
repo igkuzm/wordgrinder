@@ -231,7 +231,12 @@ enum {
 	sprmPDxaLeft80          = 0x0F,
 	sprmPNest80             = 0x10,
 	sprmPDxaLeft180         = 0x11,
-	sprmPDyaLine            = 0x12,
+	sprmPDyaLine            = 0x12, //An LSPD value that
+																	//specifies the spacing
+																	//between lines in this
+																	//paragraph. By default,
+																	//paragraphs use single
+																	//spacing
 	sprmPDyaBefore          = 0x13, //0x13 A two-byte unsigned
 																	//integer value that
 																	//specifies the size, in
@@ -517,7 +522,24 @@ enum {
 																	 //By default, table rows
 																	 //have no borders
 	sprmTDyaRowHeight        = 0x07,
-	sprmTDefTable            = 0x08,
+	sprmTDefTable            = 0x08, //A TDefTableOperand
+																	 //value that specifies
+																	 //the number of columns
+																	 //in the
+																	 //table row, the width
+																	 //of each column, border
+																	 //attributes, and a
+																	 //variety of
+																	 //other settings.
+																	 //By default, a table
+																	 //row has zero columns.
+																	 //In order for a table
+																	 //to have
+																	 //columns, the file MUST
+																	 //provide a
+																	 //sprmTDefTable or a
+																	 //sprmTInsert for each
+																	 //table row.
 	sprmTDefTableShd80       = 0x09,
 	sprmTTlp                 = 0x0A,
 	sprmTFBiDi               = 0x0B,
@@ -549,7 +571,13 @@ enum {
 	sprmTBrcRightCv          = 0x1D,
 	sprmTDxaFromTextRight    = 0x1E,
 	sprmTDyaFromTextBottom   = 0x1F,
-	sprmTSetBrc80            = 0x20,
+	sprmTSetBrc80            = 0x20, //A TableBrc80Operand
+																	 //value that specifies
+																	 //the borders of a set of
+																	 //cells in
+																	 //the table row. By
+																	 //default, cells have no
+																	 //borders
 	sprmTInsert              = 0x21,
 	sprmTDelete              = 0x22,
 	sprmTDxaCol              = 0x23,
@@ -560,7 +588,15 @@ enum {
 	sprmTVertAlign           = 0x2C,
 	sprmTSetShd              = 0x2D,
 	sprmTSetShdOdd           = 0x2E,
-	sprmTSetBrc              = 0x2F,
+	sprmTSetBrc              = 0x2F, //A TableBrcOperand value
+																	 //that specifies the
+																	 //border type of a set of
+																	 //cells in
+																	 //a table row. By
+																	 //default, the border
+																	 //type is inherited from
+																	 //the table border
+																	 //properties
 	sprmTCellPadding         = 0x32,
 
 	sprmTCellSpacingDefault  = 0x33, //0x33 A CSSAOperand
@@ -600,7 +636,18 @@ enum {
 	sprmTCellFHideMark       = 0x42,
 	sprmTSetShdTable         = 0x60,
 	sprmTWidthIndent         = 0x61,
-	sprmTCellBrcType         = 0x62,
+	sprmTCellBrcType         = 0x62, //A TCellBrcTypeOperand
+																	 //value that specifies
+																	 //the border type for
+																	 //the first
+																	 //several consecutive
+																	 //cells in a table row.
+																	 //By default, the border
+																	 //type is
+																	 //inherited from the
+																	 //table style of the
+																	 //whole table.
+																	 //
 	sprmTFBiDi90             = 0x64,
 	sprmTFNoAllowOverlap     = 0x65,
 	sprmTFCantSplit          = 0x66,
@@ -614,10 +661,56 @@ enum {
 	sprmTRsid                = 0x79,
 	sprmTCellVertAlignStyle  = 0x7C,
 	sprmTCellNoWrapStyle     = 0x7D,
-	sprmTCellBrcTopStyle     = 0x7F,
-	sprmTCellBrcBottomStyle  = 0x80,
-	sprmTCellBrcLeftStyle    = 0x81,
-	sprmTCellBrcRightStyle   = 0x82,
+	sprmTCellBrcTopStyle     = 0x7F, //A BrcOperand value
+																	 //that specifies the top
+																	 //border for cells that
+																	 //are affected
+																	 //by a CNFOperand value.
+																	 //This Sprm MUST NOT
+																	 //appear outside of the
+																	 //grpprl array of a
+																	 //CNFOperand value. By
+																	 //default, cells have no
+																	 //top border.
+	sprmTCellBrcBottomStyle  = 0x80, //A BrcOperand value
+																	 //that specifies the
+																	 //bottom border for
+																	 //cells that are
+																	 //affected by a
+																	 //CNFOperand value. This
+																	 //Sprm MUST NOT appear
+																	 //outside of
+																	 //the grpprl array of a
+																	 //CNFOperand. By
+																	 //default, cells have no
+																	 //bottom
+																	 //border
+	sprmTCellBrcLeftStyle    = 0x81, //A BrcOperand value
+																	 //that specifies the
+																	 //logical left border
+																	 //for cells that are
+																	 //affected by a
+																	 //CNFOperand value. This
+																	 //Sprm MUST NOT appear
+																	 //outside of
+																	 //the grpprl array of a
+																	 //CNFOperand. By
+																	 //default, cells have no
+																	 //logical left
+																	 //border
+	sprmTCellBrcRightStyle   = 0x82, //A BrcOperand value
+																	 //that specifies the
+																	 //logical right border
+																	 //for cells that
+																	 //are affected by a
+																	 //CNFOperand value. This
+																	 //Sprm MUST NOT appear
+																	 //outside
+																	 //of the grpprl array of
+																	 //a CNFOperand. By
+																	 //default, cells have no
+																	 //logical
+																	 //right border
 	sprmTCellBrcInsideHStyle = 0x83,
 	sprmTCellBrcInsideVStyle = 0x84,
 	sprmTCellBrcTL2BRStyle   = 0x85,
