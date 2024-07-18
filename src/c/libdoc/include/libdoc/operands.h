@@ -727,7 +727,9 @@ TDefTableOperandInit(struct Prl *prl)
 		int size = t->cb - ((t->NumberOfColumns + 1)*2) - 1; 
 		int len  = t->NumberOfColumns * sizeof(struct TC80);
 		if (size > sizeof(struct TC80)){
-			t->rgTc80 = MALLOC(len, return t);
+			t->rgTc80 = (BYTE *)malloc(len);
+			if (!t->rgTc80)
+				return t;
 			memset(t->rgTc80, 0xFF, len);
 			int i;
 			for (i=0; i < size; i++){
