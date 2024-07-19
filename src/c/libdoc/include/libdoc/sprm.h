@@ -18,13 +18,155 @@ enum {
 	sprmCFRMarkDel        = 0x00,
 	sprmCFRMarkIns        = 0x01,
 	sprmCFFldVanish       = 0x02,
-	sprmCPicLocation      = 0x03,
+	sprmCPicLocation      = 0x03, //A signed 32-bit integer
+																//that specifies either the
+																//position in the Data
+																//Stream
+																//of a picture or binary
+																//data or the name of an OLE
+																//object storage.
+																//Text with sprmCPicLocation
+																//applied MUST also have
+																//sprmCFSpec applied with
+																//a value of 1. The text
+																//range MUST contain only
+																//characters from the
+																//special
+																//characters specified in
+																//sprmCFSpec.
+																//The value of
+																//sprmCPicLocation is
+																//evaluated for each
+																//character in the text
+																//range. The value is
+																//evaluated differently
+																//depending on the character
+																//code, as
+																//shown following:
+																//If the character is
+																//U+0001:
+																// The operand of
+																//sprmCPicLocation is a
+																//position in the
+																//DataStream. If
+																//sprmCFData is also present
+																//and set to 1, the value
+																//specifies the position
+																//of a NilPICFAndBinData and
+																//describes binary data;
+																//otherwise the
+																//value specifies the
+																//position of a
+																//PICFAndOfficeArtData and
+																//describes a
+																//picture.
+																//If the character is
+																//U+0014:
+																// If sprmCFOle2 is also
+																//present and set to "true"
+																//and the associated field
+																//does not have
+																//grffldEnd.fZombieEmbed
+																//set, the operand of
+																//sprmCPicLocation specifies
+																//the location of an OLE
+																//object storage. If the
+																//file is not encrypted with
+																//Office Binary Document RC4
+																//CryptoAPI
+																//Encryption (section
+																//2.2.6.3), the value
+																//specifies the name of an
+																//OLE
+																//object storage in the
+																//ObjectPool of the
+																//document.
+																//Specifically, the decimal
+																//value is converted to a
+																//string, and
+																//prefixed with an
+																//underscore. The resultant
+																//string MUST be the
+																//name of a valid OLE
+																//storage in the ObjectPool
+																//of the
+																//document. If the file is
+																//encrypted with Office
+																//Binary Document
+																//RC4 CryptoAPI Encryption,
+																//the value specifies an
+																//offset in the
+																//data stream which contains
+																//an FOBJH followed by an
+																//OLE
+																//object storage.
+																//When used in this fashion,
+																//the text range on which
+																//sprmCPicLocation is
+																//applied MUST contain
+																//exactly one
+																//character.
+																//If sprmCFOle2 is absent or
+																//set to "false" or the
+																//associated field
+																//has grffldEnd.fZombieEmbed
+																//set, sprmCPicLocation is
+																//unused Release: May 17,
+																//2022
+																//Sprm ispmd operand
+																//and MUST be ignored.
+																//If there is another
+																//character,
+																//sprmCPicLocation MUST be
+																//ignored.
+																//sprmCPicLocation MUST be
+																//present for characters
+																//that indicate a picture,
+																//binary data, or OLE object
+																//storage.
 	sprmCIbstRMark        = 0x04,
 	sprmCDttmRMark        = 0x05,
-	sprmCFData            = 0x06,
+	sprmCFData            = 0x06, //A Bool8 that specifies
+																//whether the picture
+																//character in the text
+																//represents
+																//binary data. If set to
+																//true, the text range
+																//MUST contain exactly 1
+																//character
+																//that is the picture
+																//character (U+0001) and
+																//sprmCPicLocation MUST be
+																//present to specify the
+																//location of the binary
+																//data. By default, a
+																//picture
+																//character specifies a
+																//picture and does not
+																//specify binary data.
 	sprmCIdslRMark        = 0x07,
 	sprmCSymbol           = 0x09,
-	sprmCFOle2            = 0x0A,
+	sprmCFOle2            = 0x0A, //A Bool8 value that
+																//specifies whether the
+																//character is a
+																//placeholder for an
+																//OLE object. When
+																//sprmCFOle2 is true,
+																//sprmCFObj MUST also be
+																//true, and
+																//sprmCPicLocation MUST
+																//also be set with the OLE
+																//storage name. The
+																//character representing
+																//the OLE object MUST be
+																//the field separator
+																//(U+00014) of an EMBED
+																//field (0x3A), LINK field
+																//(0x38), or CONTROL field
+																//(0x57). By default,
+																//characters are not
+																//placeholders for OLE
+																//objects.
 	sprmCHighlight        = 0x0C,
 	sprmCFWebHidden       = 0x11,
 	sprmCRsidProp         = 0x15,
@@ -106,8 +248,70 @@ enum {
 	sprmCCharScale        = 0x52,
 	sprmCFDStrike         = 0x53,
 	sprmCFImprint         = 0x54,
-	sprmCFSpec            = 0x55,
-	sprmCFObj             = 0x56,
+	sprmCFSpec            = 0x55, //A ToggleOperand value that
+																//specifies whether the
+																//current text has a
+																//meaning that differs or
+																//displays differently than
+																//the underlying character
+																//to
+																//which it is applied. This
+																//value SHOULD<146> be
+																//applied only to the
+																//following
+																//characters.
+																//U+0001 - A picture
+																//location that is used in
+																//conjunction with
+																//sprmCPicLocation.
+																//U+0002 - An auto-numbered
+																//footnote reference. See
+																//plcffndRef.
+																//U+0003 - A short
+																//horizontal line.
+																//U+0004 - A long horizontal
+																//line that is the width of
+																//the content area
+																//of the page.
+																//U+0005 - An annotation
+																//reference character. See
+																//PlcfandRef.
+																//U+0008 - A drawn object.
+																//See plcfSpa.
+																//U+0013 - A field begin
+																//character. See Plcfld.
+																//U+0014 - A field separator
+																//character. See Plcfld.
+																//U+0015 - A field end
+																//character. See Plcfld.
+																//U+0028 - A symbol. See
+																//sprmCSymbol.
+																//U+003C - The start of a
+																//structured document tag
+																//bookmark range.
+																//See
+																//FibRgFcLcb2003.fcPlcfBkfSdt.
+																//U+003E - The end of a
+																//structured document tag
+																//bookmark range.
+																//See
+																//FibRgFcLcb2003.fcPlcfBklSdt.
+																//U+2002 - An en space.
+																//U+2003 - An em space.
+																//By default, characters
+																//have no special meaning
+																//beyond their underlying
+																//glyph.
+	sprmCFObj             = 0x56, //A Bool8 value that
+																//specifies whether the
+																//current text represents
+																//an
+																//embedded object. If
+																//sprmCFObj is "true",
+																//sprmCFOle2 MUST also be
+																//"true".
+																//By default, text is not
+																//an embedded object.
 	sprmCPropRMark90      = 0x57,
 	sprmCFEmboss          = 0x58,
 	sprmCSfxText          = 0x59,
@@ -847,11 +1051,24 @@ enum {
  * A Prl with a sprm.sgc of 3 modifies a picture
  * property.*/
 enum {
-	sprmPicBrcTop80    = 0x02,
+	sprmPicBrcTop80    = 0x02, //A Brc80 that specifies the
+														 //top border of the inline
+														 //picture. The Brc80.brcType
+														 //field MUST be less than or
+														 //equal to 0x19. By default,
+														 //inline pictures do not have
+														 //borders
 	sprmPicBrcLeft80   = 0x03,
 	sprmPicBrcBottom80 = 0x04,
 	sprmPicBrcRight80  = 0x05,
-	sprmPicBrcTop      = 0x08,
+	sprmPicBrcTop      = 0x08, //A BrcOperand that specifies
+														 //the top border of the inline
+														 //picture. The
+														 //BrcOperand.Brc.brcType field
+														 //MUST be less than or equal to
+														 //0x1B. By default,
+														 //inline pictures do not have
+														 //borders
 	sprmPicBrcLeft     = 0x09,
 	sprmPicBrcBottom   = 0x0A,
 	sprmPicBrcRight    = 0x0B,

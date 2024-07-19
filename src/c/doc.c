@@ -2,12 +2,13 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 18.07.2024
+ * Last Modified Date: 19.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
 #include "libdoc/include/libdoc.h"
 #include "libdoc/include/libdoc/str.h"
+#include "libdoc/include/mswordtype.h"
 #include <stdio.h>
 
 static int main_document(void *, ldp_t*, int);
@@ -136,6 +137,13 @@ static void flushstyle(struct undoc_t *t, int STY, bool val){
 	lua_call(t->L, 2, 0);
 }
 
+static void flusinlinepicture(struct undoc_t *t, CHP *chp){
+	fprintf(stderr, "sprmFSpec: %d\n", chp->sprmCFSpec);
+	fprintf(stderr, "sprmFData: %d\n", chp->sprmCFData);
+	fprintf(stderr, "sprmFOle2: %d\n", chp->sprmCFOle2);
+	fprintf(stderr, "sprmFObj: %d\n", chp->sprmCFObj);
+}
+
 int main_document(void *d, ldp_t *p, int ch){
 	struct undoc_t *t = d;
 
@@ -161,14 +169,30 @@ int main_document(void *d, ldp_t *p, int ch){
 			return 0;
 		
 		case HORIZONTALTAB:      c= '\t' ; break;
-		case HYPERLINK_START:    c= ' '  ; break;
-		case HYPERLINK_SEPARATE: c= ' '  ; break;
-		case HYPERLINK_END:      c= ' '  ; break;
+		case HYPERLINK_START:
+			c= ' ';
+			fprintf(stderr, "HYPERLINK_START\n"); 
+			break;
+		case HYPERLINK_SEPARATE:
+			c= ' ';
+			fprintf(stderr, "HYPERLINK_SEPARATE\n"); 
+			break;
+		case HYPERLINK_END:
+			c= ' ';
+			fprintf(stderr, "HYPERLINK_END\n"); 
+			break;
 		case PAGEBREAK:          c= ch   ; break;
 		case SOFT_HYPEN:
 		case HYPHEN:             c= '-'  ; break;
 		case INLINE_PICTURE:
-		case FLOATING_PICTURE:   c= ' '  ; break;
+			c= ' ';
+			fprintf(stderr, "INLINE_PICTURE\n"); 
+			flusinlinepicture(t, &p->chp);
+			break;
+		case FLOATING_PICTURE:   
+			c= ' ';
+			fprintf(stderr, "FLOATING_PICTURE\n"); 
+			break;
 		
 		default: break;	
 	}

@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 18.07.2024
+ * Last Modified Date: 19.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -102,6 +102,32 @@ int apply_char_property(
 			ToggleOperand(doc, prl->operand[0]); 
 		return 0;
 	}
+
+	// special chars 
+	if (ismpd == sprmCFSpec){
+		SHORT *t = (SHORT *)prl->operand;
+		doc->prop.chp.sprmCFSpec = *t;
+		return 0;
+	}
+
+	if (ismpd == sprmCFOle2){
+		BYTE *n = prl->operand;
+		doc->prop.chp.sprmCFOle2 = *n;
+		return 0;
+	}
+	
+	if (ismpd == sprmCFObj){
+		BYTE *n = prl->operand;
+		doc->prop.chp.sprmCFObj = *n;
+		return 0;
+	}
+
+	if (ismpd == sprmCFData){
+		BYTE *n = prl->operand;
+		doc->prop.chp.sprmCFData = *n;
+		return 0;
+	}
+
 
 #ifdef DEBUG
 	LOG("no rule to parse ismpd: 0x%02x", ismpd); 
@@ -498,11 +524,13 @@ int apply_table_property(
 				doc->prop.trp.cbordB[i] = bB;
 				doc->prop.trp.cbordR[i] = bR;
 
+			TDefTableOperandFree(t);
 #ifdef DEBUG
 	LOG("Column %d has XAS: %d, borders: %d:%d:%d:%d", i-1, xas, bT, bL, bB, bR); 
 #endif
 			}
 		}
+
 		
 		return 0;
 	}
@@ -521,6 +549,78 @@ int apply_picture_property(
 #ifdef DEBUG
 	LOG("ismpd: 0x%02x", ismpd); 
 #endif
+	
+	if (
+			ismpd == sprmPicBrcTop80 ||
+			ismpd == sprmPicBrcLeft80 ||
+			ismpd == sprmPicBrcBottom80 ||
+			ismpd == sprmPicBrcRight80
+			)
+	{
+		/* TODO: set no borders as default */
+		
+		struct Brc80 *t =
+			(struct Brc80 *)prl->operand;
+
+		if (t->brcType != 0xFF && t->brcType){
+			switch (ismpd) {
+				case sprmPicBrcTop80:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcLeft80:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcBottom80:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcRight80:
+					/* TODO: set borders */
+					break;
+
+				default:
+					break;
+			
+			}
+		}
+
+		return 0;
+	}
+	
+	if (
+			ismpd == sprmPicBrcTop ||
+			ismpd == sprmPicBrcLeft ||
+			ismpd == sprmPicBrcBottom ||
+			ismpd == sprmPicBrcRight
+			)
+	{
+		/* TODO: set no borders as default */
+
+		struct BrcOperand *t =
+			(struct BrcOperand *)prl->operand;
+
+		if (t->brc.brcType){
+			switch (ismpd) {
+				case sprmPicBrcTop:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcLeft:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcBottom:
+					/* TODO: set borders */
+					break;
+				case sprmPicBrcRight:
+					/* TODO: set borders */
+					break;
+
+				default:
+					break;
+			
+			}
+		}
+
+		return 0;
+	}
 
 
 #ifdef DEBUG
