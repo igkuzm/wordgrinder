@@ -2,7 +2,7 @@
  * File              : doc_parse.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 20.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc.h"
@@ -71,6 +71,8 @@ int doc_parse(const char *filename, void *user_data,
 	ret = doc_read(&doc, &cfb);
 	if (ret)
 		return ret;
+
+	doc.prop.data = &doc;
 
 	FibRgFcLcb97 *rgFcLcb97 = (FibRgFcLcb97 *)(doc.fib.rgFcLcb);
 

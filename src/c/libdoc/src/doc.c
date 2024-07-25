@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 29.05.2024
+ * Last Modified Date: 25.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -62,7 +62,7 @@ static int _doc_fib_init(Fib *fib, FILE *fp, struct cfb *cfb){
 	fib->rgCswNew = NULL;
 
 	//allocate fibbase
-	fib->base = (FibBase *)MALLOC(32,
+	fib->base = (FibBase *)ALLOC(32,
 		ERR("malloc");
 		return DOC_ERR_ALLOC);
 
@@ -122,7 +122,7 @@ static int _doc_fib_init(Fib *fib, FILE *fp, struct cfb *cfb){
 	}
 
 	//allocate FibRgW97
-	fib->rgW97 = (FibRgW97 *)MALLOC(28,
+	fib->rgW97 = (FibRgW97 *)ALLOC(28,
 		ERR("malloc");
 		free(fib->base);
 		return DOC_ERR_ALLOC);
@@ -167,7 +167,7 @@ static int _doc_fib_init(Fib *fib, FILE *fp, struct cfb *cfb){
 	}	
 
 	//allocate FibRgLw97
-	fib->rgLw97 = (FibRgLw97 *)MALLOC(88,
+	fib->rgLw97 = (FibRgLw97 *)ALLOC(88,
 		ERR("malloc");
 		free(fib->base);
 		free(fib->rgW97);
@@ -219,7 +219,7 @@ static int _doc_fib_init(Fib *fib, FILE *fp, struct cfb *cfb){
 #endif	
 
 	//allocate rgFcLcb
-	fib->rgFcLcb = (uint32_t *)MALLOC(fib->cbRgFcLcb*8,
+	fib->rgFcLcb = (uint32_t *)ALLOC(fib->cbRgFcLcb*8,
 		ERR("malloc");
 		free(fib->base);
 		free(fib->rgW97);
@@ -268,7 +268,7 @@ static int _doc_fib_init(Fib *fib, FILE *fp, struct cfb *cfb){
 	if (fib->cswNew > 0){
 		//allocate FibRgCswNew
 		fib->rgCswNew = 
-			(FibRgCswNew *)MALLOC(fib->cswNew * 2,
+			(FibRgCswNew *)ALLOC(fib->cswNew * 2,
 		  ERR("malloc");
 			free(fib->base);
 			free(fib->rgW97);
@@ -345,7 +345,7 @@ int _plcpcd_init(struct PlcPcd * PlcPcd, uint32_t len, cfb_doc_t *doc){
 #endif	
 
 	//allocate aCP
-	PlcPcd->aCp = (uint32_t *)MALLOC(4,
+	PlcPcd->aCp = (uint32_t *)ALLOC(4,
 			ERR("malloc");
 			free(PlcPcd);	
 			return -1);
@@ -390,7 +390,7 @@ int _plcpcd_init(struct PlcPcd * PlcPcd, uint32_t len, cfb_doc_t *doc){
 	LOG("number of Pcd in array: %d", PlcPcd->aPcdl);
 #endif	
 	
-	PlcPcd->aPcd = (struct Pcd *)MALLOC(size,
+	PlcPcd->aPcd = (struct Pcd *)ALLOC(size,
 			ERR("malloc");
 			free(PlcPcd->aCp);	
 			free(PlcPcd);	
@@ -514,7 +514,7 @@ static int _clx_init(cfb_doc_t *doc)
 		clx->RgPrc->data->cbGrpprl = cbGrpprl;
 
 		//allocate GrpPrl
-		clx->RgPrc->data->GrpPrl = (struct Prl *)MALLOC(cbGrpprl,
+		clx->RgPrc->data->GrpPrl = (struct Prl *)ALLOC(cbGrpprl,
 				ERR("malloc");
 				return DOC_ERR_ALLOC);
 		
@@ -684,6 +684,9 @@ int doc_read(cfb_doc_t *doc, struct cfb *cfb){
 		return DOC_ERR_FILE;
 	}
 
+	//get Data
+	doc->Data = cfb_get_stream(cfb, (char*)"Data");
+
 	//Read the Clx from the Table Stream
 	ret = _clx_init(doc);
 	if (ret)
@@ -752,6 +755,515 @@ void doc_close(cfb_doc_t *doc)
 			fclose(doc->Table);
 		if (doc->WordDocument)
 			fclose(doc->WordDocument);
+		if (doc->Data)
+			fclose(doc->Data);
 	}
 /* TODO: free memory and close streams */
+}
+
+static void image_from_OfficeArtBlipJPEG(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipJPEG t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipJPEG));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (
+			recInstance != 0x46A && recInstance != 0x6E2 &&
+			recInstance != 0x46B && recInstance != 0x6E3
+			)
+	{
+		ERR("this is not OfficeArtBlipJPEG - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x46B || recInstance == 0x6E3){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.tag, 1, 1, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_jpg;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipTIFF(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipTIFF t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipTIFF));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x6E4 && recInstance != 0x6E5){
+		ERR("this is not OfficeArtBlipTIFF - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x6E5){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.tag, 1, 1, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_tiff;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipDIB(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipDIB t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipDIB));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x7A8 && recInstance != 0x7A9){
+		ERR("this is not OfficeArtBlipDIB - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x7A9){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.tag, 1, 1, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_dbitmap;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipPICT(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipPICT t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipPICT));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x542 && recInstance != 0x543){
+		ERR("this is not OfficeArtBlipPICT - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x543){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.metafileHeader, 1, 34, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_mac;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipWMF(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipWMF t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipWMF));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x216 && recInstance != 0x217){
+		ERR("this is not OfficeArtBlipWMF - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x217){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.metafileHeader, 1, 34, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_wmf;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipEMF(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipEMF t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipEMF));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x3D4 && recInstance != 0x3D5){
+		ERR("this is not OfficeArtBlipEMF - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x3D5){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.metafileHeader, 1, 34, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_wmf;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtBlipPNG(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtBlipPNG t;
+	memset(&t, 0, sizeof(struct OfficeArtBlipPNG));
+
+	t.rh = *rh;
+	fread(t.rgbUid1, 1, 16, fp);
+
+	USHORT recInstance = OfficeArtRecordHeaderRecInstance(rh);
+	if (recInstance != 0x6E0 && recInstance != 0x6E1){
+		ERR("this is not OfficeArtBlipPNG - recInstance not match");
+		return;
+	}
+
+	if (recInstance == 0x6E1){
+		fread(t.rgbUid2, 1, 16, fp);
+	}
+	
+	fread(&t.tag, 1, 1, fp);
+
+	if (rh->recLen){
+		// read BLIP data
+		BYTE BLIPFileData[rh->recLen];
+		fread(&BLIPFileData, rh->recLen, 1, fp);
+		t.BLIPFileData = BLIPFileData;
+
+		// Picture struct
+		struct picture pic;
+		memset(&pic, 0, sizeof(struct picture));
+
+		pic.type = pict_png;
+		pic.data = BLIPFileData;
+		pic.len  = rh->recLen;
+		pic.goalw = picf->picf.picmid.dxaGoal;
+		pic.goalh = picf->picf.picmid.dyaGoal;
+		pic.scalex = picf->picf.picmid.mx;
+		pic.scaley = picf->picf.picmid.my;
+
+		if (callback)
+			callback(&pic, userdata);
+	}
+};
+
+static void image_from_OfficeArtFBSE(
+		FILE *fp, 
+		struct OfficeArtRecordHeader *rh, 
+		struct PICFAndOfficeArtData *picf,
+		void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	struct OfficeArtFBSE t;	
+	memset(&t, 0, sizeof(struct OfficeArtFBSE));
+
+	t.rh = *rh;
+	fread(&t.btWin32, 1, 1,  fp);
+	fread(&t.btMacOS, 1, 1,  fp);
+	fread(t.rgbUid,   1, 16, fp);
+	fread(&t.tag,     2, 1,  fp);
+	fread(&t.size,    4, 1,  fp);
+	fread(&t.cRef,    4, 1,  fp);
+	fread(&t.foDelay, 4, 1,  fp);
+	fread(&t.unused1, 1, 1,  fp);
+	fread(&t.cbName,  1, 1,  fp);
+	fread(&t.unused2, 1, 1,  fp);
+	fread(&t.unused3, 1, 1,  fp);
+	
+	t.nameData = NULL;
+	BYTE nameData[t.cbName + 1];
+	if (t.cbName){
+		fread(nameData, t.cbName, 1, fp);
+		t.nameData = nameData;
+	}
+	
+	// read BLIP header
+	struct OfficeArtRecordHeader header;
+	fread(&header, OfficeArtRecordHeaderSize, 1, fp);
+
+	LOG("OfficeArtBStoreContainerFileBlock with type: 0x%X and len %d",
+			header.recType, header.recLen);
+
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipEMF)
+		return image_from_OfficeArtBlipEMF(
+				fp, &header, picf, userdata, callback);
+
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipWMF)
+		return image_from_OfficeArtBlipWMF(
+				fp, &header, picf, userdata, callback);
+	
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipPICT)
+		return image_from_OfficeArtBlipPICT(
+				fp, &header, picf, userdata, callback);
+
+	if (
+			header.recType == OfficeArtRecTypeOfficeArtBlipJPEG ||
+			header.recType == OfficeArtRecTypeOfficeArtBlipJPEG_
+			)
+		return image_from_OfficeArtBlipJPEG(
+				fp, &header, picf, userdata, callback);
+	
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipPNG)
+		return image_from_OfficeArtBlipPNG(
+				fp, &header, picf, userdata, callback);
+	
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipDIB)
+		return image_from_OfficeArtBlipDIB(
+				fp, &header, picf, userdata, callback);
+	
+	if (header.recType == OfficeArtRecTypeOfficeArtBlipTIFF)
+		return image_from_OfficeArtBlipTIFF(
+				fp, &header, picf, userdata, callback);
+};
+
+void doc_get_inline_picture(
+		int ch, ldp_t *p, void *userdata,
+		void (*callback)(struct picture *pic, void *userdata))
+{
+	cfb_doc_t *doc = p->data;
+	if (ch == INLINE_PICTURE){
+		if (doc->prop.chp.sprmCFData){
+			/* TODO: NilPICFAndBinData */
+		
+		} else {
+			//PICFAndOfficeArtData
+			struct PICFAndOfficeArtData t;
+			memset(&t, 0, 
+					sizeof(struct PICFAndOfficeArtData));
+			
+			// read PICF from stream
+			fseek(doc->Data, 
+					doc->prop.chp.sprmCPicLocation,
+					SEEK_SET);
+			fread(&t, 68, 1, doc->Data);
+	
+			// read PicName if needed
+			if (t.picf.mfpf.mm == MM_SHAPEFILE){
+				fread(&t.cchPicName,
+						1, 1, doc->Data);
+				BYTE stPicName[t.cchPicName + 1];
+				t.stPicName = NULL;
+				if (t.cchPicName > 0){
+					fread(stPicName,
+							t.cchPicName, 1, doc->Data);
+					t.stPicName = stPicName; 
+				}
+			}
+
+			// read SpContainer header
+			struct OfficeArtRecordHeader spHeader;
+			fread(&spHeader,
+					OfficeArtRecordHeaderSize,
+					1, doc->Data);
+
+			if (spHeader.recType != 
+					OfficeArtRecTypeOfficeArtSpContainer)
+			{
+				ERR("This is not OfficeArtSpContainer");
+				return;
+			}
+
+			// skip SpContainer shape data
+			fseek(doc->Data,
+					spHeader.recLen, SEEK_CUR);
+
+			// read OfficeArtBStoreContainerFileBlock header
+			struct OfficeArtRecordHeader rh;
+			fread(&rh,
+					OfficeArtRecordHeaderSize,
+					1, doc->Data);
+
+			LOG("OfficeArtBStoreContainerFileBlock with type: 0x%X and len %d",
+					rh.recType, rh.recLen);
+
+			if (rh.recType == OfficeArtRecTypeOfficeArtFBSE)
+				return image_from_OfficeArtFBSE(
+						doc->Data, &rh, &t, userdata, callback);
+		
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipEMF)
+				return image_from_OfficeArtBlipEMF(
+						doc->Data, &rh, &t, userdata, callback);
+
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipWMF)
+				return image_from_OfficeArtBlipWMF(
+						doc->Data, &rh, &t, userdata, callback);
+			
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipPICT)
+				return image_from_OfficeArtBlipPICT(
+						doc->Data, &rh, &t, userdata, callback);
+			
+			if (
+					rh.recType == OfficeArtRecTypeOfficeArtBlipJPEG ||
+					rh.recType == OfficeArtRecTypeOfficeArtBlipJPEG_
+					)
+				return image_from_OfficeArtBlipJPEG(
+						doc->Data, &rh, &t, userdata, callback);
+
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipPNG)
+				return image_from_OfficeArtBlipPNG(
+						doc->Data, &rh, &t, userdata, callback);
+			
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipDIB)
+				return image_from_OfficeArtBlipDIB(
+						doc->Data, &rh, &t, userdata, callback);
+			
+			if (rh.recType == OfficeArtRecTypeOfficeArtBlipTIFF)
+				return image_from_OfficeArtBlipDIB(
+						doc->Data, &rh, &t, userdata, callback);
+		}	
+	}
 }

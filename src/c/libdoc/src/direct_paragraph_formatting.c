@@ -2,7 +2,7 @@
  * File              : direct_paragraph_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 24.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 */
 
@@ -95,7 +95,7 @@ void direct_paragraph_formatting(
 		size += 2*cb_; 
 	}
 
-	struct GrpPrlAndIstd *grpPrlAndIstd = MALLOC(size, 
+	struct GrpPrlAndIstd *grpPrlAndIstd = ALLOC(size, 
 			ERR("malloc"); return);
 	fread(grpPrlAndIstd, size, 1,
 			doc->WordDocument);

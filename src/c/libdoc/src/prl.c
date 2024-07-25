@@ -2,7 +2,7 @@
  * File              : prl.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 24.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -76,7 +76,7 @@ static struct Prl * prl_new(MEM *mem)
 			
 	}
 	if (bytes){
-		prl = MALLOC(bytes + sizeof(sprm) + alloc, 
+		prl = ALLOC(bytes + sizeof(sprm) + alloc, 
 				ERR("malloc"); return NULL);
 		prl->sprm = sprm;
 		memread(prl->operand, bytes, 1, mem);

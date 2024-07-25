@@ -2,13 +2,15 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 19.07.2024
+ * Last Modified Date: 25.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
 #include "libdoc/include/libdoc.h"
 #include "libdoc/include/libdoc/str.h"
 #include "libdoc/include/mswordtype.h"
+#include "images/stb_image_write.h"
+#include "images/stb_image.h"
 #include <stdio.h>
 
 static int main_document(void *, ldp_t*, int);
@@ -137,11 +139,42 @@ static void flushstyle(struct undoc_t *t, int STY, bool val){
 	lua_call(t->L, 2, 0);
 }
 
-static void flusinlinepicture(struct undoc_t *t, CHP *chp){
-	fprintf(stderr, "sprmFSpec: %d\n", chp->sprmCFSpec);
-	fprintf(stderr, "sprmFData: %d\n", chp->sprmCFData);
-	fprintf(stderr, "sprmFOle2: %d\n", chp->sprmCFOle2);
-	fprintf(stderr, "sprmFObj: %d\n", chp->sprmCFObj);
+static void picture_callback(struct picture *pict, void *data)
+{
+	struct undoc_t *t = data;
+	flushstring(t);
+
+	// get image data
+	int x, y, c;
+  stbi_uc *image = 
+		stbi_load_from_memory(pict->data, pict->len,
+			 	&x, &y, 
+				&c, 0);
+
+	if (!image)
+		return;
+		
+	lua_pushvalue(t->L, 7);
+	lua_pushstring(t->L, "P");
+	lua_call(t->L, 1, 1);
+	
+	size_t size;
+	const char* filename = 
+		luaL_checklstring(t->L, -1, &size);
+
+	if (filename){
+		stbi_write_jpg(filename, x, y,
+			 	c, image, 90);
+		stbi_image_free(image);
+	}
+}
+
+static void flusinlinepicture(struct undoc_t *t, ldp_t *p){
+	doc_get_inline_picture(
+			INLINE_PICTURE, 
+			p, 
+			t, 
+			picture_callback);
 }
 
 int main_document(void *d, ldp_t *p, int ch){
@@ -187,7 +220,7 @@ int main_document(void *d, ldp_t *p, int ch){
 		case INLINE_PICTURE:
 			c= ' ';
 			fprintf(stderr, "INLINE_PICTURE\n"); 
-			flusinlinepicture(t, &p->chp);
+			flusinlinepicture(t, p);
 			break;
 		case FLOATING_PICTURE:   
 			c= ' ';

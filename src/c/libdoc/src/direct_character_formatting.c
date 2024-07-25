@@ -2,7 +2,7 @@
  * File              : direct_character_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 20.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -17,6 +17,7 @@
 
 static void set_to_default(cfb_doc_t *doc){
 	CHP *chp = &(doc->prop.chp);
+	memset(chp, 0, sizeof(CHP));
 	
 	chp->fBold      = doc->prop.pap_chp.fBold;
 	chp->fUnderline = doc->prop.pap_chp.fUnderline;

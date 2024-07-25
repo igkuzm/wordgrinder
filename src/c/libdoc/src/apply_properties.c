@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 19.07.2024
+ * Last Modified Date: 20.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -105,8 +105,8 @@ int apply_char_property(
 
 	// special chars 
 	if (ismpd == sprmCFSpec){
-		SHORT *t = (SHORT *)prl->operand;
-		doc->prop.chp.sprmCFSpec = *t;
+		doc->prop.chp.sprmCFSpec = 
+			ToggleOperand(doc, prl->operand[0]); 
 		return 0;
 	}
 
@@ -127,6 +127,14 @@ int apply_char_property(
 		doc->prop.chp.sprmCFData = *n;
 		return 0;
 	}
+
+	// picture location 
+	if (ismpd == sprmCPicLocation){
+		LONG *n = (LONG *)prl->operand;
+		doc->prop.chp.sprmCPicLocation = *n; 
+		return 0;
+	}
+
 
 
 #ifdef DEBUG
@@ -524,7 +532,7 @@ int apply_table_property(
 				doc->prop.trp.cbordB[i] = bB;
 				doc->prop.trp.cbordR[i] = bR;
 
-			TDefTableOperandFree(t);
+			//TDefTableOperandFree(t);
 #ifdef DEBUG
 	LOG("Column %d has XAS: %d, borders: %d:%d:%d:%d", i-1, xas, bT, bL, bB, bR); 
 #endif

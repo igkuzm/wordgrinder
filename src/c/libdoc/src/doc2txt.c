@@ -2,7 +2,7 @@
  * File              : doc2txt.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 25.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -35,9 +35,11 @@ int main(int argc, char *argv[])
 	return ret;
 }
 
+static void picture(struct picture *pic, void *d){
+	fprintf(stderr, "PIC len: %d\n", pic->len);
+}
+
 int main_document(void *d, ldp_t *p, int ch){
-	if (!p->chp.fBold)
-		return 0;
 
 /* Following symbols below 32 are allowed inside paragraph:
 0x0002 - footnote mark
@@ -54,6 +56,18 @@ int main_document(void *d, ldp_t *p, int ch){
 */
 
 	switch (ch) {
+		case INLINE_PICTURE:
+			{
+				fprintf(stderr,
+						"INLINE_PICTURE\n");
+				doc_get_inline_picture(
+						ch, 
+						p, 
+						NULL, 
+						picture);
+				printf("%c", ' '); break;
+			}
+			
 		case 0x0D: printf("%c", '\n'); break;
 		case 0x07: printf("%c", '\n'); break;
 		case 0x1E: printf("%c", '-' ); break;
@@ -63,7 +77,7 @@ int main_document(void *d, ldp_t *p, int ch){
 		case 0x0C: printf("%c", ch)  ; break;
 		case 0x1F: printf("%c", 0xAD); break;
 		case 0x0B: printf("%c", 0x0A); break;
-		case 0x08: case 0x01: printf("%c", ' '); break;
+		case 0x08: printf("%c", ' '); break;
 		default: putchar(ch);
 	}
 

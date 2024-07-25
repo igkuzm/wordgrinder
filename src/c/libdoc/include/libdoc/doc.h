@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 18.07.2024
+ * Last Modified Date: 25.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -23,7 +23,7 @@ extern "C"{
 
 #include "../libdoc.h"
 #include "../../ms-cfb/cfb.h"
-#include "../../ms-cfb/alloc.h"
+#include "alloc.h"
 #include "../../ms-cfb/log.h"
 #include "../../ms-cfb/byteorder.h"
 #include "str.h"
@@ -3474,7 +3474,7 @@ static struct PlcBteChpx * plcbteChpx_get(
 		FILE *fp, ULONG offset, ULONG size, int *n)
 {
 	// get PlcBteChpx data
-	BYTE * p = (BYTE *)MALLOC(size,
+	BYTE * p = (BYTE *)ALLOC(size,
 			ERR("malloc"); 
 			exit(ENOMEM)); 
 	fseek(fp, offset, SEEK_SET);
@@ -3545,7 +3545,7 @@ static struct PlcBtePapx * plcbtePapx_get(
 	LOG("start");
 #endif
 	// get PlcBtePapx data
-	BYTE *p = (BYTE *)MALLOC(size,
+	BYTE *p = (BYTE *)ALLOC(size,
 			ERR("malloc"); 
 			exit(ENOMEM)); 
 	fseek(fp, offset, SEEK_SET);
@@ -3706,7 +3706,7 @@ struct PapxFkp {
 static struct PapxFkp * papxFkp_get(
 		FILE *fp, ULONG offset)
 {
-	BYTE *p = (BYTE *)MALLOC(512,
+	BYTE *p = (BYTE *)ALLOC(512,
 			ERR("malloc"); 
 			exit(ENOMEM));
 	fseek(fp, offset, SEEK_SET);
@@ -3797,7 +3797,7 @@ struct ChpxFkp {
 static struct ChpxFkp * chpxFkp_get(
 		FILE *fp, ULONG offset)
 {
-	BYTE *p = (BYTE *)MALLOC(512,
+	BYTE *p = (BYTE *)ALLOC(512,
 			ERR("malloc"); 
 			exit(ENOMEM));
 	fseek(fp, offset, SEEK_SET);
@@ -4389,7 +4389,7 @@ static struct STSH *STSH_get(FILE *fp,
 		return NULL;
 	}
 
-	STSH->lpstshi = (struct LPStshi *)MALLOC(
+	STSH->lpstshi = (struct LPStshi *)ALLOC(
 			cbStshi + 2, 
 			ERR("malloc");
 			exit(ENOMEM));
@@ -4407,7 +4407,7 @@ static struct STSH *STSH_get(FILE *fp,
 	LOG("STSH rglpstd len: %d", *n);
 #endif
 	
-	STSH->rglpstd = (BYTE *)MALLOC(*n, 
+	STSH->rglpstd = (BYTE *)ALLOC(*n, 
 			ERR("malloc");
 			exit(ENOMEM));
 	if (fread(STSH->rglpstd, *n, 1,
@@ -4627,6 +4627,1153 @@ struct StkParaGRLPUPX {
 															//formatting for the style.
 };
 
+/* 2.9.22 BrcType
+ * brcType (8 bits): An unsigned integer that specifies the
+ * type of border. Values that are larger than
+ * 0x1B are not valid unless they describe a page border, in
+ * which case they can be a value in the range
+ * of 0x40 to 0xE3, inclusive.
+ * Values MUST be from the following table. The reference
+ * column specifies for each brcType value the
+ * ST_Border enumeration value in [ECMA-376] part 4, section
+ * 2.18.4, that further specifies the meaning
+ * of the border type. */
+enum BrcType {
+	BrcTypeNone                   = 0x00, //No border. none
+	BrcTypeLine                   = 0x01, //A single line.
+																				//single
+	BrcTypeDouble                 = 0x03, //A double line.
+																				//double
+	BrcTypeSolid                  = 0x05, //A thin single
+																				//solid line.
+	BrcTypeDotted                 = 0x06, //A dotted border.
+																				//dotted
+	BrcTypeDashed                 = 0x07, //A dashed border
+																				//with large gaps
+																				//between the
+																				//dashes. dashed
+	BrcTypeDotDash                = 0x08, // A border of
+																				// alternating dots
+																				// and dashes.
+																				// dotDash
+	BrcTypeDotDotDash             = 0x09, // A border of
+																				// alternating sets
+																				// of two dots and
+																				// one dash.
+																				// dotDotDash
+	BrcTypeTriple                 = 0x0A, // A triple line
+																				// border. triple
+	BrcTypeThinThickSmallGap      = 0x0B, // A thin outer
+																				// border and a
+																				// thick inner
+																				// border with a
+																				// small gap between
+	BrcTypeThinThickMediumGap     = 0x0C, // A thin outer
+																				// border and thick
+																				// inner border with
+																				// a small gap
+																				// between
+	BrcTypeThinThickLargeGap      = 0x0D, // A thin outer
+																				// border, a thick
+																				// middle border,
+																				// and a thin inner
+																				// border with
+	BrcTypeThickMediumGap         = 0x0E, // A thin outer
+																				// border and a
+																				// thick inner
+																				// border with a
+																				// medium gap
+																				// between
+	BrcTypeThickThinMediumGap     = 0x0F, // A thin outer
+																				// border and a
+																				// thick inner
+																				// border and a
+																				// medium gap
+																				// between
+	BrcTypeThinThickThinMediumGap = 0x10, // A thin outer
+																				// border, a thick
+																				// middle border,
+																				// and a thin inner
+																				// border witha
+																				// medium gaps
+																				// between them
+																				// thinThickThinMediumGap
+	BrcTypeThickLargeGap          = 0x11, //A thick outer
+																				//border and a thin
+																				//inner border with
+																				//a large gap
+																				//between them.
+	BrcTypeThickThinLargeGap      = 0x12, //A thin outer
+																				//border and a thick
+																				//inner border with
+																				//a large gap
+																				//between them.
+	BrcTypeThinThickThinLargeGap  = 0x13, //A thin outer
+																				//border, a thick
+																				//middle border, and
+																				//a thin inner
+																				//border with large
+																				//gaps between them.
+	BrcTypeWave                   = 0x14, //A single wavy
+																				//line. wave
+	BrcTypeDoubleWave             = 0x15, //A double wavy
+																				//line. doubleWave
+	BrcTypeDashSmallGap           = 0x16, //A dashed border
+																				//with small gaps
+																				//between the
+																				//dashes.
+	BrcTypeDashDotStroked         = 0x17, //A border
+																				//consisting of
+																				//alternating groups
+																				//of 5 and 1 thin
+																				//diagonal lines.
+	BrcTypeThreeDEmboss           = 0x18, //A thin light gray
+																				//outer border, a
+																				//thick medium gray
+																				//middle border,
+																				//and a thin black
+																				//inner border with
+																				//no gaps between
+																				//them.
+	BrcTypeThreeDEngrave          = 0x19, //A thin black outer
+																				//border, a thick
+																				//medium gray middle
+																				//border, and a thin
+																				//light gray inner
+																				//border with no
+																				//gaps between them.
+	BrcTypeOutset                 = 0x1A, //A thin light gray
+																				//outer border and a
+																				//thin medium gray
+																				//inner border with
+																				//a large gap
+																				//between them.
+	BrcTypeInset                  = 0x1B, //A thin medium gray
+																				//outer border and a
+																				//thin light gray
+																				//inner border with
+																				//a large gap
+																				//between them.
+
+//0x40 An image border. apples
+//0x41 An image border. archedScallops
+//0x42 An image border. babyPacifier
+//0x43 An image border. babyRattle
+//0x44 An image border. balloons3Colors
+//0x45 An image border. balloonsHotAir
+//0x46 An image border. basicBlackDashes
+//0x47 An image border. basicBlackDots
+//0x48 An image border. basicBlackSquares
+//0x49 An image border. basicThinLines
+//0x4A An image border. basicWhiteDashes
+//0x4B An image border. basicWhiteDots
+//0x4C An image border. basicWhiteSquares
+//0x4D An image border. basicWideInline
+//0x4E An image border. basicWideMidline
+//0x4F An image border. basicWideOutline
+//0x50 An image border. bats
+//0x51 An image border. birds
+//0x52 An image border. birdsFlight
+//0x53 An image border. cabins
+//0x54 An image border. cakeSlice
+//0x55 An image border. candyCorn
+//0x56 An image border. celticKnotwork
+//0x57 An image border. certificateBanner
+//0x58 An image border. chainLink
+//0x59 An image border. champagneBottle
+//0x5A An image border. checkedBarBlack
+//0x5B An image border. checkedBarColor
+//0x5C An image border. checkered
+//0x5D An image border. christmasTree
+//0x5E An image border. circlesLines
+//0x5F An image border. circlesRectangles
+//0x60 An image border. classicalWave
+//0x61 An image border. clocks
+//0x62 An image border. compass
+//0x63 An image border. confetti
+//0x64 An image border. confettiGrays
+//0x65 An image border. confettiOutline
+//0x66 An image border. confettiStreamers
+//0x67 An image border. confettiWhite
+//0x68 An image border. cornerTriangles
+//0x69 An image border. couponCutoutDashes
+//0x6A An image border. couponCutoutDots
+//0x6B An image border. crazyMaze
+//0x6C An image border. creaturesButterfly
+//0x6D An image border. creaturesFish
+//0x6E An image border. creaturesInsects
+//0x6F An image border. creaturesLadyBug
+//0x70 An image border. crossStitch
+//0x71 An image border. cup
+//0x72 An image border. decoArch
+//0x73 An image border. decoArchColor
+//0x74 An image border. decoBlocks
+//0x75 An image border. diamondsGray
+//0x76 An image border. doubleD
+//0x77 An image border. doubleDiamonds
+//0x78 An image border. earth1
+//0x79 An image border. earth2
+//0x7A An image border. eclipsingSquares1
+//0x7B An image border. eclipsingSquares2
+//0x7C An image border. eggsBlack
+//0x7D An image border. fans
+//0x7E An image border. film
+//0x7F An image border. firecrackers
+//0x80 An image border. flowersBlockPrint
+//0x81 An image border. flowersDaisies
+//0x82 An image border. flowersModern1
+//0x83 An image border. flowersModern2
+//0x84 An image border. flowersPansy
+//0x85 An image border. flowersRedRose
+//0x86 An image border. flowersRoses
+//0x87 An image border. flowersTeacup
+//0x88 An image border. flowersTiny
+//0x89 An image border. gems
+//0x8A An image border. gingerbreadMan
+//0x8B An image border. gradient
+//0x8C An image border. handmade1
+//0x8D An image border. handmade2
+//0x8E An image border. heartBalloon
+//0x8F An image border. heartGray
+//0x90 An image border. hearts
+//0x91 An image border. heebieJeebies
+//0x92 An image border. holly
+//0x93 An image border. houseFunky
+//0x94 An image border. hypnotic
+//0x95 An image border. iceCreamCones
+//0x96 An image border. lightBulb
+//0x97 An image border. lightning1
+//0x98 An image border. lightning2
+//0x99 An image border. mapPins
+//0x9A An image border. mapleLeaf
+//0x9B An image border. mapleMuffins
+//0x9C An image border. marquee
+//0x9D An image border. marqueeToothed
+//0x9E An image border. moons
+//0x9F An image border. mosaic
+//0xA0 An image border. musicNotes
+//0xA1 An image border. northwest
+//0xA2 An image border. ovals
+//0xA3 An image border. packages
+//0xA4 An image border. palmsBlack
+//0xA5 An image border. palmsColor
+//0xA6 An image border. paperClips
+//0xA7 An image border. papyrus
+//0xA8 An image border. partyFavor
+//0xA9 An image border. partyGlass
+//0xAA An image border. pencils
+//0xAB An image border. people
+//0xAC An image border. peopleWaving
+//0xAD An image border. peopleHats
+//0xAE An image border. poinsettias
+//0xAF An image border. postageStamp
+//0xB0 An image border. pumpkin1
+//0xB1 An image border. pushPinNote2
+//0xB2 An image border. pushPinNote1
+//0xB3 An image border. pyramids
+//0xB4 An image border. pyramidsAbove
+//0xB5 An image border. quadrants
+//0xB6 An image border. rings
+//0xB7 An image border. safari
+//0xB8 An image border. sawtooth
+//0xB9 An image border. sawtoothGray
+//0xBA An image border. scaredCat
+//0xBB An image border. seattle
+//0xBC An image border. shadowedSquares
+//0xBD An image border. sharksTeeth
+//0xBE An image border. shorebirdTracks
+//0xBF An image border. skyrocket
+//0xC0 An image border. snowflakeFancy
+//0xC1 An image border. snowflakes
+//0xC2 An image border. sombrero
+//0xC3 An image border. southwest
+//0xC4 An image border. stars
+//0xC5 An image border. starsTop
+//0xC6 An image border. stars3d
+//0xC7 An image border. starsBlack
+//0xC8 An image border. starsShadowed
+//0xC9 An image border. sun
+//0xCA An image border. swirligig
+//0xCB An image border. tornPaper
+//0xCC An image border. tornPaperBlack
+//0xCD An image border. trees
+//0xCE An image border. triangleParty
+//0xCF An image border. triangles
+//0xD0 An image border. tribal1
+//0xD1 An image border. tribal2
+//0xD2 An image border. tribal3
+//0xD3 An image border. tribal4
+//0xD4 An image border. tribal5
+//0xD5 An image border. tribal6
+//0xD6 An image border. twistedLines1
+//0xD7 An image border. twistedLines2
+//0xD8 An image border. vine
+//0xD9 An image border. waveline
+//0xDA An image border. weavingAngles
+//0xDB An image border. weavingBraid
+//0xDC An image border. weavingRibbon
+//0xDD An image border. weavingStrips
+//0xDE An image border. whiteFlowers
+//0xDF An image border. woodwork
+//0xE0 An image border. xIllusions
+//0xE1 An image border. zanyTriangles
+//0xE2 An image border. zigZag
+//0xE3 An image border. zigZagStitch
+//0xFF This MUST be ignored.
+};
+
+
+/* 2.9.16 Brc
+ * The Brc structure specifies a border. */
+struct Brc {
+	ULONG vc;          //cv (4 bytes): A COLORREF that
+										 //specifies the color of this border.
+	BYTE dptLineWidth; //(8 bits): Specifies the width of the
+										 //border. Different meanings based on
+										 //brcType brcType Meaning
+										 //brcType < 0x40 An unsigned integer
+										 //that specifies the width of the
+										 //border in 1/8- point increments.
+										 //Values of less than 2 are considered
+										 //to be equivalent to 2.
+										 //brcType >= 0x40 An unsigned integer
+										 //that specifies the width of the
+										 //border in 1-point increments. This
+										 //value MUST be less than 32.
+	BYTE brcType;      //(1 byte): A BrcType that specifies
+										 //the type of this border.  
+	USHORT dptspace_A_B_fReserved;
+										 //dptSpace (5bits): An unsigned integer that
+										 //specifies the distance from the text
+										 //to the border, in points. For page
+										 //borders, sprmSPgbProp can specify
+										 //that this value shall specify the
+										 //distance from the edge of the page to
+										 //the border.
+										 //A - fShadow (1 bit): If this bit is 
+										 //set, the border has an additional
+										 //shadow effect. For top, logical left, 
+										 //and between borders, this has no 
+										 //visual effect.
+										 //B - fFrame (1 bit): If this bit is 
+										 //set, then the border has a 
+										 //three-dimensional effect. For top, 
+										 //logical left, and between borders, 
+										 //this has no visual effect. For 
+										 //visually symmetric border types, 
+										 //this has no visual effect. 
+										 //fReserved (9 bits): This value is 
+										 //unused and MUST be ignored.
+};
+
+
+/* 2.9.17 Brc80
+ * The Brc80 structure describes a border. */
+struct Brc80 {
+	BYTE dptLineWidth; //(8 bits): An unsigned integer that
+										 //specifies the width of the border in
+										 //1/8-point increments. Values of less 
+										 //than 2 are considered to be equivalent to 2.
+	BYTE brcType;      //(1 byte): A BrcType that specifies
+										 //the type of this border. This value
+										 //MUST NOT be 0x1A or 0x1B.
+	BYTE ico;          //(1 byte): An Ico that specifies the
+										 //color of this border.
+	BYTE dptSpace_fShadow_B_C; 
+										 //dptSpace (5 bits): An unsigned
+										 //integer that specifies the distance
+										 //from the text to the border, in points.
+										 //A - fShadow (1 bit): If this bit is
+										 //set, the border has an additional
+										 //shadow effect. For top and logical
+										 //left borders, this bit has no visual
+										 //effect.
+										 //B - fFrame (1 bit): Specifies whether
+										 //the specified border is modified to
+										 //create a frame effect by reversing
+										 //the appearance of the border from the
+										 //edge nearest the text to the edge
+										 //furthest from the text. The frame
+										 //effect shall only be applied to right
+										 //and bottom borders.
+										 //C - reserved (1 bit): This bit MUST
+										 //be zero, and MUST be ignored.
+};
+
+/* 2.9.18 Brc80MayBeNil
+ * The Brc80MayBeNil structure is a Brc80 structure. When
+ * all bits are set (0xFFFFFFFF when
+ * interpreted as a 4-byte unsigned integer), this structure
+ * specifies that the region in question has no
+ * border.*/
+typedef struct Brc80 Brc80MayBeNil;
+
+/* PICTURES */
+#define OfficeArtRecTypeOfficeArtSpContainer     0xF004
+#define OfficeArtRecTypeOfficeArtFBSE            0xF007
+#define OfficeArtRecTypeOfficeArtBlipEMF         0xF01A
+#define OfficeArtRecTypeOfficeArtBlipWMF         0xF01B
+#define OfficeArtRecTypeOfficeArtBlipPICT        0xF01C
+#define OfficeArtRecTypeOfficeArtBlipJPEG        0xF01D
+#define OfficeArtRecTypeOfficeArtBlipPNG         0xF01E
+#define OfficeArtRecTypeOfficeArtBlipDIB         0xF01F
+#define OfficeArtRecTypeOfficeArtBlipTIFF        0xF029
+#define OfficeArtRecTypeOfficeArtBlipJPEG_       0xF02A
+
+#define OfficeArtRecordHeaderSize 8
+struct OfficeArtRecordHeader {
+	SHORT recVer_recInstance; //recVer
+														//(4 bits): An unsigned
+														//integer that specifies the
+														//version if the record is an
+														//atom. If the record is a
+														//container, this field MUST
+														//contain 0xF
+														
+														//recInstance 
+														//(12 bits): An unsigned
+														//integer that differentiates
+														//an atom from the other
+														//atoms that are contained in
+														//the record.
+	USHORT recType;           //(2 bytes): An unsigned
+														//integer that specifies the
+														//type of the record. This
+														//value MUST be from 0xF000
+														//through 0xFFFF, inclusive.
+	
+	ULONG recLen;             //(4 bytes): An unsigned
+														//integer that specifies the
+														//length, in bytes, of the
+														//record. If the record is an
+														//atom, this value specifies
+														//the length of the atom,
+														//excluding the header. If the
+														//record is a container, this
+														//value specifies the sum of
+														//the lengths of the atoms that
+														//the record contains, plus the
+														//length of the record header
+														//for each atom.
+};
+
+static USHORT 
+OfficeArtRecordHeaderRecInstance(
+		struct OfficeArtRecordHeader *rh) 
+{
+	USHORT x = ((rh->recVer_recInstance & 0xFFF0) >> 4);
+	return x;
+}
+
+struct OfficeArtSpContainer {
+	struct OfficeArtRecordHeader rh;
+	BYTE shape[];
+};
+
+struct OfficeArtInlineSpContainer {
+	struct OfficeArtSpContainer *shape;
+	BYTE *data;
+};
+
+enum MM {
+	MM_SHAPE     = 0x0064,
+	MM_SHAPEFILE = 0x0066,
+};
+
+/* 2.9.156 MFPF
+ * The MFPF structure specifies the type of picture data
+ * that is stored. */
+struct MFPF {
+	SHORT mm;             //(2 bytes): A signed integer that
+												//specifies the format of the
+												//picture data. This MUST be one of
+												//the following values.
+												//Name Value Meaning
+												//MM_SHAPE 0x0064 Shape object
+												//MM_SHAPEFILE 0x0066 Shape file
+	SHORT xExt;           //(2 bytes): This field is unused and MUST be ignored.
+	SHORT yExt;           //(2 bytes): This field is unused and MUST be ignored.
+	SHORT swHMF;          //(2 bytes): This field MUST be zero and MUST be ignored.
+};
+
+/* 2.9.191 PICF_Shape
+ * The PICF_Shape structure specifies additional header
+ * information for pictures of type MM_SHAPE or
+ * MM_SHAPEFILE. */
+struct PICF_Shape {
+	LONG grf;             //(4 bytes): This field MUST be ignored.
+	LONG padding1;        //(4 bytes): This value MUST be zero and MUST be ignored.
+	SHORT mmPM;           //(2 bytes): This field MUST be ignored.
+	LONG padding2;        //(4 bytes): This field MUST be zero and MUST be ignored.
+};
+
+/* 2.9.193 PICMID
+ * The PICMID structure specifies the size and border
+ * information for a picture.*/
+struct PICMID {
+	SHORT dxaGoal;        //(2 bytes): A signed integer that
+												//specifies the initial width of the
+												//picture, in twips, before
+												//cropping or scaling occurs. 
+												//This value MUST be greater than zero.
+	SHORT dyaGoal;        //(2 bytes): A signed integer that
+												//specifies the initial height of
+												//the picture, in twips, before
+												//cropping or scaling occurs. 
+												//This value MUST be greater than zero.
+	USHORT mx;            //(2 bytes): An unsigned integer
+												//that specifies the ratio, measured
+												//in tenths of a percent, between
+												//the final display width and the
+												//initial picture width that is
+												//specified by dxaGoal. If the
+												//picture is
+												//not cropped, mx values that are
+												//greater than 1000 cause the
+												//picture to stretch in width, while
+												//values that are less than 1000
+												//cause the picture to shrink in
+												//width. If the picture is
+												//horizontally cropped and the mx
+												//value is not adjusted accordingly,
+												//the picture is scaled. To
+												//counteract the new dimensions of a
+												//cropped image and avoid scaling,
+												//set mx to the value of ((dxaGoal –
+												//(left-crop + right-crop)) /
+												//dxaGoal. The final display width
+												//MUST be at least 15 twips and MUST
+												//NOT exceed 31680 twips (22 inches)
+												//after cropping and scaling.
+	USHORT my;            //(2 bytes): An unsigned integer
+												//that specifies the ratio, measured
+												//in tenths of a percent, between
+												//the final display height and the
+												//initial picture height that was
+												//specified by dyaGoal. If the
+												//picture is not cropped, my values
+												//that are greater than 1000 cause
+												//the picture to stretch in height,
+												//while values of less than 1000
+												//cause the picture to shrink.
+												//If the picture is vertically
+												//cropped and the my value is not
+												//adjusted accordingly, the picture
+												//is scaled. To counteract the new
+												//dimensions of a cropped image and
+												//avoid scaling, set the my value to
+												//the value of ((dyaGoal – (top-crop
+												//+ bottom-crop)) / dyaGoal. The
+												//final display height MUST be at
+												//least 15 twips and MUST NOT exceed
+												//31680 twips (22 inches) after
+												//cropping and scaling.
+	SHORT dxaReserved1;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+	SHORT dyaReserved1;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+	SHORT dxaReserved2;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+	SHORT dyaReserved2;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+	BYTE fReserved;       //(8 bits): This value MUST be zero
+												//and MUST be ignored.
+	BYTE bpp;             //(8 bits): This field is unused and
+												//MUST be ignored.
+	struct Brc80 brcTop80;//(4 bytes): A Brc80 structure that
+												//specifies what border to render
+												//above the picture.
+	struct Brc80 brcLeft80; 
+												//(4 bytes): A Brc80 structure that
+												//specifies what border to render to
+												//the left of the picture.
+	struct Brc80 brcBottom80; 
+												//(4 bytes): A Brc80 structure that
+												//specifies what border to render
+												//below the picture.
+	struct Brc80 brcRight80; 
+												//(4 bytes): A Brc80 structure that
+												//specifies what border to render to
+												//the right of the picture.
+	SHORT dxaReserved3;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+	SHORT dyaReserved3;   //(2 bytes): This value MUST be zero
+												//and MUST be ignored.
+};
+
+/* 2.9.190 PICF
+ * The PICF structure specifies the type of a picture, as
+ * well as the size of the picture and information
+ * about its border.*/
+struct PICF {
+	LONG lcb;             // (4 bytes): A signed integer that
+												// specifies the size, in bytes, of
+												// this PICF structure and the
+												// subsequent data.
+	USHORT cbHeader;      //(2 bytes): An unsigned integer
+												//that specifies the size, in bytes,
+												//of this PICF structure. This value
+												//MUST be 0x44.
+	struct MFPF mfpf;     //(8 bytes): An MFPF structure that
+												//specifies the storage format of
+												//the picture.
+	struct PICF_Shape innerHeader;
+												//(14 bytes): A PICF_Shape structure
+												//that specifies additional header
+												//information.
+	struct PICMID picmid; //(38 bytes): A PICMID structure
+												//that specifies the size and border
+												//information of the picture.
+	SHORT cProps;         //(2 bytes): This value MUST be 0
+												//and MUST be ignored.
+};
+
+/* The OfficeArtBlipEMF record specifies BLIP file data for
+ * the enhanced metafile format (EMF).*/
+struct OfficeArtBlipEMF {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer 
+												//A value that MUST be 0x0.
+												//rh.recInstance A value of 0x3D4 
+												//to specify one Unique ID (UID), 
+												//or a value of 0x3D5 to specify 
+												//two UIDs.
+												//rh.recType  A value that MUST 
+												//be 0xF01A.
+												//rh.recLen      An unsigned integer
+												//that specifies the number of bytes
+												//following the header. This value
+												//MUST be the size of the
+												//BLIPFileData field plus 50 if
+												//recInstance equals 0x3D4, or
+												//the size of BLIPFileData plus 66
+												//if recInstance equals 0x3D5.
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals 0x3D5. If 
+												//this value is not 0, rgbUid1 MUST
+												//be ignored.
+	BYTE metafileHeader[34]; 
+												//(34 bytes): An
+												//OfficeArtMetafileHeader record, as
+												//defined in section 2.2.31, that
+												//specifies how to process the
+												//metafile in BLIPFileData.
+
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the EMF data.
+
+};
+
+/* The OfficeArtBlipWMF record specifies BLIP file data for
+ * the Windows Metafile Format (WMF).*/
+struct OfficeArtBlipWMF {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer      
+												//A value that MUST be 0x0.
+												//rh.recInstance A value of 0x216 to
+												//specify one UID, or a value of
+												//0x217 to specify two UIDs.
+												//rh.recType     
+												//A value that MUST be 0xF01B.
+												//rh.recLen      
+												//An unsigned integer that specifies 
+												//the number of bytes following 
+												//the header. This value MUST be 
+												//the size of BLIPFileData plus 50 
+												//if recInstance equals 0x216, 
+												//or the size of BLIPFileData 
+												//plus 66 if recInstance 
+												//equals 0x217.
+
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals 0x217. 
+												//If this value exists, rgbUid1 
+												//MUST be ignored.
+
+	BYTE metafileHeader[34]; 
+												//(34 bytes): An
+												//OfficeArtMetafileHeader record, as
+												//defined in section 2.2.31, that
+												//specifies how to process the
+												//metafile in BLIPFileData.
+
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the WMF data.
+
+};
+
+/* The OfficeArtBlipPICT record specifies the BLIP file data
+ * for the Macintosh PICT format.*/
+struct OfficeArtBlipPICT {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer      
+												//A value that MUST be 0x0.
+												//rh.recInstance A value of 0x542 
+												//to specify one UID, or a value of
+												//0x543 to specify two UIDs.
+												//rh.recType     
+												//A value that MUST be 0xF01C.
+												//rh.recLen An unsigned integer 
+												//that specifies the number of 
+												//bytes following the header. 
+												//This value MUST be the size 
+												//of BLIPFileData plus 50 
+												//if recInstance equals 0x542, 
+												//or the size of BLIPFileData 
+												//plus 66 if recInstance 
+												//equals 0x543.
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals
+												//0x543. If this value exists, 
+												//rgbUid1 MUST be ignored.
+	BYTE metafileHeader[34]; 
+												//(34 bytes): An
+												//OfficeArtMetafileHeader record, as
+												//defined in section 2.2.31, that
+												//specifies how to process the
+												//metafile in BLIPFileData.
+
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the Macintosh
+												//PICT data.
+
+};
+
+/* The OfficeArtBlipJPEG record specifies BLIP file data for
+ * the Joint Photographic Experts Group (JPEG) format.*/
+struct OfficeArtBlipJPEG{
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer      
+												//A value that MUST be 0x0.
+												//rh.recInstance A value that is 
+												//specified in the following table.
+												//rh.recType     
+												//A value that MUST be 0xF01D.
+												//rh.recLen      
+												//An unsigned integer that specifies
+												//the number of bytes following the
+												//header. This value MUST be the
+												//size of BLIPFileData plus 17 if
+												//recInstance equals either 0x46A or
+												//0x6E2, or the size of BLIPFileData 
+												//plus 33 if recInstance equals 
+												//either 0x46B or 0x6E3.
+												//Value of recInstance         
+												//Meaning Number of unique identifiers
+
+												//0x46A JPEG in RGB color space  1
+												//0x46B JPEG in RGB color space  2
+												//0x6E2 JPEG in CMYK color space 1
+												//0x6E3 JPEG in CMYK color space 2
+
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals
+												//either 0x46B or 0x6E3. 
+												//If this value is specified, 
+												//rgbUid1 MUST be ignored.
+	BYTE tag;             //(1 byte): An unsigned integer that
+												//specifies an application-defined
+												//internal resource tag. This value
+												//MUST be 0xFF for external files.
+
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the JPEG
+												//data.
+};
+
+/* The OfficeArtBlipPNG record specifies BLIP file data for
+ * the Portable Network Graphics (PNG) format.*/
+struct OfficeArtBlipPNG {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												// rh.recVer      
+												// A value that MUST be 0x0.
+												//rh.recInstance A value of 0x6E0 to
+												//specify one UID, or a value of
+												//0x6E1 to specify two UIDs.
+												//rh.recType     A value that MUST
+												//be 0xF01E.
+												//rh.recLen      An unsigned integer
+												//that specifies the number of bytes
+												//following the header. This value
+												//MUST be the size of BLIPFileData
+												//plus 17 if recInstance equals
+												//0x6E0, or the size of
+												//BLIPFileData plus 33 if 
+												//recInstance equals 0x6E1.
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals
+												//0x6E1. If this value exists, 
+												//rgbUid1 MUST be ignored.
+	BYTE tag;             //(1 byte): An unsigned integer that
+												//specifies an application-defined
+												//internal resource tag. This value
+												//MUST be 0xFF for external files.
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the PNG data.
+
+};
+
+/* The OfficeArtBlipDIB record specifies BLIP file data for
+ * the device-independent bitmap (DIB) format.*/
+struct OfficeArtBlipDIB {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer A value that MUST be 0x0.
+												//rh.recInstance A value of 0x7A8 to
+												//specify one UID, or a value of
+												//0x7A9 to specify two UIDs.
+												//rh.recType     A value that MUST be 0xF01F.
+												//rh.recLen      An unsigned integer
+												//that specifies the number of bytes
+												//following the header. This value
+												//MUST be the size of BLIPFileData
+												//plus 17 if recInstance equals
+												//0x7A8, or the size of
+												//BLIPFileData plus 33 if 
+												//recInstance equals 0x7A9.
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals
+												//0x7A9. If this value exists, 
+												//rgbUid1 MUST be ignored.
+	BYTE tag;							//(1 byte): An unsigned integer that
+												//specifies an application-defined
+												//internal resource tag. This value
+												//MUST be 0xFF for external files.
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the DIB data.
+};
+
+/* The OfficeArtBlipTIFF record specifies BLIP file data for
+ * the TIFF format. */
+struct OfficeArtBlipTIFF {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer      
+												//A value that MUST be 0x0.
+												//rh.recInstance A value of 0x6E4 to
+												//specify one UID, or a value of
+												//0x6E5 to specify two UIDs.
+												//rh.recType     A value that MUST
+												//be 0xF029.
+												//rh.recLen      
+												//An unsigned integer that 
+												//specifies the number of bytes 
+												//following the header. 
+												//This value MUST be the size of 
+												//BLIPFileData plus 17 if 
+												//recInstance equals 0x6E4, or 
+												//the size of BLIPFileData plus 
+												//33 if recInstance equals 0x6E5.
+	BYTE rgbUid1[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+	BYTE rgbUid2[16];     //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the uncompressed BLIPFileData.
+												//This field only exists if
+												//recInstance equals
+												//0x6E5. If this value exists, 
+												//rgbUid1 MUST be ignored.
+	BYTE tag;             //(1 byte): An unsigned integer that
+												//specifies an application-defined
+												//internal resource tag. This value
+												//MUST be 0xFF for external files.
+	BYTE *BLIPFileData;   //(variable): A variable-length
+												//field that specifies the TIFF
+												//data.
+
+};
+
+/*The OfficeArtFBSE record specifies a File BLIP Store Entry
+ * (FBSE) that contains information about the BLIP.*/
+struct OfficeArtFBSE {
+	struct OfficeArtRecordHeader rh; 
+												//(8 bytes): An
+												//OfficeArtRecordHeader structure,
+												//as defined in section 2.2.1, that
+												//specifies the header for this
+												//record. The following table
+												//specifies the subfields.
+												//rh.recVer
+												//A value that MUST be 0x2.
+												//rh.recInstance An MSOBLIPTYPE
+												//enumeration value, as defined in
+												//section 2.4.1, that specifies the
+												//BLIP type and MUST match either
+												//btWin32 or btMacOS.
+												//rh.recType     A value that MUST
+												//be 0xF007.
+												//rh.recLen      An unsigned integer
+												//that specifies the number of bytes
+												//following the header. This value
+												//MUST be the size of nameData plus
+												//36 if the BLIP is not embedded in
+												//this record, or
+												//the size of nameData plus size
+												//plus 36 if the BLIP is embedded in
+												//this record.
+
+	BYTE btWin32;         //(1 byte): An MSOBLIPTYPE
+												//enumeration value, as defined in
+												//section 2.4.1, that specifies the
+												//Windows BLIP type. If the btMacOS
+												//value is supported by the Windows
+												//operating system, this
+												//value MUST match btMacOS. If the
+												//values of btWin32 and btMacOS are
+												//different, the BLIP that matches
+												//rh.recInstance MUST be present and
+												//the other MAY be present.
+
+	BYTE btMacOS;         //(1 byte): An MSOBLIPTYPE
+												//enumeration value, as defined in
+												//section 2.4.1, that specifies the
+												//Macintosh BLIP type. If the
+												//btWin32 value is supported by the
+												//Macintosh operating system,
+												//this value MUST match btWin32. If
+												//the values of btWin32 and btMacOS
+												//are different, the BLIP that
+												//matches rh.recInstance MUST be
+												//present and the other MAY be
+												//present.
+
+	BYTE rgbUid[16];      //(16 bytes): An MD4 message digest,
+												//as specified in [RFC1320], that
+												//specifies the unique identifier of
+												//the pixel data in the BLIP.
+
+	USHORT tag;           //(2 bytes): An unsigned integer
+												//that specifies an
+												//application-defined internal
+												//resource tag. This value MUST be
+												//0xFF for external files.
+
+	ULONG size;           //(4 bytes): An unsigned integer
+												//that specifies the size, in bytes,
+												//of the BLIP in the stream.
+
+	ULONG cRef;           //(4 bytes): An unsigned integer
+												//that specifies the number of
+												//references to the BLIP. A value of
+												//0x00000000 specifies an empty slot
+												//in the OfficeArtBStoreContainer
+												//record, as defined in
+												//section 2.2.20.
+
+	ULONG foDelay;        //(4 bytes): An MSOFO structure, as
+												//defined in section 2.1.4, that
+												//specifies the file offset into the
+												//associated OfficeArtBStoreDelay
+												//record, as defined in section
+												//2.2.21, (delay stream). A value of
+												//0xFFFFFFFF specifies that the file
+												//is not in the delay stream, and in
+												//this case, cRef MUST be
+												//0x00000000.
+
+	BYTE unused1;         //(1 byte): A value that is
+												//undefined and MUST be ignored.
+
+	BYTE cbName;          //(1 byte): An unsigned integer that
+												//specifies the length, in bytes, of
+												//the nameData field, including the
+												//terminating NULL character. This
+												//value MUST be an even number and
+												//less than or equal to 0xFE. If the
+												//value is 0x00, nameData will not
+												//be written.
+
+	BYTE unused2;         //(1 byte): A value that is
+												//undefined and MUST be ignored.
+
+	BYTE unused3;         //(1 byte):  A value that is
+												//undefined and MUST be ignored.
+
+	BYTE *nameData;       //(variable): A Unicode
+												//null-terminated string that
+												//specifies the name of the BLIP.
+
+	BYTE *embeddedBlip;   //(variable): An OfficeArtBlip
+												//record, as defined in section
+												//2.2.23, specifying the BLIP file
+												//data that is embedded in this
+												//record. If this value is not 0,
+												//foDelay MUST be ignored.
+};
+
+/* 2.9.192 PICFAndOfficeArtData
+ * The PICFAndOfficeArtData structure specifies header
+ * information and binary data for a picture.
+ * These structures MUST be stored in the Data Stream at
+ * locations that are specified by the
+ * sprmCPicLocation value. The range of text that is
+ * described by the Chpx structure which contains the
+ * sprmCPicLocation value MUST contain the picture character
+ * (U+0001). */
+struct PICFAndOfficeArtData {
+	struct PICF picf;    //(68 bytes): A PICF structure that
+											 //specifies the type of the picture,
+											 //as well as the picture size
+											 //and border information.
+	BYTE cchPicName;     //(1 byte): An optional unsigned
+											 //integer that specifies the size of
+											 //stPicName. This value
+											 //MUST exist if and only if
+											 //picf.mfpf.mm is MM_SHAPEFILE
+											 //(0x0066).
+	BYTE *stPicName;     //(variable): An optional string of
+											 //ANSI characters that specifies the
+											 //full path and file name of the 
+											 //picture. This value MUST exist 
+											 //if and only if picf.mfpf.mm is 
+											 //MM_SHAPEFILE
+	BYTE *picture;
+												//(variable): An 
+												//OfficeArtInlineSpContainer, 
+												//as specified in [MS-ODRAW] 
+												//section 2.2.15, that specifies 
+												//the image.
+};
+
+/* 2.9.158 NilPICFAndBinData
+ * The NilPICFAndBinData structure that holds header
+ * information and binary data for a hyperlink,
+ * form field, or add-in field. The NilPICFAndBinData
+ * structure MUST be stored in the Data Stream. */
+struct NilPICFAndBinData {
+	LONG lcb;             //(4 bytes): A signed integer that
+												//specifies the size, in bytes, of
+												//this structure.
+	USHORT cbHeader;      //(2 bytes): An unsigned integer
+												//that specifies the number of bytes
+												//from the beginning of
+												//this structure to the beginning 
+												//of binData. This value MUST 
+												//be 0x44.
+	BYTE ignored[62];     //(62 bytes): This field MUST be 0
+												//and MUST be ignored.
+	BYTE *binData;        //(variable): The interpretation of
+												//the binData element depends on the
+												//field type of the field containing 
+												//the picture character and is 
+												//given by the following.
+												//Field Type   Data Type
+												//REF          HFD
+												//PAGEREF      HFD
+												//FORMTEXT     FFData
+												//FORMCHECKBOX FFData
+												//NOTEREF      HFD
+												//PRIVATE			 Custom binary data 
+												//             that is specified 
+												//             by the add-in that 
+												//             inserted this field.
+												//ADDIN        Custom binary data 
+												//             that is specified by the
+												//             add-in that inserted this field.
+												//FORMDROPDOWN FFData
+												//HYPERLINK    HFD
+												//
+ //The NilPICFAndBinData structure is invalid if it
+ //describes a picture character that is not inside a field
+ //or is inside a field with a field type other than those
+ //specified in the preceding table. The size of binData is
+ //lcb –cbHeader. The data MAY<227> be invalid. If the data
+ //is invalid, it MUST be ignored.
+};
+
 /*
  * MS-DOC Structure.
  */
@@ -4635,6 +5782,7 @@ typedef struct cfb_doc
 {
 	FILE *WordDocument;   //document stream
 	FILE *Table;          //table stream
+	FILE *Data;           //data stream
 	
 	Fib  fib;             //File information block
 	struct Clx clx;       //clx data
