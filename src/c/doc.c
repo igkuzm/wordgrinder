@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 25.07.2024
+ * Last Modified Date: 26.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -169,9 +169,19 @@ static void picture_callback(struct picture *pict, void *data)
 	}
 }
 
-static void flusinlinepicture(struct undoc_t *t, ldp_t *p){
-	doc_get_inline_picture(
+static void flusinlinepicture(struct undoc_t *t, ldp_t *p)
+{
+	doc_get_picture(
 			INLINE_PICTURE, 
+			p, 
+			t, 
+			picture_callback);
+}
+
+static void flusfloatingpicture(struct undoc_t *t, ldp_t *p)
+{
+	doc_get_picture(
+			FLOATING_PICTURE, 
 			p, 
 			t, 
 			picture_callback);
@@ -219,12 +229,13 @@ int main_document(void *d, ldp_t *p, int ch){
 		case HYPHEN:             c= '-'  ; break;
 		case INLINE_PICTURE:
 			c= ' ';
-			fprintf(stderr, "INLINE_PICTURE\n"); 
+			//fprintf(stderr, "INLINE_PICTURE\n"); 
 			flusinlinepicture(t, p);
 			break;
 		case FLOATING_PICTURE:   
 			c= ' ';
-			fprintf(stderr, "FLOATING_PICTURE\n"); 
+			//fprintf(stderr, "FLOATING_PICTURE\n"); 
+			flusfloatingpicture(t, p);
 			break;
 		
 		default: break;	

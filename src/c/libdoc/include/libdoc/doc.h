@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 25.07.2024
+ * Last Modified Date: 26.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -3589,6 +3589,150 @@ static void plcbtePapx_free(struct PlcBtePapx *p){
 	}
 }
 
+/* 2.9.222 Rca
+ * The Rca structure is used to define the coordinates of a
+ * rectangular area in the document. Unless
+ * otherwise specified by the other structures that use this
+ * structure, the origin is at the top left of the
+ * page and the units are in twips.*/
+struct Rca {
+	LONG left;           //(4 bytes): An integer that
+											 //specifies the X coordinate of the
+											 //top left corner of the rectangle.
+	LONG top;            //(4 bytes): An integer that
+											 //specifies the Y coordinate of the
+											 //top left corner of the rectangle.
+	LONG right;          //(4 bytes): An integer that
+											 //specifies the X coordinate of the
+											 //bottom right corner of the rectangle.
+	LONG bottom;         //(4 bytes): An integer that
+											 //specifies the X coordinate of the
+											 //bottom right corner of the rectangle.
+};
+
+/* 2.9.253 Spa
+ * The Spa structure specifies information about the shapes
+ * and drawings that the document contains.*/
+struct Spa {
+	LONG lid;            //(4 bytes): An integer that
+											 //specifies the identifier of a shape
+											 //that is contained in the
+											 //OfficeArtDggContainer structure.
+											 //This value corresponds to the spid
+											 //field of an OfficeArtFSP structure
+											 //that specifies the data for this
+											 //shape. OfficeArtDggContainer and
+											 //OfficeArtFSP are specified in
+											 //[MS-ODRAW] sections 2.2.12 and
+											 //2.2.40, respectively.
+	struct Rca rca;      //(16 bytes): An Rca structure that
+											 //specifies the rectangle where the
+											 //drawing exists. 
+											 //The coordinates of rca are in twips.
+	USHORT A_bx_by_wr_wrk_B_C_D;    
+											 //A - fHdr (1 bit): This bit is
+											 //undefined and MUST be ignored.
+											 //bx (2 bits): An unsigned integer
+											 //that specifies the horizontal
+											 //position of the origin that is used
+											 //to calculate the rca. This MUST be
+											 //one of the following values.
+											 //Value Meaning
+											 //0 Anchored at the leading margin of
+											 //the page.
+											 //1 Anchored at the leading edge of
+											 //the page.
+											 //2 Anchored at the leading edge of
+											 //the column.
+											 //by (2 bits): An unsigned integer
+											 //that specifies the vertical
+											 //position of the origin that is used
+											 //to calculate the rca. This MUST be
+											 //one of the following values.
+											 //Value Meaning
+											 //0 Anchored at the top margin of the
+											 //page.
+											 //1 Anchored at the top edge of the
+											 //page.
+											 //2 Anchored at the top edge of the
+											 //paragraph.
+											 //wr (4 bits): An unsigned integer
+											 //that specifies the style of text
+											 //wrapping around this shape. This
+											 //MUST be one of the following values.
+											 //Value Meaning
+											 //0 Wrap text around the object.
+											 //1 No text wrapping around the
+											 //object. No text appears on either
+											 //side of the shape
+											 //(top and bottom wrapping).
+											 //2 Wrap text around an absolutely
+											 //positioned object (square
+											 //wrapping).
+											 //3 Display as if the shape is not
+											 //there. The shape appears either in
+											 //front of or behind
+											 //the text, based on fBelowText.
+											 //4 Wrap text tightly around this
+											 //shape, following its contour only
+											 //on the left and right
+											 //sides (tight wrapping).
+											 //5 Wrap text tightly around this
+											 //shape, following its contour on all
+											 //sides (through wrapping).
+											 //wrk (4 bits): An unsigned integer
+											 //that specifies the details of the
+											 //text wrapping around this shape.
+											 //This field MUST be ignored when wr
+											 //is 1 or 3. This MUST be one of the
+											 //following values.
+											 //Value Meaning
+											 //0 Allow text wrapping on both sides
+											 //of the shape.
+											 //1 Allow text wrapping only on the
+											 //left side of the shape.
+											 //2 Allow text wrapping only on the
+											 //right side of the shape.
+											 //3 Allow text wrapping only on the
+											 //largest side of the shape.
+											 //B - fRcaSimple (1 bit): MUST be
+											 //zero.
+											 //C - fBelowText (1 bit): An unsigned
+											 //integer that specifies whether this
+											 //shape is behind the text. A
+											 //value of 1 specifies that the shape
+											 //appears behind the paragraph. A
+											 //value of 0 specifies that the
+											 //shape appears in front of the text
+											 //and obscures it. If wr is not 3,
+											 //this field MUST be ignored.
+											 //D - fAnchorLock (1 bit): An
+											 //unsigned integer that specifies
+											 //whether the anchor of the shape is
+											 //locked to its current paragraph.
+	BYTE cTxbx[4];			 //(4 bytes): This value is undefined
+											 //and MUST be ignored.
+};
+
+/* 2.8.27 PlcfSpa
+ * The PlcfSpa structure is a PLC structure in which the
+ * data elements are SPA structures (26 bytes
+ * each).*/
+struct PlcfSpa {
+	CP *aCP;        //(variable): An array of CPs. Each CP
+									//specifies the position in the document
+									//part of the anchor
+									//for a shape. This array MUST NOT contain
+									//duplicate CPs. The characters at all but
+									//the last CP MUST be 0x08 and MUST have
+									//sprmCFSpec applied with a value of 1.
+									//See sprmCFSpec for more information.
+	struct Spa *aSpa; 
+									//(variable): An array of SPAs (26 bytes
+									//each) that specify properties for the
+									//shape at the corresponding CP.
+};
+
 /* 2.9.23 BxPap
  * The BxPap structure specifies the offset of a PapxInFkp
  * in PapxFkp. */
@@ -5009,16 +5153,21 @@ struct Brc80 {
 typedef struct Brc80 Brc80MayBeNil;
 
 /* PICTURES */
-#define OfficeArtRecTypeOfficeArtSpContainer     0xF004
-#define OfficeArtRecTypeOfficeArtFBSE            0xF007
-#define OfficeArtRecTypeOfficeArtBlipEMF         0xF01A
-#define OfficeArtRecTypeOfficeArtBlipWMF         0xF01B
-#define OfficeArtRecTypeOfficeArtBlipPICT        0xF01C
-#define OfficeArtRecTypeOfficeArtBlipJPEG        0xF01D
-#define OfficeArtRecTypeOfficeArtBlipPNG         0xF01E
-#define OfficeArtRecTypeOfficeArtBlipDIB         0xF01F
-#define OfficeArtRecTypeOfficeArtBlipTIFF        0xF029
-#define OfficeArtRecTypeOfficeArtBlipJPEG_       0xF02A
+#define OfficeArtRecTypeOfficeArtDggContainer           0xF000
+#define OfficeArtRecTypeOfficeArtBStoreContainer        0xF001
+#define OfficeArtRecTypeOfficeArtSpContainer            0xF004
+#define OfficeArtRecTypeOfficeArtFDggBlock              0xF006
+#define OfficeArtRecTypeOfficeArtFBSE                   0xF007
+#define OfficeArtRecTypeOfficeArtBlipEMF                0xF01A
+#define OfficeArtRecTypeOfficeArtBlipWMF                0xF01B
+#define OfficeArtRecTypeOfficeArtBlipPICT               0xF01C
+#define OfficeArtRecTypeOfficeArtBlipJPEG               0xF01D
+#define OfficeArtRecTypeOfficeArtBlipPNG                0xF01E
+#define OfficeArtRecTypeOfficeArtBlipDIB                0xF01F
+#define OfficeArtRecTypeOfficeArtBlipTIFF               0xF029
+#define OfficeArtRecTypeOfficeArtBlipJPEG_              0xF02A
+#define OfficeArtRecTypeOfficeArtColorMRUContainer      0xF11A
+#define OfficeArtRecTypeOfficeArtSplitMenuClorContainer 0xF11E
 
 #define OfficeArtRecordHeaderSize 8
 struct OfficeArtRecordHeader {
@@ -5791,6 +5940,8 @@ typedef struct cfb_doc
 	int plcbtePapxNaFc;   // number of aFc in plcbteChpx
 	struct PlcBteChpx *plcbteChpx;
 	int plcbteChpxNaFc;   // number of aFc in plcbteChpx
+	struct PlcfSpa *plcfspa;
+	int plcfspaNaCP;      // number of aCP in plcfspa;
 	struct STSH *STSH;    // style sheet 
 	int lrglpstd;         // len of rglpstd
 	ldp_t prop;           // properties

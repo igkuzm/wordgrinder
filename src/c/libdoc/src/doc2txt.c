@@ -2,7 +2,7 @@
  * File              : doc2txt.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 25.07.2024
+ * Last Modified Date: 26.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -60,7 +60,7 @@ int main_document(void *d, ldp_t *p, int ch){
 			{
 				fprintf(stderr,
 						"INLINE_PICTURE\n");
-				doc_get_inline_picture(
+				doc_get_picture(
 						ch, 
 						p, 
 						NULL, 
@@ -68,6 +68,18 @@ int main_document(void *d, ldp_t *p, int ch){
 				printf("%c", ' '); break;
 			}
 			
+		case FLOATING_PICTURE:
+			{
+				fprintf(stderr,
+						"FLOATING_PICTURE\n");
+				doc_get_picture(
+						ch, 
+						p, 
+						NULL, 
+						picture);
+				printf("%c", ' '); break;
+			}
+
 		case 0x0D: printf("%c", '\n'); break;
 		case 0x07: printf("%c", '\n'); break;
 		case 0x1E: printf("%c", '-' ); break;
@@ -77,7 +89,6 @@ int main_document(void *d, ldp_t *p, int ch){
 		case 0x0C: printf("%c", ch)  ; break;
 		case 0x1F: printf("%c", 0xAD); break;
 		case 0x0B: printf("%c", 0x0A); break;
-		case 0x08: printf("%c", ' '); break;
 		default: putchar(ch);
 	}
 

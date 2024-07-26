@@ -2,7 +2,7 @@
  * File              : mswordtype.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 17.01.2024
- * Last Modified Date: 25.07.2024
+ * Last Modified Date: 26.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -68,6 +68,7 @@ typedef struct char_prop
 	char allCaps;    // all capital symbols
 	
 	// MS DOC special 
+	int  cp; // character portion
 	int  sprmCFSpec; // sprcial properties
 	char sprmCFObj;
 	char sprmCFOle2;

@@ -2,7 +2,7 @@
  * File              : retrieving_text.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 26.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc/retrieving_text.h"
@@ -65,6 +65,7 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 
 		// get properties
 		direct_character_formatting(doc, off, pcd);
+		doc->prop.chp.cp = cp;
 
 		fseek(doc->WordDocument, off, SEEK_SET);	
 		int ch;
@@ -96,6 +97,7 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 
 		// get properties
 		direct_character_formatting(doc, off, pcd);
+		doc->prop.chp.cp = cp;
 		
 		fseek(doc->WordDocument, off, SEEK_SET);	
 		WORD u;
