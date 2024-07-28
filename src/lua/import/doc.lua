@@ -2,7 +2,7 @@
 File              : doc.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 15.07.2024
+Last Modified Date: 28.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -103,6 +103,9 @@ function Cmd.ImportDOCFile(filename)
 
     local image = function(pstyle)
 	  importer:flushparagraph(pstyle)
+	  importer:style_off(BOLD)
+	  importer:style_off(ITALIC)
+	  importer:style_off(UNDERLINE)
       local tmpname = os.tmpname()
       tmpname = string.format('%s.jpg', tmpname)
       importer:text(tmpname)

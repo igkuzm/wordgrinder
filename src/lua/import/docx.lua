@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 22.01.2024
+Last Modified Date: 28.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -420,6 +420,9 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 																		local tmpname = os.tmpname()
 																		UnzipFile(zipfile, image, tmpname)
 																		-- add image to WG
+																		importer:style_off(BOLD)
+																		importer:style_off(ITALIC)
+																		importer:style_off(UNDERLINE)
 																		importer:text(tmpname)
 																		importer:flushword(false)
 																		importer:flushparagraph("IMG")
