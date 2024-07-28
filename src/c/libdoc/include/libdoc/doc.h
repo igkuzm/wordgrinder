@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 26.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -13,7 +13,7 @@
 extern "C"{
 #endif
 
-//#define DEBUG
+/*#define DEBUG*/
 
 #include <stdint.h>
 #include <stdio.h>
@@ -3847,46 +3847,31 @@ struct PapxFkp {
 									 // field occupies the last byte
 };
 
-static struct PapxFkp * papxFkp_get(
+static void papxFkp_init(
+		struct PapxFkp *papxFkp, BYTE buf[512],
 		FILE *fp, ULONG offset)
 {
-	BYTE *p = (BYTE *)ALLOC(512,
-			ERR("malloc"); 
-			exit(ENOMEM));
+	memset(buf, 0, 512);
 	fseek(fp, offset, SEEK_SET);
-	if (fread(p, 512, 1, fp) != 1)
+	if (fread(buf, 512, 1, fp) != 1)
 	{
 		ERR("fread");
-		return NULL;
+		return;
 	}
 
-	struct PapxFkp *st =	NEW(
-			struct PapxFkp, 
-			ERR("malloc"); 
-			exit(ENOMEM));
-	st->cpara = p[511];
-	st->rgfc = (ULONG *)p;
-	void *ptr = &(p[(st->cpara + 1)*4]);
-	st->rgbx = (struct BxPap *)ptr;
+	papxFkp->cpara = buf[511];
+	papxFkp->rgfc = (ULONG *)buf;
+	papxFkp->rgbx = (struct BxPap *)(&(buf[(papxFkp->cpara + 1)*4]));
 #ifdef DEBUG
-LOG("PapxFkp->cpara: %d", st->cpara);
+LOG("PapxFkp->cpara: %d", papxFkp->cpara);
 int i;
-for (i = 0; i < st->cpara+1; ++i) {
-	LOG("PapxFkp.rgfc[%d]: %d ", i, st->rgfc[i]);	
+for (i = 0; i < papxFkp->cpara+1; ++i) {
+	LOG("PapxFkp.rgfc[%d]: %d ", i, papxFkp->rgfc[i]);	
 }
-for (i = 0; i < st->cpara; ++i) {
-	LOG("rgbx[%d].bOffset: %d ", i, st->rgbx[i].bOffset);	
+for (i = 0; i < papxFkp->cpara; ++i) {
+	LOG("rgbx[%d].bOffset: %d ", i, papxFkp->rgbx[i].bOffset);	
 }
 #endif
-	return st;
-}
-static void papxFkp_free(struct PapxFkp *p)
-{
-	if (p){
-		if (p->rgfc)
-			free(p->rgfc);
-		free(p);
-	}
 }
 
 /* 2.9.33 ChpxFkp
@@ -3938,44 +3923,31 @@ struct ChpxFkp {
 									//bytes.
 }; 
 
-static struct ChpxFkp * chpxFkp_get(
+static void chpxFkp_init(
+		struct ChpxFkp *chpxFkp, BYTE buf[512],
 		FILE *fp, ULONG offset)
 {
-	BYTE *p = (BYTE *)ALLOC(512,
-			ERR("malloc"); 
-			exit(ENOMEM));
+	memset(buf, 0, 512);
 	fseek(fp, offset, SEEK_SET);
-	if (fread(p, 512, 1, fp) != 1)
+	if (fread(buf, 512, 1, fp) != 1)
 	{
 		ERR("fread");
-		return NULL;
+		return;
 	}
 
-	struct ChpxFkp *st =	NEW(struct ChpxFkp, 
-			ERR("malloc"); 
-			exit(ENOMEM));
-	st->crun = p[511];
-	st->rgfc = (ULONG *)p;
-	st->rgb  = &(p[(st->crun + 1)*4]);
+	chpxFkp->crun = buf[511];
+	chpxFkp->rgfc = (ULONG *)buf;
+	chpxFkp->rgb = &(buf[(chpxFkp->crun + 1)*4]);
 #ifdef DEBUG
-LOG("ChpxFkp->cpara: %d", st->crun);
+LOG("ChpxFkp->cpara: %d", chpxFkp->crun);
 int i;
-for (i = 0; i < st->crun+1; ++i) {
-	LOG("ChpxFkp.rgfc[%d]: %d ", i, st->rgfc[i]);	
+for (i = 0; i < chpxFkp->crun+1; ++i) {
+	LOG("ChpxFkp.rgfc[%d]: %d ", i, chpxFkp->rgfc[i]);	
 }
-for (i = 0; i < st->crun; ++i) {
-	LOG("rgb[%d]: %d ", i, st->rgb[i]);	
+for (i = 0; i < chpxFkp->crun; ++i) {
+	LOG("rgb[%d]: %d ", i, chpxFkp->rgb[i]);	
 }
 #endif
-	return st;
-}
-static void chpxFkp_free(struct ChpxFkp *p)
-{
-	if (p){
-		if (p->rgfc)
-			free(p->rgfc);
-		free(p);
-	}
 }
 
 /* 2.9.32 Chpx

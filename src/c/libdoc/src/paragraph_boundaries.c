@@ -2,7 +2,7 @@
  * File              : paragraph_boundaries.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -27,7 +27,7 @@ CP first_cp_in_paragraph(cfb_doc_t *doc, CP cp)
 	LOG("start");
 #endif
 	CP fcp = CPERROR;
-	struct PapxFkp *papxFkp = NULL;
+	struct PapxFkp papxFkp;
 	struct Pcd *pcd = NULL;
 	int k=0;
 	ULONG of=0;
@@ -96,25 +96,25 @@ CP first_cp_in_paragraph(cfb_doc_t *doc, CP cp)
 
 		of = pnFkpPapx_pn(
 					doc->plcbtePapx->aPnBtePapx[j]) * 512;
-		papxFkp = 
-				papxFkp_get(doc->WordDocument, of);
+		BYTE buf[512];
+		papxFkp_init(&papxFkp, buf, doc->WordDocument, of);
 
 /* 6. Find the largest k such that PapxFkp.rgfc[k] ≤ fc.
  * If the last element of PapxFkp.rgfc is less
  * than or equal to fc, then cp is outside the range of
  * character positions in this document, and is
  * not valid. Let fcFirst be PapxFkp.rgfc[k].*/
-		for (k=0; papxFkp->rgfc[k] <= fc; )
+		for (k=0; papxFkp.rgfc[k] <= fc; )
 			k++;	
 		k--;
 		
-		if (papxFkp->rgfc[papxFkp->cpara] <= fc){
+		if (papxFkp.rgfc[papxFkp.cpara] <= fc){
 			ERR("last element of PapxFkp.rgfc is less"
 					" than or equal to fc: cp is outside the"
 					" range of character positions in this document");
 			return CPERROR;
 		}
-		fcFirst = papxFkp->rgfc[k];
+		fcFirst = papxFkp.rgfc[k];
 
 first_cp_in_paragraph_7:
 /* 7. If fcFirst is greater than fcPcd, then let dfc be
@@ -143,17 +143,11 @@ first_cp_in_paragraph_8:
  * Go to step 2; */
 		cp = plcPcd->aCp[i];
 		i--;
-	
-		if (papxFkp)
-			free(papxFkp);
-		papxFkp = NULL;
 	}
 
 #ifdef DEBUG
 	LOG("first cp in paragraph: %d", fcp);
 #endif
-	if (papxFkp)
-		free(papxFkp);
 	return fcp;
 }
 
@@ -166,7 +160,7 @@ CP last_cp_in_paragraph(cfb_doc_t *doc, CP cp)
 	LOG("start");
 #endif
 	CP lcp = CPERROR;
-	struct PapxFkp *papxFkp = NULL;
+	struct PapxFkp papxFkp;
 	struct Pcd *pcd = NULL;
 	int k=0;
 	ULONG of=0;
@@ -225,25 +219,25 @@ CP last_cp_in_paragraph(cfb_doc_t *doc, CP cp)
 		
 		of = pnFkpPapx_pn(
 						doc->plcbtePapx->aPnBtePapx[j]) * 512;
-		papxFkp = 
-			papxFkp_get(doc->WordDocument, of);
+		BYTE buf[512];
+		papxFkp_init(&papxFkp, buf, doc->WordDocument, of);
 
 /* 5. Find largest k such that PapxFkp.rgfc[k] ≤ fc. If the
  * last element of PapxFkp.rgfc is less than
  * or equal to fc, then cp is outside the range of character
  * positions in this document, and is not
  * valid. Let fcLim be PapxFkp.rgfc[k+1]. */
-		for (k=0; papxFkp->rgfc[k] <= fc; )
+		for (k=0; papxFkp.rgfc[k] <= fc; )
 			k++;	
 		k--;
 		
-		if (papxFkp->rgfc[papxFkp->cpara] <= fc){
+		if (papxFkp.rgfc[papxFkp.cpara] <= fc){
 			ERR("last element of PapxFkp.rgfc is less"
 					" than or equal to fc: cp is outside the"
 					" range of character positions in this document");
 			return CPERROR;
 		}
-		ULONG fcLim = papxFkp->rgfc[k+1];
+		ULONG fcLim = papxFkp.rgfc[k+1];
 		
 /* 6. If fcLim ≤ fcMac, then let dfc be (fcLim – fcPcd). If
  * Pcd.fc.fCompressed is zero, then set dfc
@@ -263,18 +257,13 @@ CP last_cp_in_paragraph(cfb_doc_t *doc, CP cp)
 last_cp_in_paragraph_7:
 		cp = plcPcd->aCp[i+1];
 		i++;
-		if (papxFkp)
-			free(papxFkp);
-		papxFkp = NULL;
 	}
 
 #ifdef DEBUG
 	LOG("last cp in paragraph: %d", lcp);
 #endif
 	direct_paragraph_formatting(
-			doc, k, papxFkp, of, pcd);
+			doc, k, &papxFkp, of, pcd);
 
-	if (papxFkp)
-		free(papxFkp);
 	return lcp;
 }

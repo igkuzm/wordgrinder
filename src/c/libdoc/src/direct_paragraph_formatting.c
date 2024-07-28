@@ -2,7 +2,7 @@
  * File              : direct_paragraph_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 24.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 */
 
@@ -95,28 +95,26 @@ void direct_paragraph_formatting(
 		size += 2*cb_; 
 	}
 
-	struct GrpPrlAndIstd *grpPrlAndIstd = ALLOC(size, 
-			ERR("malloc"); return);
-	fread(grpPrlAndIstd, size, 1,
+	//read istd from GrpprlAndIstd
+	USHORT istd;
+	fread(&istd, 2, 1,
 			doc->WordDocument);
 
 #ifdef DEBUG
-	LOG("Istd: %d", grpPrlAndIstd->istd);
-	char str[BUFSIZ] = "grpprl data: ";
-	for (int i = 0; i < size-2; ++i) {
-		STRFCAT(str, "%d ", grpPrlAndIstd->grpprl[i]);	
-	}
-	LOG("%s", str);
+	LOG("Istd: %d", istd);
 #endif
 	
 	// apply style properties
-	apply_style_properties(doc, grpPrlAndIstd->istd);	
+	apply_style_properties(doc, istd);	
 
 /* 4. Find the grpprl within the GrpprlAndIstd. This is an
  * array of Prl elements that specifies the
  * direct properties of this paragraph. */
+	BYTE grpprl[size-2];
+	fread(grpprl, size-2, 1,
+			doc->WordDocument);
 	parse_grpprl(
-			grpPrlAndIstd->grpprl, 
+			grpprl, 
 			size-2, 
 			doc, callback);
 
@@ -131,7 +129,6 @@ void direct_paragraph_formatting(
  * structures that modify paragraph properties within the
  * array of Prl elements specified by Prm1. */
 
-	free(grpPrlAndIstd);
 }
 int callback(void *userdata, struct Prl *prl){
 	// parse properties

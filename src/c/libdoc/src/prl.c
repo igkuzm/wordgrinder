@@ -2,7 +2,7 @@
  * File              : prl.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 24.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -11,16 +11,20 @@
 #include <stdint.h>
 #include "../include/libdoc/sprm.h"
 
-static struct Prl * prl_new(MEM *mem)
+static struct Prl * prl_parse(BYTE *grpprl, int *read)
 {
-	struct Prl *prl = NULL;
-	Sprm sprm;
-	memread(&sprm, sizeof(Sprm), 1, mem);
+#ifdef DEBUG
+	LOG("start");
+#endif
+	Sprm sprm = *(Sprm *)(&grpprl[*read]);
+
 	sprm = ctohs(sprm);	
 	int spra  = SprmSpra(sprm);
 
+#ifdef DEBUG
+	LOG("sprm: 0x%X", sprm);
+#endif
 	// get operand
-	uint8_t *operand = NULL;
 	int bytes = 0, alloc = 0;
 	switch (spra) {
 		case 0: case 1:
@@ -47,19 +51,19 @@ static struct Prl * prl_new(MEM *mem)
 				if (SprmSgc(sprm) == sgcTab &&
 						SprmIspmd(sprm) == sprmTDefTable)
 				{
-					USHORT cb = *(USHORT *)(mem->buffer);
+					USHORT cb = *(USHORT *)(&grpprl[read[0]+2]);
 					bytes = cb + 1;
-					alloc += 2;
 					break;
 				}
 				if (SprmSgc(sprm) == sgcPar &&
 						SprmIspmd(sprm) == sprmPChgTabs)
 				{
-					BYTE cb = *(mem->buffer);
+					BYTE cb = *(&grpprl[read[0]+2]);
 					if (cb >1 && cb < 255)
 						bytes = cb;
 					else if (cb == 255){
 						/* TODO: PChgTabsOperand */
+						ERR("TODO PChgTabsOperand");
 					}
 					else {
 						ERR("PChgTabsOperand");
@@ -67,8 +71,7 @@ static struct Prl * prl_new(MEM *mem)
 						
 					break;
 				}
-				memread(&bytes, 1, 1, mem);
-				alloc++;
+				bytes = *(&grpprl[read[0]+2]);
 			}
 			break;
 		default:
@@ -76,12 +79,12 @@ static struct Prl * prl_new(MEM *mem)
 			
 	}
 	if (bytes){
-		prl = ALLOC(bytes + sizeof(sprm) + alloc, 
-				ERR("malloc"); return NULL);
-		prl->sprm = sprm;
-		memread(prl->operand, bytes, 1, mem);
+		struct Prl *prl = (struct Prl *)(&grpprl[*read]);	
+		*read += bytes + sizeof(Sprm);
+		return prl;
 	}
-	return prl;
+	// some error
+	return NULL;
 }
 
 void parse_grpprl(
@@ -91,15 +94,18 @@ void parse_grpprl(
 #ifdef DEBUG
 	LOG("start");
 #endif
-	MEM *mem = memopen(grpprl, len);
-	while (mem->p < mem->size) {
-		struct Prl *prl = prl_new(mem);
-		if (!prl)
+	int read = 0;
+	while (read < len) {
+		struct Prl *prl = prl_parse(grpprl, &read);
+		
+		if (!prl) //stop all grpprl parsing on error
 			break;
+		
 		if (callback)
 			if(callback(userdata, prl))
 				break;
-		if (prl)
-			free(prl);
 	}
+#ifdef DEBUG
+	LOG("done");
+#endif
 }

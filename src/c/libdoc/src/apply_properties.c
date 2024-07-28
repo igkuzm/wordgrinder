@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 20.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -20,6 +20,9 @@ static int apply_table_property(cfb_doc_t *doc, struct Prl *prl);
 int apply_property(cfb_doc_t *doc, int l, struct Prl *prl)
 {
 	BYTE sgc = SprmSgc(prl->sprm);
+#ifdef DEBUG
+	LOG("sgc: 0x%X", sgc);
+#endif
 	switch (sgc) {
 		case sgcCha:
 			return apply_char_property(doc, l, prl);

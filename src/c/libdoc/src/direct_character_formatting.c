@@ -2,7 +2,7 @@
  * File              : direct_character_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 20.07.2024
+ * Last Modified Date: 28.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -92,8 +92,9 @@ void direct_character_formatting(
 	LOG("chpxFkp offset: %d", chpxFkp_fc);
 #endif
 
-	struct ChpxFkp *chpxFkp = 
-		chpxFkp_get(doc->WordDocument, 
+	struct ChpxFkp chpxFkp;
+	BYTE buf[512];	
+	chpxFkp_init(&chpxFkp, buf, doc->WordDocument, 
 				chpxFkp_fc);
 
 /* 4. Find the largest j such that ChpxFkp.rgfc[j] ≤ fc. If
@@ -102,20 +103,20 @@ void direct_character_formatting(
  * positions in this document, and is not
  * valid. Find a Chpx at offset ChpxFkp.rgb[i] in ChpxFkp.*/
 	int j;
-	for (j = 0; chpxFkp->rgfc[j] <= fc;)
+	for (j = 0; chpxFkp.rgfc[j] <= fc;)
 		j++;
 	j--;
 
-	if (chpxFkp->rgfc[chpxFkp->crun] <= fc){
+	if (chpxFkp.rgfc[chpxFkp.crun] <= fc){
 		ERR("chpxFkp->rgfc[%d]: %d - cp is outside the range "
 				"of character positions in this document, and is "
 				"not valid", 
-				chpxFkp->crun,
-				chpxFkp->rgfc[chpxFkp->crun]);
+				chpxFkp.crun,
+				chpxFkp.rgfc[chpxFkp.crun]);
 		return;
 	}
 
-	ULONG offset = chpxFkp->rgb[j] * 2 + chpxFkp_fc;
+	ULONG offset = chpxFkp.rgb[j] * 2 + chpxFkp_fc;
 	BYTE cb;
 	fseek(doc->WordDocument, offset,
 		 	SEEK_SET);
@@ -156,7 +157,9 @@ void direct_character_formatting(
  * array of Prls specified by Prm1.
  */
 
-	chpxFkp_free(chpxFkp);
+#ifdef DEBUG
+	LOG("done");
+#endif
 }	
 
 int callback(void *userdata, struct Prl *prl){
