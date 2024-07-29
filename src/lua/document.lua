@@ -637,6 +637,8 @@ ParagraphClass =
 
 		width = width or Document.wrapwidth
 		if (self.wrapwidth ~= width) then
+			local linesw = {} -- width of line
+			local wordsw = {} -- width of word
 			local lines = {}
 			local line = {wn = 1}
 			local w = 0
@@ -653,9 +655,12 @@ ParagraphClass =
 					ww = ww + 1
 				end
 
+				wordsw[#wordsw+1] = ww
+				
 				xs[wn] = w
 				w = w + ww
 				if (w >= width) then
+					linesw[#linesw+1] = w
 					lines[#lines+1] = line
 					line = {wn = wn}
 					w = ww
@@ -666,45 +671,24 @@ ParagraphClass =
 			end
 
 			if (#line > 0) then
+				linesw[#linesw+1] = w
 				lines[#lines+1] = line
+			end
+		
+			-- set lines to right
+			local n = 1
+			for ln, line in ipairs(lines) do
+				local x = width - linesw[ln]
+				for _, wn in ipairs(line) do
+					self.xs[wn] = x
+					x = x + wordsw[n]
+					n = n + 1
+				end
 			end
 
 			self.lines = lines
 		end
 
-		-- set lines to right
-		for _, line in ipairs(self.lines) do
-			-- get line width
-			local w = 0;
-			for _, wn in ipairs(line) do
-				-- get width of word (including space)
-				local word = self[wn]
-				local ww = GetStringWidth(word) + 1
-
-				-- add an extra space if the user asked for it
-				if fullstopspaces and word:find("%.$") then
-					ww = ww + 1
-				end
-
-				w = w + ww
-			end 
-			-- set right
-			local x = width - w
-			for _, wn in ipairs(line) do
-				-- get width of word (including space)
-				local word = self[wn]
-				local ww = GetStringWidth(word) + 1
-
-				-- add an extra space if the user asked for it
-				if fullstopspaces and word:find("%.$") then
-					ww = ww + 1
-				end
-				
-				self.xs[wn] = x
-				x = x + ww
-			end 
-		end
-			
 		return self.lines
 	end,
 
@@ -727,8 +711,11 @@ ParagraphClass =
 			self.sentences = sentences
 		end
 
+
 		width = width or Document.wrapwidth
 		if (self.wrapwidth ~= width) then
+			local linesw = {} -- width of line
+			local wordsw = {} -- width of word
 			local lines = {}
 			local line = {wn = 1}
 			local w = 0
@@ -745,9 +732,12 @@ ParagraphClass =
 					ww = ww + 1
 				end
 
+				wordsw[#wordsw+1] = ww
+
 				xs[wn] = w
 				w = w + ww
 				if (w >= width) then
+					linesw[#linesw+1] = w
 					lines[#lines+1] = line
 					line = {wn = wn}
 					w = ww
@@ -758,45 +748,24 @@ ParagraphClass =
 			end
 
 			if (#line > 0) then
+				linesw[#linesw+1] = w
 				lines[#lines+1] = line
+			end
+
+			-- center lines
+			local n = 1
+			for ln, line in ipairs(lines) do
+				local x = width / 2 - linesw[ln] / 2
+				for _, wn in ipairs(line) do
+					self.xs[wn] = x
+					x = x + wordsw[n]
+					n = n + 1
+				end
 			end
 
 			self.lines = lines
 		end
 
-		-- center lines
-		for _, line in ipairs(self.lines) do
-			-- get line width
-			local w = 0;
-			for _, wn in ipairs(line) do
-				-- get width of word (including space)
-				local word = self[wn]
-				local ww = GetStringWidth(word) + 1
-
-				-- add an extra space if the user asked for it
-				if fullstopspaces and word:find("%.$") then
-					ww = ww + 1
-				end
-
-				w = w + ww
-			end 
-			-- set center
-			local x = width / 2 - w / 2
-			for _, wn in ipairs(line) do
-				-- get width of word (including space)
-				local word = self[wn]
-				local ww = GetStringWidth(word) + 1
-
-				-- add an extra space if the user asked for it
-				if fullstopspaces and word:find("%.$") then
-					ww = ww + 1
-				end
-				
-				self.xs[wn] = x
-				x = x + ww
-			end 
-		end
-			
 		return self.lines
 	end,
 
