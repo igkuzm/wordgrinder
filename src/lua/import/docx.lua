@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 28.07.2024
+Last Modified Date: 29.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -253,7 +253,18 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 	if (element._name == W .. " tbl") then
 		local hasBorders = false
 		local hasIBorders = false
+		local grid = {}
 		for _, element in ipairs(element) do
+			-- table grid
+			if (element._name == W .. " tblGrid") then
+				for _, element in ipairs(element) do
+					if (element._name == W .. " gridCol") then
+						local w = element[W .. " w"]
+						local width = w/1200 
+						grid[#grid+1] = width
+					end
+				end
+			end
 			-- table properties
 			if (element._name == W .. " tblPr") then
 				for _, element in ipairs(element) do
@@ -280,15 +291,17 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 			-- table row
 			if (element._name == W .. " tr") then
 				local firstcell = true
+				local celln = 0
 				for _, element in ipairs(element) do
 					-- table cell
 					if (element._name == W .. " tc") then
+						celln = celln + 1
 						textwidth = 0
 						if not firstcell then
 							importer:text(" ; ")
 						end
 						firstcell = false
-						local width = 0
+						local width = grid[celln] or 0
 						for _, element in ipairs(element) do
 							-- table cell properties
 							if (element._name == W .. " tcPr") then
