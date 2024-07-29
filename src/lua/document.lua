@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 28.07.2024
+Last Modified Date: 29.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -616,6 +616,98 @@ ParagraphClass =
 		return self.lines
 	end,
 
+	wrapRight = function(self, width)
+		local sentences = self.sentences
+		if (sentences == nil) then
+			local issentence = true
+			sentences = {}
+			for wn, word in ipairs(self) do
+				if issentence then
+					sentences[wn] = true
+					issentence = false
+				end
+
+				if word:find("%.$") then
+					issentence = true
+				end
+			end
+			sentences[#self] = true
+			self.sentences = sentences
+		end
+
+		width = width or Document.wrapwidth
+		if (self.wrapwidth ~= width) then
+			local lines = {}
+			local line = {wn = 1}
+			local w = 0
+			local xs = {}
+			local fullstopspaces = WantFullStopSpaces()
+			self.xs = xs
+
+			for wn, word in ipairs(self) do
+				-- get width of word (including space)
+				local ww = GetStringWidth(word) + 1
+
+				-- add an extra space if the user asked for it
+				if fullstopspaces and word:find("%.$") then
+					ww = ww + 1
+				end
+
+				xs[wn] = w
+				w = w + ww
+				if (w >= width) then
+					lines[#lines+1] = line
+					line = {wn = wn}
+					w = ww
+					xs[wn] = 0
+				end
+
+				line[#line+1] = wn
+			end
+
+			if (#line > 0) then
+				lines[#lines+1] = line
+			end
+
+			self.lines = lines
+		end
+
+		-- set lines to right
+		for _, line in ipairs(self.lines) do
+			-- get line width
+			local w = 0;
+			for _, wn in ipairs(line) do
+				-- get width of word (including space)
+				local word = self[wn]
+				local ww = GetStringWidth(word) + 1
+
+				-- add an extra space if the user asked for it
+				if fullstopspaces and word:find("%.$") then
+					ww = ww + 1
+				end
+
+				w = w + ww
+			end 
+			-- set right
+			local x = width - w
+			for _, wn in ipairs(line) do
+				-- get width of word (including space)
+				local word = self[wn]
+				local ww = GetStringWidth(word) + 1
+
+				-- add an extra space if the user asked for it
+				if fullstopspaces and word:find("%.$") then
+					ww = ww + 1
+				end
+				
+				self.xs[wn] = x
+				x = x + ww
+			end 
+		end
+			
+		return self.lines
+	end,
+
 	wrapCenter = function(self, width)
 		local sentences = self.sentences
 		if (sentences == nil) then
@@ -815,12 +907,12 @@ ParagraphClass =
 				end
 			end
 			return nil, nil
-		else
-			if self.style == "CENTER" then
+		elseif self.style == "CENTER" then
 				lines = self:wrapCenter()
-			else
+		elseif self.style == "RIGHT" then
+				lines = self:wrapRight()
+		else
 				lines = self:wrap()
-			end
 		end
 		
 		for ln, l in ipairs(lines) do
@@ -850,12 +942,12 @@ ParagraphClass =
 		if self.style == "TR" or self.style == "TRB" 
 		then
 			lines = self:wrapTableRow()
+		elseif self.style == "CENTER" then
+			lines = self:wrapCenter()
+		elseif self.style == "RIGHT" then
+			lines = self:wrapRight()
 		else
-			if self.style == "CENTER" then
-				lines = self:wrapCenter()
-			else
-				lines = self:wrap()
-			end
+			lines = self:wrap()
 		end 
 		
 		return lines[ln].wn
@@ -867,12 +959,12 @@ ParagraphClass =
 		if self.style == "TR" or self.style == "TRB" 
 		then
 			lines = self:wrapTableRow()
-		else 
-			if self.style == "CENTER" then
-				lines = self:wrapCenter()
-			else
-				lines = self:wrap()
-			end
+		elseif self.style == "CENTER" then
+			lines = self:wrapCenter()
+		elseif self.style == "RIGHT" then
+			lines = self:wrapRight()
+		else
+			lines = self:wrap()
 		end
 		local x = self.xs[wn]
 		local ln, wn = self:getLineOfWord(wn)
@@ -1083,7 +1175,7 @@ function UpdateDocumentStyles()
 		{
 			desc = "Justify text to right",
 			name = "RIGHT",
-			indent = 50,
+			indent = 0,
 			above = 0,
 			below = 0
 		},

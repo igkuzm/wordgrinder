@@ -2,7 +2,7 @@
 File              : redraw.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 04.01.2024
-Last Modified Date: 28.07.2024
+Last Modified Date: 29.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -239,14 +239,12 @@ function RedrawScreen()
 			paragraph.style == "TRB" 
 		then
 			lines = paragraph:wrapTableRow()
-		elseif
-			paragraph.style == "IMG" 
-		then
+		elseif paragraph.style == "IMG" then
 			lines = paragraph:wrapImage()
-		elseif
-			paragraph.style == "CENTER"
-		then
+		elseif paragraph.style == "CENTER" then
 			lines = paragraph:wrapCenter()
+		elseif paragraph.style == "RIGHT" then
+			lines = paragraph:wrapRight()
 		else
 			lines = paragraph:wrap()
 		end
@@ -275,16 +273,7 @@ function RedrawScreen()
 			end
 
 			local x = paragraph:getIndentOfLine(ln)
-			-- get indent for CENTER
-			--if paragraph.style == "CENTER" then
-				--local w = 0
-				--for _, wn in ipairs(lines[ln]) do
-					--local word = paragraph[wn]
-					--w = w + GetStringWidth(word) + 1
-				--end
-				--x = Document.wrapwidth / 2 - w / 2
-			--end
-			
+						
 			local l = lines[ln]
 
 			if not mp then
@@ -366,14 +355,12 @@ function RedrawScreen()
 			paragraph.style == "TRB" 
 		then
 			lines = paragraph:wrapTableRow()
-		elseif 
-			paragraph.style == "IMG"
-		then
+		elseif paragraph.style == "IMG" then
 			lines = paragraph:wrapImage()
-		elseif
-			paragraph.style == "CENTER"
-		then
+		elseif paragraph.style == "CENTER" then
 			lines = paragraph:wrapCenter()
+		elseif paragraph.style == "RIGHT" then
+			lines = paragraph:wrapRight()
 		else
 			lines = paragraph:wrap()
 		end
@@ -404,16 +391,6 @@ function RedrawScreen()
 			end
 			
 			local x = paragraph:getIndentOfLine(ln)
-			
-			-- get indent for CENTER
-			--if paragraph.style == "CENTER" then
-				--local w = 0
-				--for _, wn in ipairs(lines[ln]) do
-					--local word = paragraph[wn]
-					--w = w + GetStringWidth(word) + 1
-				--end
-				--x = Document.wrapwidth / 2 - w / 2
-			--end
 			
 			if not mp then
 				paragraph:renderLine(l,
