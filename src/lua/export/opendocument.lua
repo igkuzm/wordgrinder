@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 16.01.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -73,6 +73,7 @@ local style_tab =
 	["V"]      = {false, simple(), emit('</text:p>') },
 	["RAW"]    = {false, emit(''), emit('') },
 	["PRE"]    = {false, simple(), emit('</text:p>') },
+	["BOTH"]   = {false, emit('<text:p text:style-name="BOTH">'), emit('</text:p>') },
 	["CENTER"] = {false, emit('<text:p text:style-name="CENTER">'), emit('</text:p>') },
 	["RIGHT"]  = {false, emit('<text:p text:style-name="RIGHT">'), emit('</text:p>') },
 	["LEFT"]   = {false, emit('<text:p text:style-name="LEFT">'), emit('</text:p>') },
@@ -433,6 +434,15 @@ local function export_odt_with_ui(filename, title, extension)
                 	</style:style>
                 	
                 	<style:style style:name="P"
+                		style:family="paragraph" style:class="text">
+                		<style:paragraph-properties
+                			fo:margin-top="1.5mm"
+											fo:text-indent="1.00cm"
+                			fo:margin-bottom="1.5mm"/>
+                		<style:text-properties style:font-name="serif"/>
+                	</style:style>
+                		
+									<style:style style:name="BOTH"
                 		style:family="paragraph" style:class="text">
                 		<style:paragraph-properties
                 			fo:margin-top="1.5mm"

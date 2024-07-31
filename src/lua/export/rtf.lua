@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 20.01.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -66,8 +66,9 @@ local style_tab =
 	["PRE"]    = {12, '\\fs28\\sb140\\sbasedon5 PRE'},
 	["LEFT"]   = {13, '\\fs28\\sb140\\sbasedon5\\ql LEFT'},
 	["RIGHT"]  = {14, '\\fs28\\sb140\\sbasedon5\\qr RIGHT'},
-	["CENTER"] = {15, '\\fs28\\sb140\\sbasedon5\\qc CENTER'},
-	["IMG"]    = {16, '\\fs28\\sb140\\sbasedon5\\qc IMG'},
+	["BOTH"]   = {16, '\\fs28\\sb140\\sbasedon5\\qj BOTH'},
+	["CENTER"] = {17, '\\fs28\\sb140\\sbasedon5\\qc CENTER'},
+	["IMG"]    = {18, '\\fs28\\sb140\\sbasedon5\\qc IMG'},
 }
 
 local function callback(writer, document)

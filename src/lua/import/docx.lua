@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 29.07.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -146,6 +146,9 @@ local function parse_style(styles, xml)
 					end
 					if (element[VAL] == "center") then
 						style.center = true
+					end
+					if (element[VAL] == "both") then
+						style.both = true
 					end
 				end
 			end
@@ -364,6 +367,9 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 						if style.indented then
 							wgstyle = "Q"
 						end
+						if style.both then
+							wgstyle = "BOTH"
+						end
 						if style.right then
 							wgstyle = "RIGHT"
 						end
@@ -389,7 +395,7 @@ local function import_paragraphs(styles, lists, importer, element, defaultstyle)
 							wgstyle = "CENTER"
 						end
 						if (element[VAL] == "both") then
-							wgstyle = "P"
+							wgstyle = "BOTH"
 						end
 					end
 					--get numbering

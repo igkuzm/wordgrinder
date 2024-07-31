@@ -2,7 +2,7 @@
 File              : html.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 16.01.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -47,6 +47,8 @@ local style_tab =
 		on='', off=''},
 	["PRE"] = {pre=true, list=false,
 		on='<pre>', off='</pre>'},
+	["BOTH"] =  {pre=false, list=false,
+		on='<p style="text-align:justify;">', off='</p>'},
 	["CENTER"] =  {pre=false, list=false,
 		on='<p style="text-align:center;">', off='</p>'},
 	["LEFT"] =  {pre=false, list=false,

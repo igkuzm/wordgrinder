@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 29.07.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -616,6 +616,97 @@ ParagraphClass =
 		return self.lines
 	end,
 
+	wrapBoth = function(self, width)
+		local sentences = self.sentences
+		if (sentences == nil) then
+			local issentence = true
+			sentences = {}
+			for wn, word in ipairs(self) do
+				if issentence then
+					sentences[wn] = true
+					issentence = false
+				end
+
+				if word:find("%.$") then
+					issentence = true
+				end
+			end
+			sentences[#self] = true
+			self.sentences = sentences
+		end
+
+		width = width or Document.wrapwidth
+		if (self.wrapwidth ~= width) then
+			local lines = {}
+			local line = {wn = 1}
+			local linesw = {} -- width of line
+			local w = 0
+			local xs = {}
+			local fullstopspaces = WantFullStopSpaces()
+			self.xs = xs
+
+			width = width - self:getIndentOfLine(1)
+
+			for wn, word in ipairs(self) do
+				-- get width of word (including space)
+				local ww = GetStringWidth(word) + 1
+
+				-- add an extra space if the user asked for it
+				if fullstopspaces and word:find("%.$") then
+					ww = ww + 1
+				end
+
+				xs[wn] = w
+				w = w + ww
+				if (w >= width) then
+					linesw[#linesw+1] = w - ww
+					lines[#lines+1] = line
+					if #lines == 1 then
+						width = width + self:getIndentOfLine(1) - self:getIndentOfLine(2)
+					end
+					line = {wn = wn}
+					w = ww
+					xs[wn] = 0
+				end
+
+				line[#line+1] = wn
+			end
+
+			if (#line > 0) then
+				linesw[#linesw+1] = w
+				lines[#lines+1] = line
+			end
+
+			-- Justify lines
+			for ln, line in ipairs(lines) do
+				if line[ln + 1] then
+					local w = linesw[ln]
+					local dw = width
+					if ln == 1 then
+						dw = width - DocumentStyles[self.style].firstindent or 0
+					end
+					local n = 1
+					while w < dw do
+						if not line[n] then
+							n = 1
+						end
+						for i, wn in ipairs(line) do
+							if i > n then
+								xs[wn] = xs[wn] + 1
+							end
+						end
+						w = w + 1
+						n = n + 1
+					end
+				end
+			end
+
+			self.lines = lines
+		end
+
+		return self.lines
+	end,
+
 	wrapRight = function(self, width)
 		local sentences = self.sentences
 		if (sentences == nil) then
@@ -660,7 +751,7 @@ ParagraphClass =
 				xs[wn] = w
 				w = w + ww
 				if (w >= width) then
-					linesw[#linesw+1] = w
+					linesw[#linesw+1] = w - ww
 					lines[#lines+1] = line
 					line = {wn = wn}
 					w = ww
@@ -737,7 +828,7 @@ ParagraphClass =
 				xs[wn] = w
 				w = w + ww
 				if (w >= width) then
-					linesw[#linesw+1] = w
+					linesw[#linesw+1] = w - ww
 					lines[#lines+1] = line
 					line = {wn = wn}
 					w = ww
@@ -876,6 +967,8 @@ ParagraphClass =
 				end
 			end
 			return nil, nil
+		elseif self.style == "BOTH" then
+				lines = self:wrapBoth()
 		elseif self.style == "CENTER" then
 				lines = self:wrapCenter()
 		elseif self.style == "RIGHT" then
@@ -911,6 +1004,8 @@ ParagraphClass =
 		if self.style == "TR" or self.style == "TRB" 
 		then
 			lines = self:wrapTableRow()
+		elseif self.style == "BOTH" then
+			lines = self:wrapBoth()
 		elseif self.style == "CENTER" then
 			lines = self:wrapCenter()
 		elseif self.style == "RIGHT" then
@@ -928,6 +1023,8 @@ ParagraphClass =
 		if self.style == "TR" or self.style == "TRB" 
 		then
 			lines = self:wrapTableRow()
+		elseif self.style == "BOTH" then
+			lines = self:wrapBoth()
 		elseif self.style == "CENTER" then
 			lines = self:wrapCenter()
 		elseif self.style == "RIGHT" then
@@ -1052,6 +1149,23 @@ function UpdateDocumentStyles()
 		plaintext.below = 1
 		plaintext.firstindent = 0
 	end
+	
+	local both =
+	{
+		desc = "Justify text to both",
+		name = "BOTH"
+	}
+
+	if WantDenseParagraphLayout() then
+		both.above = 0
+		both.below = 0
+		both.firstindent = 4
+	else
+		both.above = 1
+		both.below = 1
+		both.firstindent = 0
+	end
+
 
 	local styles =
 	{
@@ -1155,6 +1269,7 @@ function UpdateDocumentStyles()
 			above = 0,
 			below = 0
 		},
+		both,
 		{
 			desc = "Table Row with ';' separeted cells",
 			name = "TR",

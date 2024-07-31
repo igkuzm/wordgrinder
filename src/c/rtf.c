@@ -2,7 +2,7 @@
  * File              : rtf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 17.07.2024
+ * Last Modified Date: 31.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -102,6 +102,9 @@ void par_get_style(struct unrtf_t *t, PAP *p, char style[32])
 {
 	// handle with paragraph style
 	strcpy(style, "P");
+	
+	if (p->just == justF)
+		strcpy(style, "BOTH");
 
 	if (p->just == justC)
 		strcpy(style, "CENTER");

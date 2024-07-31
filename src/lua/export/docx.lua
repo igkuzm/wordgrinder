@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 16.01.2024
+Last Modified Date: 31.07.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -94,6 +94,7 @@ local style_tab =
 	["V"]      = {false, header(), emit('</w:t></w:r></w:p>') },
 	["RAW"]    = {false, header(), emit('</w:t></w:r></w:p>') },
 	["PRE"]    = {false, header(), emit('</w:t></w:r></w:p>') },
+	["BOTH"]   = {false, header(), emit('</w:t></w:r></w:p>') },
 	["CENTER"] = {false, header(), emit('</w:t></w:r></w:p>') },
 	["RIGHT"]  = {false, header(), emit('</w:t></w:r></w:p>') },
 	["LEFT"]   = {false, header(), emit('</w:t></w:r></w:p>') },
@@ -679,6 +680,21 @@ local function export_docx_with_ui(filename, title, extension)
 			</w:style>
 			<w:style w:type="paragraph" w:styleId="P">
 				<w:name w:val="P"/>
+				<w:qFormat/>
+				<w:pPr>
+					<w:widowControl w:val="false"/>
+					<w:bidi w:val="0"/>
+					<w:spacing w:before="85" w:after="85"/>
+					<w:ind w:firstLine="567"/>
+				</w:pPr>
+				<w:rPr>
+					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
+					<w:sz w:val="24"/>
+					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
+				</w:rPr>
+			</w:style>
+			<w:style w:type="paragraph" w:styleId="BOTH">
+				<w:name w:val="BOTH"/>
 				<w:qFormat/>
 				<w:pPr>
 					<w:widowControl w:val="false"/>

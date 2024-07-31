@@ -24,6 +24,7 @@ local style_tab  =
 	["V"]      = {false, '#+begin_quote\n', '\n#+end_quote\n'},
 	["RAW"]    = {false, '', ''},
 	["PRE"]    = {true,  '#+begin_src\n', '\n#+end_src\n'},
+	["BOTH"]   = {false, '', '\n'},
 	["CENTER"] = {false, '', '\n'},
 	["RIGHT"]  = {false, '', '\n'},
 	["LEFT"]   = {false, '', '\n'},
