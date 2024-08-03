@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 17.07.2024
+Last Modified Date: 03.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -551,6 +551,7 @@ emit("build ", OBJDIR.."/luascripts.c: luascripts ", table.concat({
     "src/lua/navigate.lua",
     "src/lua/addons/goto.lua",
     "src/lua/addons/autosave.lua",
+    "src/lua/addons/pageconfig.lua",
     "src/lua/addons/docsetman.lua",
     "src/lua/addons/scrapbook.lua",
     "src/lua/addons/statusbar_charstyle.lua",

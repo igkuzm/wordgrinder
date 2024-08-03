@@ -2,7 +2,7 @@
 File              : menu.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 03.08.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -121,7 +121,7 @@ local DocumentSettingsMenu = CreateMenu("Document settings",
 	{"FSPageCount",    "P", "Page count...",         nil,         Cmd.ConfigurePageCount},
 	{"FSSmartquotes",  "Q", "Smart quotes...",       nil,         Cmd.ConfigureSmartQuotes},
 	{"FSSpellchecker", "K", "Spellchecker...",       nil,         Cmd.ConfigureSpellchecker},
-	{"FSpageConfig",   "C", "Page config...",        nil,         Cmd.ConfigurePage},
+	{"FSpageConfig",   "L", "Page layout properties...",        nil,         Cmd.ConfigurePage},
 })
 
 local GlobalSettingsMenu = CreateMenu("Global settings",

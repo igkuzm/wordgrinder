@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 31.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -522,6 +522,53 @@ function Cmd.ImportDOCXFile(filename)
 				-- get paragraph
 				if (element._name == W .. " p") or (element._name == W .. " tbl")then
 					import_paragraphs(styles, lists, importer, element, "P")
+				end
+				
+				-- get page properties
+				if (element._name == W .. " sectPr") then
+					local settings = DocumentSet.addons.pageconfig
+					for _, element in ipairs(element) do
+						if (element._name == W .. " pgSz") then
+							local w = element[W .. " w"]
+							local h = element[W .. " h"]
+							
+							local x = 0
+							local y = 0
+							
+							if w > h then
+								settings.landscape = true
+								x = h
+								y = w
+							else
+								settings.landscape = false
+								x = w
+								y = h
+							end
+
+							settings.pagesize = "A4"
+							if x == 8391 and y == 11906 then
+								settings.pagesize = "A5"
+							end
+							
+							if x == 12240 and y == 15840 then
+								settings.pagesize = "letter"
+							end
+
+						end
+						
+						if (element._name == W .. " pgMar") then
+							local left = element[W .. " left"]
+							local right = element[W .. " right"]
+							local top = element[W .. " top"]
+							local bottom = element[W .. " bottom"]
+							
+							settings.left = left / 576
+							settings.right = right / 576
+							settings.top = top / 576
+							settings.bottom = bottom / 576
+    
+						end
+					end
 				end
 			end
 		end 

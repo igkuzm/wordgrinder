@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 31.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -325,31 +325,8 @@ local function export_odt_with_ui(filename, title, extension)
 	callback(writer, Document)
 	content = table_concat(content)
 
-	local xml =
-	{
-		["mimetype"] = "application/vnd.oasis.opendocument.text",
-
-		["META-INF/manifest.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
-			<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"> 
-				<manifest:file-entry
-					manifest:media-type="application/vnd.oasis.opendocument.text"
-					manifest:full-path="/"/> 
-				<manifest:file-entry
-					manifest:media-type="text/xml"
-					manifest:full-path="content.xml"/> 
-				<manifest:file-entry
-					manifest:media-type="text/xml"
-					manifest:full-path="meta.xml"/> 
-				<manifest:file-entry
-					manifest:media-type="text/xml"
-					manifest:full-path="settings.xml"/> 
-				<manifest:file-entry
-					manifest:media-type="text/xml"
-					manifest:full-path="styles.xml"/> 
-			</manifest:manifest>
-		]],
-		
-		["styles.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
+	local styles = 
+	[[<?xml version="1.0" encoding="UTF-8"?>
 			<office:document-styles office:version="1.0"
 				xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
 				xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
@@ -528,8 +505,92 @@ local function export_odt_with_ui(filename, title, extension)
 								text:min-label-width="5mm"/>
 						</text:list-level-style-bullet>
                 	</text:list-style>
-						</office:styles></office:document-styles>
+						</office:styles>
+		]]
+
+		-- set page properties
+				local settings = DocumentSet.addons.pageconfig
+				local h = 0
+				local w = 0
+				local x = 0
+				local y = 0
+				local layout = "portrait"
+				
+				if settings.pagesize == "A4" or 
+					 settings.pagesize == "a4" then 
+
+					 x = 21.001
+					 y = 29.7
+				end
+
+				if settings.pagesize == "A5" or 
+					 settings.pagesize == "a5" then 
+
+					 x = 14.801
+					 y = 21.001
+				end
+
+				if settings.pagesize == "letter" or 
+					 settings.pagesize == "Letter" or 
+					 settings.pagesize == "LETTER" then 
+
+					 x = 21.59
+					 y = 27.94
+				end
+
+				if settings.landscape then 
+					w = y
+					h = x
+					layout = "landscape"
+				else
+					w = x
+					h = y
+				end
+
+				styles = styles .. "<office:automatic-styles>"
+
+				local str = string_format('<style:page-layout style:name="Mpm1"><style:page-layout-properties fo:page-width="%scm" fo:page-height="%scm" style:num-format="1" style:print-orientation="%s" fo:margin-top="%scm" fo:margin-bottom="%scm" fo:margin-left="%scm" fo:margin-right="%scm" style:writing-mode="lr-tb"></style:page-layout-properties></style:page-layout>\n', tostring(w), tostring(h), layout, tostring(settings.top), tostring(settings.bottom), tostring(settings.left), tostring(settings.right))
+				
+				str = str .. [[
+						<style:style style:name="Mdp1" style:family="drawing-page">
+							<style:drawing-page-properties draw:background-size="full"/>
+						</style:style>
+				]]
+				
+				str = str .. "</office:automatic-styles>"
+
+				str = str .. [[<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="Mpm1" draw:style-name="Mdp1"/>
+						  </office:master-styles>]]
+
+				styles = styles .. str
+
+		styles = styles .. "</office:document-styles>"
+
+	local xml =
+	{
+		["mimetype"] = "application/vnd.oasis.opendocument.text",
+
+		["META-INF/manifest.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
+			<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"> 
+				<manifest:file-entry
+					manifest:media-type="application/vnd.oasis.opendocument.text"
+					manifest:full-path="/"/> 
+				<manifest:file-entry
+					manifest:media-type="text/xml"
+					manifest:full-path="content.xml"/> 
+				<manifest:file-entry
+					manifest:media-type="text/xml"
+					manifest:full-path="meta.xml"/> 
+				<manifest:file-entry
+					manifest:media-type="text/xml"
+					manifest:full-path="settings.xml"/> 
+				<manifest:file-entry
+					manifest:media-type="text/xml"
+					manifest:full-path="styles.xml"/> 
+			</manifest:manifest>
 		]],
+		
+		["styles.xml"] = styles,
 		
 		["settings.xml"] = [[<?xml version="1.0" encoding="UTF-8"?>
 			<office:document-settings office:version="1.0"

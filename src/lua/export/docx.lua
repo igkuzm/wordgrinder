@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 31.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -160,6 +160,47 @@ local function callback(writer, document)
 		
 		epilogue = function()
 			changepara(nil)
+			-- set page prop
+			local settings = DocumentSet.addons.pageconfig
+			local h = 0
+			local w = 0
+			local x = 0
+			local y = 0
+			
+			if settings.pagesize == "A4" or 
+				 settings.pagesize == "a4" then 
+
+				 x = 11906
+				 y = 16838
+			end
+
+			if settings.pagesize == "A5" or 
+				 settings.pagesize == "a5" then 
+
+				 x = 8391
+				 y = 11906
+			end
+
+			if settings.pagesize == "letter" or 
+				 settings.pagesize == "Letter" or 
+				 settings.pagesize == "LETTER" then 
+
+				 x = 12240
+				 y = 15840
+			end
+
+			if settings.language then 
+				w = y
+				h = x
+			else
+				w = x
+				h = y
+			end
+
+			local str = string_format('<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="%s" w:h="%s"/><w:pgMar w:left="%s" w:right="%s" w:gutter="0" w:header="0" w:top="%s" w:footer="0" w:bottom="%s"/><w:pgNumType w:fmt="decimal"/><w:formProt w:val="false"/><w:textDirection w:val="lrTb"/><w:docGrid w:type="default" w:linePitch="100" w:charSpace="0"/></w:sectPr>\n', tostring(w), tostring(h), tostring(settings.left*576), tostring(settings.right*576), tostring(settings.top*576), tostring(settings.bottom*576))
+
+			writer(str)
+
 			writer('</w:body></w:document>\n')	
 		end,
 		

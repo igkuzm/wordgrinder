@@ -2,7 +2,7 @@
  * File              : rtf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 31.07.2024
+ * Last Modified Date: 04.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -270,6 +270,17 @@ int char_cb(void *d, STREAM s, prop_t *p, int ch)
 	return 0;
 }
 
+void flushpageprop(struct unrtf_t *t, prop_t *p){
+	lua_pushvalue(t->L, 8);
+	lua_pushnumber(t->L, p->dop.xaPage);
+	lua_pushnumber(t->L, p->dop.yaPage);
+	lua_pushnumber(t->L, p->dop.xaLeft);
+	lua_pushnumber(t->L, p->dop.xaRight);
+	lua_pushnumber(t->L, p->dop.yaTop);
+	lua_pushnumber(t->L, p->dop.yaBottom);
+	lua_call(t->L, 6, 0);
+}
+
 static int unrtf_cb(lua_State* L)
 {
 	size_t size;
@@ -295,6 +306,10 @@ static int unrtf_cb(lua_State* L)
 	n.pict_cb = pict_cb;
 	//n.info_cb = info_cb;
 	//n.date_cb = date_cb;
+	
+	// set page prop
+	flushpageprop(&t, &p);
+	
 
 	int ec = ecRtfParse(fp, &p, &n);
 	fclose(fp);

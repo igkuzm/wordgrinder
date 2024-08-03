@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 31.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -80,7 +80,48 @@ local function callback(writer, document)
 			writer('{\\rtf1\\ansi\\deff0')
 			writer('{\\fonttbl{\\f0 Times New Roman}}')
 			writer('\\deflang1033\\widowctrl')
-			writer('\\uc0\\n')
+			writer('\\uc0\n')
+
+			-- set page size
+			local settings = DocumentSet.addons.pageconfig
+			local h = 0
+			local w = 0
+			local x = 0
+			local y = 0
+			
+			if settings.pagesize == "A4" or 
+				 settings.pagesize == "a4" then 
+
+				 x = 11906
+				 y = 16838
+			end
+
+			if settings.pagesize == "A5" or 
+				 settings.pagesize == "a5" then 
+
+				 x = 8391
+				 y = 11906
+			end
+
+			if settings.pagesize == "letter" or 
+				 settings.pagesize == "Letter" or 
+				 settings.pagesize == "LETTER" then 
+
+				 x = 12240
+				 y = 15840
+			end
+
+			if settings.language then 
+				w = y
+				h = x
+			else
+				w = x
+				h = y
+			end
+
+			local str = string_format('\\paperw%s\\paperh%s\\margl%s\\margr%s\\margt%s\\margb%s\n', tostring(w), tostring(h), tostring(settings.left*576), tostring(settings.right*576), tostring(settings.top*576), tostring(settings.bottom*576))
+			
+			writer(str)
 			
 			writer('{\\*\\listtable\n')
 			writer('{\\list\\listtemplateid2\\listsimple')

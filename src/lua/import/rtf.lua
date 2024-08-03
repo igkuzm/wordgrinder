@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 28.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -114,6 +114,36 @@ function Cmd.ImportRTFFile(filename)
       return tmpname
     end
 
+    local pageprop = function(w, h, l, r, t, b)
+	  local settings = DocumentSet.addons.pageconfig
+      local x = 0
+      local y = 0
+      if w > h then
+        settings.landscape = true
+        x = h
+        y = w
+      else
+        settings.landscape = false
+        x = w
+        y = h
+      end
+
+      settings.pagesize = "A4"
+      if x == 8391 and y == 11906 then
+        settings.pagesize = "A5"
+      end
+      
+      if x == 12240 and y == 15840 then
+        settings.pagesize = "letter"
+      end
+
+      settings.left = l / 576
+      settings.right = r / 576
+      settings.top = t / 576
+      settings.bottom = b / 576
+      
+    end
+
     UnRTF(
       filename,
       paragraph,
@@ -121,7 +151,8 @@ function Cmd.ImportRTFFile(filename)
       tablerow,
       tablecell,
       text,
-      image
+      image,
+      pageprop
     )
     
 	if (#document > 1) then
