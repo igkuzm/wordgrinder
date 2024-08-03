@@ -121,7 +121,7 @@ local DocumentSettingsMenu = CreateMenu("Document settings",
 	{"FSPageCount",    "P", "Page count...",         nil,         Cmd.ConfigurePageCount},
 	{"FSSmartquotes",  "Q", "Smart quotes...",       nil,         Cmd.ConfigureSmartQuotes},
 	{"FSSpellchecker", "K", "Spellchecker...",       nil,         Cmd.ConfigureSpellchecker},
-	{"FSpageConfig",   "L", "Page config...",        nil,         Cmd.ConfigurePage},
+	{"FSpageConfig",   "C", "Page config...",        nil,         Cmd.ConfigurePage},
 })
 
 local GlobalSettingsMenu = CreateMenu("Global settings",
