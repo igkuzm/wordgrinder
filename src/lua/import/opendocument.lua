@@ -187,20 +187,18 @@ local function collect_styles(styles, xml)
 end
 
 local function size_to_cm(w)
-	local s = tonumber(string.match(w, "%d+"))
+	local s = tonumber(string.match(w, "%d+%.?%d*"))
 	if string.match(w, "cm") then
 		s = s
-	end
-	if string.match(w, "in") then
+	elseif string.match(w, "in") then
 		s = s * 2.5
-	end
-	if string.match(w, "dxa") then
+	elseif string.match(w, "dxa") then
 		s = s / 576
 	end
 	return s
 end
 
-local function get_page_properties(styles, xml)
+local function get_page_properties(xml)
 	local STYLES = OFFICE_NS .. " styles"
 	local AUTOMATIC_STYLES = OFFICE_NS .. " automatic-styles"
 	local PAGELAYOUT = STYLE_NS .. " page-layout"
@@ -214,12 +212,12 @@ local function get_page_properties(styles, xml)
 				if (element._name == PAGELAYOUT) then
 					for _, element in ipairs(element) do
 						if (element._name == PAGELAYOUTPROP) then
-							local w = element[FO_NS .. "page-width"] or 21.001
-							local h = element[FO_NS .. "page-height"] or 29.7
-							local l = element[FO_NS .. "margin-left"] or 2
-							local r = element[FO_NS .. "margin-right"] or 2
-							local t = element[FO_NS .. "margin-top"] or 2
-							local b = element[FO_NS .. "margin-bottom"] or 2
+							local w = element[FO_NS .. " page-width"] or 21.001
+							local h = element[FO_NS .. " page-height"] or 29.7
+							local l = element[FO_NS .. " margin-left"] or 2
+							local r = element[FO_NS .. " margin-right"] or 2
+							local t = element[FO_NS .. " margin-top"] or 2
+							local b = element[FO_NS .. " margin-bottom"] or 2
 
 							-- set page prop
 							local settings = DocumentSet.addons.pageconfig
@@ -247,9 +245,9 @@ local function get_page_properties(styles, xml)
 							end
 							
 							settings.left = size_to_cm(l)
-							settings.right = size_to_cm(l)
-							settings.top = size_to_cm(l)
-							settings.bottom = size_to_cm(l)
+							settings.right = size_to_cm(r)
+							settings.top = size_to_cm(t)
+							settings.bottom = size_to_cm(b)
 
 						end
 					end
@@ -355,14 +353,12 @@ local function import_paragraphs(styles, importer, xml, defaultstyle)
 									add_text(styles, importer, element)
 									local w = width[en];
 									if w then
-										local width = tonumber(string.match(w, "%d+"))
+										local width = tonumber(string.match(w, "%d+%.?%d*"))
 										if string.match(w, "cm") then
 											width = width * 5
-										end
-										if string.match(w, "in") then
+										elseif string.match(w, "in") then
 											width = width * 5 * 2.5
-										end
-										if string.match(w, "dxa") then
+										elseif string.match(w, "dxa") then
 											width = width/20/72 * 12
 										end
 										local i 
@@ -483,7 +479,7 @@ function Cmd.ImportODTFile(filename)
 	local styles = {}
 	collect_styles(styles, stylesxml)
 	collect_styles(styles, contentxml)
-	get_page_properties(styles, stylesxml)
+	get_page_properties(stylesxml)
 	resolve_parent_styles(styles)
 
 	-- Actually import the content.
