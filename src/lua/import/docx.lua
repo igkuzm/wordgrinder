@@ -529,8 +529,8 @@ function Cmd.ImportDOCXFile(filename)
 					local settings = DocumentSet.addons.pageconfig
 					for _, element in ipairs(element) do
 						if (element._name == W .. " pgSz") then
-							local w = element[W .. " w"]
-							local h = element[W .. " h"]
+							local w = element[W .. " w"] or 11906
+							local h = element[W .. " h"] or 16838
 							
 							local x = 0
 							local y = 0
@@ -557,10 +557,10 @@ function Cmd.ImportDOCXFile(filename)
 						end
 						
 						if (element._name == W .. " pgMar") then
-							local left = element[W .. " left"]
-							local right = element[W .. " right"]
-							local top = element[W .. " top"]
-							local bottom = element[W .. " bottom"]
+							local left = element[W .. " left"] or 2
+							local right = element[W .. " right"] or 2
+							local top = element[W .. " top"] or 2
+							local bottom = element[W .. " bottom"] or 2
 							
 							settings.left = left / 576
 							settings.right = right / 576

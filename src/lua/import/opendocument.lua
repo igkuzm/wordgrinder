@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 31.07.2024
+Last Modified Date: 04.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -180,6 +180,79 @@ local function collect_styles(styles, xml)
 				end
 				if (element._name == TEXT_NS .. " list-style") then
 					parse_style(styles, element)
+				end
+			end
+		end
+	end
+end
+
+local function size_to_cm(w)
+	local s = tonumber(string.match(w, "%d+"))
+	if string.match(w, "cm") then
+		s = s
+	end
+	if string.match(w, "in") then
+		s = s * 2.5
+	end
+	if string.match(w, "dxa") then
+		s = s / 576
+	end
+	return s
+end
+
+local function get_page_properties(styles, xml)
+	local STYLES = OFFICE_NS .. " styles"
+	local AUTOMATIC_STYLES = OFFICE_NS .. " automatic-styles"
+	local PAGELAYOUT = STYLE_NS .. " page-layout"
+	local PAGELAYOUTPROP = STYLE_NS .. " page-layout-properties"
+	
+	local FONT_STYLE = FO_NS .. " font-style"
+
+	for _, element in ipairs(xml) do
+		if (element._name == STYLES) or (element._name == AUTOMATIC_STYLES) then
+			for _, element in ipairs(element) do
+				if (element._name == PAGELAYOUT) then
+					for _, element in ipairs(element) do
+						if (element._name == PAGELAYOUTPROP) then
+							local w = element[FO_NS .. "page-width"] or 21.001
+							local h = element[FO_NS .. "page-height"] or 29.7
+							local l = element[FO_NS .. "margin-left"] or 2
+							local r = element[FO_NS .. "margin-right"] or 2
+							local t = element[FO_NS .. "margin-top"] or 2
+							local b = element[FO_NS .. "margin-bottom"] or 2
+
+							-- set page prop
+							local settings = DocumentSet.addons.pageconfig
+							
+							local x = 0
+							local y = 0
+							
+							if w > h then
+								settings.landscape = true
+								x = size_to_cm(h)
+								y = size_to_cm(w)
+							else
+								settings.landscape = false
+								x = size_to_cm(w)
+								y = size_to_cm(h)
+							end
+
+							settings.pagesize = "A4"
+							if x == 14.801 and y == 21.001 then
+								settings.pagesize = "A5"
+							end
+							
+							if x == 21.59 and y == 27.94 then
+								settings.pagesize = "letter"
+							end
+							
+							settings.left = size_to_cm(l)
+							settings.right = size_to_cm(l)
+							settings.top = size_to_cm(l)
+							settings.bottom = size_to_cm(l)
+
+						end
+					end
 				end
 			end
 		end
@@ -410,6 +483,7 @@ function Cmd.ImportODTFile(filename)
 	local styles = {}
 	collect_styles(styles, stylesxml)
 	collect_styles(styles, contentxml)
+	get_page_properties(styles, stylesxml)
 	resolve_parent_styles(styles)
 
 	-- Actually import the content.

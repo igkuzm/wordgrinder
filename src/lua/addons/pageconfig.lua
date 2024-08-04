@@ -14,10 +14,10 @@ do
 		DocumentSet.addons.pageconfig = DocumentSet.addons.pageconfig or {
 			landscape = false,
 			pagesize = "A4",
-			top = 1.0,
-			left = 1.5,
-			bottom = 1.0,
-			right = 1.0,
+			top = 2.0,
+			left = 2.0,
+			bottom = 2.0,
+			right = 2.0,
 		}
 	end
 	
@@ -75,7 +75,7 @@ function Cmd.ConfigurePage()
 
 	local dialogue =
 	{
-		title = "Configure Page",
+		title = "Page Layout Config",
 		width = Form.Large,
 		height = 13,
 		stretchy = false,
