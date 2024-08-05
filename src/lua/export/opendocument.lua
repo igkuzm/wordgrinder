@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -281,12 +281,32 @@ local function callback(writer, document)
 			getimagesize(para.imagename, imagesize)
 			local image = {imageid, para.imagename}
 			images[#images+1] = image
+
+			local config = DocumentSet.addons.pageconfig
+
+			local w = 21.001
+			local h = 29.7
+
+			if config.pagesize == "A5" then
+				w = 14.801
+				h = 21.001
+			elseif config.pagesize == "letter" then
+				w = 21.59
+				h = 27.94
+			end
+
+			local pagewidth = w
+			if config.landscape then
+				pagewidth = h
+			end
+
+			pagewidth = pagewidth - config.left - config.right
 			
 			writer(string_format([[
-				<draw:frame draw:style-name="IMG" draw:name="Image%d" text:anchor-type="as-char" svg:width="16.85cm" svg:height="%dcm" draw:z-index="0">
+				<draw:frame draw:style-name="IMG" draw:name="Image%d" text:anchor-type="as-char" svg:width="%dcm" svg:height="%dcm" draw:z-index="0">
 					<draw:image xlink:href="Pictures/Image%d.jpg" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" draw:mime-type="image/jpeg"/>
 				</draw:frame>
-			]], imageid, Y/X*16.85, imageid))
+			]], imageid, pagewidth, Y/X*pagewidth, imageid))
 			writer('</text:p>')
 			imageid = imageid + 1
 		end,
@@ -336,9 +356,9 @@ local function export_odt_with_ui(filename, title, extension)
 				xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
 				xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
 				
-				<office:font-face-decls>
-				  <style:font-face style:name="monospace" svg:font-family="monospace" style:font-family-generic="modern" style:font-pitch="fixed"/>
-				  <style:font-face style:name="serif" svg:font-family="serif" style:font-family-generic="roman" style:font-pitch="variable"/>
+				<office:font-face-decls>    
+				<style:font-face style:name="Times New Roman" svg:font-family="'Times New Roman'" style:font-family-generic="roman" style:font-pitch="variable"/>
+				<style:font-face style:name="monospace" svg:font-family="monospace" style:font-family-generic="roman" style:font-pitch="variable"/>
 				</office:font-face-decls>
 				 
 				<office:styles>
@@ -347,8 +367,38 @@ local function export_odt_with_ui(filename, title, extension)
       <style:paragraph-properties style:text-autospace="ideograph-alpha" style:line-break="strict" style:writing-mode="lr-tb" style:font-independent-line-spacing="false">
         <style:tab-stops/>
       </style:paragraph-properties>
-      <style:text-properties style:use-window-font-color="true" style:font-name="Nimbus Roman" fo:font-size="12pt" fo:language="ru" fo:country="RU" style:letter-kerning="true" style:font-name-asian="Nimbus Sans1" style:font-size-asian="12pt" style:language-asian="zh" style:country-asian="CN" style:font-name-complex="FreeSans" style:font-size-complex="12pt" style:language-complex="hi" style:country-complex="IN"/>
     </style:default-style>
+			]]
+
+			local fontsize = DocumentSet.addons.pageconfig.fontsize
+
+			styles = styles .. string_format('<style:style style:name="H1" style:family="paragraph"><style:paragraph-properties fo:margin-top="5mm" fo:margin-bottom="2mm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize * 1.5)
+
+    styles = styles .. string_format('<style:style style:name="H2" style:family="paragraph"><style:paragraph-properties fo:margin-top="5mm" fo:margin-bottom="2mm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize * 1.2)
+    
+		styles = styles .. string_format('<style:style style:name="H3" style:family="paragraph"><style:paragraph-properties fo:margin-top="5mm" fo:margin-bottom="2mm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize * 1.1)
+    
+		styles = styles .. string_format('<style:style style:name="H4" style:family="paragraph"><style:paragraph-properties fo:margin-top="5mm" fo:margin-bottom="2mm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+	styles = styles .. string_format('<style:style style:name="P" style:family="paragraph"><style:paragraph-properties fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" fo:text-indent="1cm" style:auto-text-indent="false" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize) 
+    
+		styles = styles .. string_format('<style:style style:name="BOTH" style:family="paragraph"><style:paragraph-properties fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="justify" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" fo:text-indent="1cm" style:auto-text-indent="false" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="CENTER" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="center" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="LEFT" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="RIGTH" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="IMG" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="center" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="Q" style:family="paragraph"><style:paragraph-properties fo:margin-left="1cm" fo:margin-right="0cm" fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" fo:text-indent="0cm" style:auto-text-indent="false" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="V" style:family="paragraph"><style:paragraph-properties fo:margin-left="1cm" fo:margin-right="0cm" fo:margin-top="0cm" fo:margin-bottom="0cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" fo:text-indent="0cm" style:auto-text-indent="false" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+    
+		styles = styles .. string_format('<style:style style:name="PRE" style:family="paragraph"><style:paragraph-properties fo:margin-left="1cm" fo:margin-right="0cm" fo:margin-top="0cm" fo:margin-bottom="0cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" fo:text-indent="0cm" style:auto-text-indent="false" style:writing-mode="lr-tb"/><style:text-properties style:font-name="monospace" fo:font-family="monospace" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="12pt"/></style:style>', fontsize)
+
+			styles = styles .. [[
 					<style:style style:name="B" style:family="text">
 	              		<style:text-properties fo:font-weight="bold"
 	              			style:font-weight-complex="bold"
@@ -366,121 +416,6 @@ local function export_odt_with_ui(filename, title, extension)
 							style:text-underline-width="auto"
 							style:text-underline-color="font-color"/>
 	            	</style:style>
-                	
-                	<style:style style:name="H1"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="5mm"
-                			fo:margin-bottom="2mm"/>
-                		<style:text-properties
-                			fo:font-size="150%"
-                			style:font-name="serif"
-                			fo:font-weight="bold"/>
-                	</style:style>
-                	
-                	<style:style style:name="H2"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="5mm"
-                			fo:margin-bottom="2mm"/>
-                		<style:text-properties
-                			fo:font-size="130%"
-                			style:font-name="serif"
-                			fo:font-weight="bold"/>
-                	</style:style>
-                	
-                	<style:style style:name="H3"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="5mm"
-                			fo:margin-bottom="2mm"/>
-                		<style:text-properties
-                			fo:font-size="110%"
-                			style:font-name="serif"
-                			fo:font-weight="bold"/>
-                	</style:style>
-                	
-                	<style:style style:name="H4"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="5mm"
-                			fo:margin-bottom="2mm"/>
-                		<style:text-properties
-                			style:font-name="serif"
-                			fo:font-weight="bold"/>
-                	</style:style>
-                	
-                	<style:style style:name="P"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="1.5mm"
-											fo:text-indent="1.00cm"
-                			fo:margin-bottom="1.5mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-                		
-									<style:style style:name="BOTH"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="1.5mm"
-											fo:text-align="justify"
-											fo:text-indent="1.00cm"
-                			fo:margin-bottom="1.5mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-                	
-									<style:style style:name="CENTER"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="1.5mm"
-											fo:text-align="center"
-                			fo:margin-bottom="1.5mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-                	
-									<style:style style:name="LEFT"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="1.5mm"
-											fo:text-align="left"
-                			fo:margin-bottom="1.5mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-        
-									<style:style style:name="RIGHT"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="1.5mm"
-											fo:text-align="right"
-                			fo:margin-bottom="1.5mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-        
-									<style:style style:name="Q"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-							fo:margin-top="1.5mm"
-                			fo:margin-bottom="1.5mm"
-                			fo:margin-left="10mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-                	
-                	<style:style style:name="V"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-left="10mm"
-                			fo:margin-top="0mm"
-                			fo:margin-bottom="0mm"/>
-                		<style:text-properties style:font-name="serif"/>
-                	</style:style>
-                	
-                	<style:style style:name="PRE"
-                		style:family="paragraph" style:class="text">
-                		<style:paragraph-properties
-                			fo:margin-top="0mm"
-                			fo:margin-bottom="0mm"/>
-                		<style:text-properties style:font-name="monospace"/>
-                	</style:style>
                 	
                 	<text:list-style style:name="LB">
                 		<text:list-level-style-bullet text:level="1" text:bullet-char="•">

@@ -142,6 +142,8 @@ function Cmd.ImportDOCFile(filename)
       settings.right = r / 567
       settings.top = t / 567
       settings.bottom = b / 567
+
+      Cmd.SetTextWidth()
       
     end
 

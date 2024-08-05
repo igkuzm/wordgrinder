@@ -2,7 +2,7 @@
 File              : main.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 06.01.2024
+Last Modified Date: 05.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -99,6 +99,8 @@ end
 function WordProcessor(filename)
     LoadGlobalSettings()
     ResetDocumentSet()
+  
+    Cmd.SetTextWidth()
 
     -- Move legacy config files.
 
@@ -160,7 +162,7 @@ function WordProcessor(filename)
     wg.initscreen()
     ResizeScreen()
     RedrawScreen()
-
+    
     if filename then
         if not Cmd.LoadDocumentSet(filename) then
             -- As a special case, if we tried to load a document from the command line and it

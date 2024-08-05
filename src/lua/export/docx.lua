@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -197,7 +197,7 @@ local function callback(writer, document)
 				h = y
 			end
 
-			local str = string_format('<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="%s" w:h="%s"/><w:pgMar w:left="%s" w:right="%s" w:gutter="0" w:header="0" w:top="%s" w:footer="0" w:bottom="%s"/><w:pgNumType w:fmt="decimal"/><w:formProt w:val="false"/><w:textDirection w:val="lrTb"/><w:docGrid w:type="default" w:linePitch="100" w:charSpace="0"/></w:sectPr>\n', tostring(w), tostring(h), tostring(settings.left*576), tostring(settings.right*576), tostring(settings.top*576), tostring(settings.bottom*576))
+			local str = string_format('<w:sectPr><w:type w:val="nextPage"/><w:pgSz w:w="%s" w:h="%s"/><w:pgMar w:left="%s" w:right="%s" w:gutter="0" w:header="0" w:top="%s" w:footer="0" w:bottom="%s"/><w:pgNumType w:fmt="decimal"/><w:formProt w:val="false"/><w:textDirection w:val="lrTb"/><w:docGrid w:type="default" w:linePitch="100" w:charSpace="0"/></w:sectPr>\n', tostring(w), tostring(h), tostring(settings.left*567), tostring(settings.right*567), tostring(settings.top*567), tostring(settings.bottom*567))
 
 			writer(str)
 
@@ -267,16 +267,57 @@ local function callback(writer, document)
 					<w:spacing w:before="0" w:after="0"/>
 					<w:rPr>
 						<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
-						<w:sz w:val="24"/>
-					</w:rPr>
-				</w:pPr>
 			]])
+
+			writer(string_format('<w:sz w:val="%d"/></w:rPr></w:pPr>', DocumentSet.addons.pageconfig.fontsize * 2))
 
 			writer('<w:r><w:t>')
 		end,
 		
 		image_end = function(para)
 				writer('</w:t></w:r>')
+
+			local settings = DocumentSet.addons.pageconfig
+			local h = 0
+			local w = 0
+			local x1 = 0
+			local y1 = 0
+			
+			if settings.pagesize == "A4" or 
+				 settings.pagesize == "a4" then 
+
+				 x1 = 11906
+				 y1 = 16838
+			end
+
+			if settings.pagesize == "A5" or 
+				 settings.pagesize == "a5" then 
+
+				 x1 = 8391
+				 y1 = 11906
+			end
+
+			if settings.pagesize == "letter" or 
+				 settings.pagesize == "Letter" or 
+				 settings.pagesize == "LETTER" then 
+
+				 x1 = 12240
+				 y1 = 15840
+			end
+
+			if settings.language then 
+				w = y1
+				h = x1
+			else
+				w = x1
+				h = y1
+			end
+
+			local pagewidth = w
+
+			pagewidth = pagewidth - settings.left*567 - settings.right*567
+			
+			pagewidth = pagewidth * 609
 
 			local X = 0
 			local Y = 0
@@ -313,7 +354,7 @@ local function callback(writer, document)
 											<pic:spPr bwMode="auto">
 												<a:xfrm>
 													<a:off x="0" y="0"/>
-													<a:ext cx="5878830" cy="%d"/>
+													<a:ext cx="%d" cy="%d"/>
 												</a:xfrm>
 												<a:prstGeom prst="rect">
 													<a:avLst/>
@@ -325,7 +366,7 @@ local function callback(writer, document)
 							</wp:inline>
 						</w:drawing>
 					</w:r>
-				]], imageid, imageid, para.imagename, imageid, imageid, para.imagename, rId, Y/X*5878830))
+				]], imageid, imageid, para.imagename, imageid, imageid, para.imagename, rId, pagewidth, Y/X*pagewidth))
 
 				writer('</w:p>')
 
@@ -418,6 +459,109 @@ local function export_docx_with_ui(filename, title, extension)
 	
 	add_relation('</Relationships>\n')
 	relations = table_concat(relations)
+
+	local styles = [[<?xml version="1.0" encoding="utf-8"?>
+		<w:styles 
+			xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" 
+			xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" 
+			xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+			mc:Ignorable="w14">
+			<w:docDefaults>
+				<w:rPrDefault>
+					<w:rPr>
+						<w:rFonts w:ascii="Nimbus Roman" w:hAnsi="Nimbus Roman" w:eastAsia="Cantarell" w:cs="FreeSerif"/>
+						<w:color w:val="000000"/>
+						<w:sz w:val="24"/>
+						<w:szCs w:val="24"/>
+						<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
+					</w:rPr>
+				</w:rPrDefault>
+				<w:pPrDefault>
+					<w:pPr>
+						<w:suppressAutoHyphens w:val="true"/>
+					</w:pPr>
+				</w:pPrDefault>
+			</w:docDefaults>
+			<w:style w:type="paragraph" w:styleId="Normal">
+				<w:name w:val="Normal"/>
+				<w:qFormat/>
+				<w:pPr>
+					<w:widowControl w:val="false"/>
+					<w:bidi w:val="0"/>
+				</w:pPr>
+				<w:rPr>
+					<w:sz w:val="24"/>
+					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
+				</w:rPr>
+			</w:style>
+			<w:style w:type="character" w:styleId="B">
+				<w:name w:val="B"/>
+				<w:qFormat/>
+				<w:rPr>
+					<w:b/>
+					<w:bCs/>
+				</w:rPr>
+			</w:style>
+			<w:style w:type="character" w:styleId="I">
+				<w:name w:val="I"/>
+				<w:qFormat/>
+				<w:rPr>
+					<w:i/>
+					<w:iCs/>
+				</w:rPr>
+			</w:style>
+			<w:style w:type="character" w:styleId="UL">
+				<w:name w:val="UL"/>
+				<w:qFormat/>
+				<w:rPr>
+					<w:u w:val="single"/>
+				</w:rPr>
+			</w:style>
+	]]
+			
+	local settings = DocumentSet.addons.pageconfig
+
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="H1"><w:name w:val="H1"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="283" w:after="113"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 3)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="H2"><w:name w:val="H2"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="283" w:after="113"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2.5)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="H3"><w:name w:val="H3"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="283" w:after="113"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2.2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="H4"><w:name w:val="H4"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="283" w:after="113"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="P"><w:name w:val="P"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:ind w:firstLine="567"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="BOTH"><w:name w:val="BOTH"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:ind w:firstLine="567"/><w:jc w:val="both"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="CENTER"><w:name w:val="CENTER"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:jc w:val="center"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="LEFT"><w:name w:val="LEFT"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:jc w:val="left"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="RIGTH"><w:name w:val="RIGTH"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:jc w:val="rigth"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="IMG"><w:name w:val="IMG"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:jc w:val="center"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="Q"><w:name w:val="Q"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="85" w:after="85"/><w:ind w:left="567" w:hanging="0"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="V"><w:name w:val="V"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="0" w:after="0"/><w:ind w:left="567" w:hanging="0"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+	
+	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="PRE"><w:name w:val="PRE"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="0" w:after="0"/><w:ind w:left="567" w:hanging="0"/></w:pPr><w:rPr><w:rFonts w:ascii="monospace" w:hAnsi="monospace"/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 2)
+
+	styles = styles .. [[
+		<w:style w:type="numbering" w:styleId="LB">
+				<w:name w:val="LB"/>
+				<w:qFormat/>
+			</w:style>
+			<w:style w:type="numbering" w:styleId="LN">
+				<w:name w:val="LN"/>
+				<w:qFormat/>
+			</w:style>
+			<w:style w:type="numbering" w:styleId="L">
+				<w:name w:val="L"/>
+				<w:qFormat/>
+			</w:style>
+		</w:styles>
+	]]
 	
 	local xml =
 	{
@@ -602,271 +746,7 @@ local function export_docx_with_ui(filename, title, extension)
 			<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
 		</Types>]],
 
-		["word/styles.xml"] = [[<?xml version="1.0" encoding="utf-8"?>
-		<w:styles 
-			xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" 
-			xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" 
-			xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-			mc:Ignorable="w14">
-			<w:docDefaults>
-				<w:rPrDefault>
-					<w:rPr>
-						<w:rFonts w:ascii="Nimbus Roman" w:hAnsi="Nimbus Roman" w:eastAsia="Cantarell" w:cs="FreeSerif"/>
-						<w:color w:val="000000"/>
-						<w:sz w:val="24"/>
-						<w:szCs w:val="24"/>
-						<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-					</w:rPr>
-				</w:rPrDefault>
-				<w:pPrDefault>
-					<w:pPr>
-						<w:suppressAutoHyphens w:val="true"/>
-					</w:pPr>
-				</w:pPrDefault>
-			</w:docDefaults>
-			<w:style w:type="paragraph" w:styleId="Normal">
-				<w:name w:val="Normal"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-				</w:pPr>
-				<w:rPr>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="character" w:styleId="B">
-				<w:name w:val="B"/>
-				<w:qFormat/>
-				<w:rPr>
-					<w:b/>
-					<w:bCs/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="character" w:styleId="I">
-				<w:name w:val="I"/>
-				<w:qFormat/>
-				<w:rPr>
-					<w:i/>
-					<w:iCs/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="character" w:styleId="UL">
-				<w:name w:val="UL"/>
-				<w:qFormat/>
-				<w:rPr>
-					<w:u w:val="single"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="H1">
-				<w:name w:val="H1"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="283" w:after="113"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:b/>
-					<w:sz w:val="36"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="H2">
-				<w:name w:val="H2"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="283" w:after="113"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:b/>
-					<w:sz w:val="31"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="H3">
-				<w:name w:val="H3"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="283" w:after="113"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:b/>
-					<w:sz w:val="26"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="H4">
-				<w:name w:val="H4"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="283" w:after="113"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:b/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="P">
-				<w:name w:val="P"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:ind w:firstLine="567"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="BOTH">
-				<w:name w:val="BOTH"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:ind w:firstLine="567"/>
-					<w:jc w:val="both"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="CENTER">
-				<w:name w:val="CENTER"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:jc w:val="center"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="IMG">
-				<w:name w:val="IMG"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:jc w:val="center"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="LEFT">
-				<w:name w:val="LEFT"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:jc w:val="left"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="RIGHT">
-				<w:name w:val="RIGHT"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:jc w:val="right"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="Q">
-				<w:name w:val="Q"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="85" w:after="85"/>
-					<w:ind w:left="567" w:hanging="0"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="V">
-				<w:name w:val="V"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="0" w:after="0"/>
-					<w:ind w:left="567" w:hanging="0"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="serif" w:hAnsi="serif"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="paragraph" w:styleId="PRE">
-				<w:name w:val="PRE"/>
-				<w:qFormat/>
-				<w:pPr>
-					<w:widowControl w:val="false"/>
-					<w:bidi w:val="0"/>
-					<w:spacing w:before="0" w:after="0"/>
-				</w:pPr>
-				<w:rPr>
-					<w:rFonts w:ascii="monospace" w:hAnsi="monospace"/>
-					<w:sz w:val="24"/>
-					<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
-				</w:rPr>
-			</w:style>
-			<w:style w:type="numbering" w:styleId="LB">
-				<w:name w:val="LB"/>
-				<w:qFormat/>
-			</w:style>
-			<w:style w:type="numbering" w:styleId="LN">
-				<w:name w:val="LN"/>
-				<w:qFormat/>
-			</w:style>
-			<w:style w:type="numbering" w:styleId="L">
-				<w:name w:val="L"/>
-				<w:qFormat/>
-			</w:style>
-		</w:styles>]],
+		["word/styles.xml"] = styles,
 
 		 ["word/document.xml"] = content
 	}

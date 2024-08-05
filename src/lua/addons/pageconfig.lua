@@ -21,8 +21,46 @@ do
 			fontsize = 12,
 		}
 	end
-	
+
 	AddEventListener(Event.RegisterAddons, cb)
+end
+
+function Cmd.SetTextWidth()
+	local settings = DocumentSet.addons.pageconfig or {}
+	-- if fontsize is 12 - then it should be 0,22 cm for 1
+	-- symbol and 0,3 cm for 1 line
+	-- if fontsize is 14 - then it should be 0,27 cm for 1
+	-- symbol and 0,56 cm for 1 line
+	local pagewidth = 0;
+	if settings.landscape then
+		if settings.pagesize == "A4" then
+			pagewidth = 29
+		elseif settings.pagesize == "A5" then
+			pagewidth = 21
+		elseif settings.pagesize == "letter" then
+			pagewidth = 28
+		end
+	else
+		if settings.pagesize == "A4" then
+			pagewidth = 21
+		elseif settings.pagesize == "A5" then
+			pagewidth = 15
+		elseif settings.pagesize == "letter" then
+			pagewidth = 22
+		end
+	end
+
+	pagewidth = pagewidth - settings.left - settings.right
+	
+	local width = 0;
+	if settings.fontsize == 12 then
+		width = pagewidth / 0.22
+	else
+		width = pagewidth / 0.27
+	end
+
+	GlobalSettings.lookandfeel.maxwidth = width
+
 end
 
 -----------------------------------------------------------------------------
@@ -135,8 +173,8 @@ function Cmd.ConfigurePage()
 		right_textfield,
 
 		Form.Label {
-			x1 = 1, y1 = 11,
-			x2 = 32, y2 = 11,
+			x1 = 1, y1 = 13,
+			x2 = 32, y2 = 13,
 			align = Form.Left,
 			value = "Default font size (12, 14):"
 		},
@@ -158,6 +196,8 @@ function Cmd.ConfigurePage()
 		local bottom = tonumber(bottom_textfield.value)
 		local right = tonumber(right_textfield.value)
 		
+		local fontsize = tonumber(fontsize_textfield.value)
+		
 		if not pagesize then
 			ModalMessage("Parameter error", "Pagesize should be A4, A5 or letter.")
 		elseif pagesize ~= "a4" and 
@@ -170,12 +210,23 @@ function Cmd.ConfigurePage()
 		then
 			ModalMessage("Parameter error", "Pagesize should be A4, A5, or letter.")
 		
-		elseif pagesize ~= "12" and 
-					 pagesize ~= "14"
+		elseif fontsize ~= 12 and 
+					 fontsize ~= 14
 		then
 			ModalMessage("Parameter error", "Default font size should be 12 or 14")
 		
 		else
+			
+			if pagesize == "a4" then 
+				pagesize = "A4"
+			elseif pagesize == "a5" then
+				pagesize = "A5" 
+			elseif pagesize == "Letter" then
+				pagesize = "letter"
+			elseif pagesize == "LETTER" then
+				pagesize = "letter"
+			end
+
 			settings.landscape = landscape
 			settings.pagesize = pagesize
 			settings.top = top
@@ -184,6 +235,8 @@ function Cmd.ConfigurePage()
 			settings.right = right
 			settings.fontsize = fontsize
 			DocumentSet:touch()
+      
+			Cmd.SetTextWidth()
 
 			return true
 		end

@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -50,29 +50,36 @@ local function unrtf(s)
 	return table_concat(ss)
 end
 
-local style_tab =
+local style_tab = {}
+
+local function style_tab_init()
+	local fontsize = DocumentSet.addons.pageconfig.fontsize
+	style_tab =
 {
-	["H1"]     = {1, '\\fs40\\sb400\\b\\sbasedon0 H1'},
-	["H2"]     = {2, '\\fs36\\sb360\\b\\sbasedon0 H2'},
-	["H3"]     = {3, '\\fs32\\sb320\\b\\sbasedon0 H3'},
-	["H4"]     = {4, '\\fs28\\sb280\\b\\sbasedon0 H4'},
-	["P"]      = {5, '\\fs28\\sb140\\sbasedon0\\qj P'},
-	["L"]      = {6, '\\fs28\\sb140\\sbasedon5 L'},
-	["LB"]     = {7, '\\fs28\\sb140\\sbasedon5 LB'},
-	["LN"]     = {8, '\\fs28\\sb140\\sbasedon5 LN'},
-	["Q"]      = {9, '\\fs28\\sb140\\li500\\sbasedon5 Q'},
-	["V"]      = {10, '\\fs28\\sb140\\li500\\sbasedon5 V'},
-	["RAW"]    = {11, '\\fs28\\sb140\\sbasedon5 RAW'},
-	["PRE"]    = {12, '\\fs28\\sb140\\sbasedon5 PRE'},
-	["LEFT"]   = {13, '\\fs28\\sb140\\sbasedon5\\ql LEFT'},
-	["RIGHT"]  = {14, '\\fs28\\sb140\\sbasedon5\\qr RIGHT'},
-	["BOTH"]   = {16, '\\fs28\\sb140\\sbasedon5\\qj BOTH'},
-	["CENTER"] = {17, '\\fs28\\sb140\\sbasedon5\\qc CENTER'},
-	["IMG"]    = {18, '\\fs28\\sb140\\sbasedon5\\qc IMG'},
+	["H1"]     = {1,  string_format('\\fs%d\\sb400\\b\\sbasedon0 H1', fontsize * 3)},
+	["H2"]     = {2,  string_format('\\fs%d\\sb360\\b\\sbasedon0 H2', fontsize * 2.5)},
+	["H3"]     = {3,  string_format('\\fs%d\\sb320\\b\\sbasedon0 H3', fontsize * 2.2)},
+	["H4"]     = {4,  string_format('\\fs%d\\sb280\\b\\sbasedon0 H4', fontsize * 2)},
+	["P"]      = {5,  string_format('\\fs%d\\sb140\\sbasedon0\\qj P', fontsize * 2)},
+	["L"]      = {6,  string_format('\\fs%d\\sb140\\sbasedon5 L', fontsize * 2)},
+	["LB"]     = {7,  string_format('\\fs%d\\sb140\\sbasedon5 LB', fontsize * 2)},
+	["LN"]     = {8,  string_format('\\fs%d\\sb140\\sbasedon5 LN', fontsize * 2)},
+	["Q"]      = {9,  string_format('\\fs%d\\sb140\\li500\\sbasedon5 Q', fontsize * 2)},
+	["V"]      = {10, string_format('\\fs%d\\sb140\\li500\\sbasedon5 V', fontsize * 2)},
+	["RAW"]    = {11, string_format('\\fs%d\\sb140\\sbasedon5 RAW', fontsize * 2)},
+	["PRE"]    = {12, string_format('\\fs%d\\sb140\\sbasedon5 PRE', fontsize * 2)},
+	["LEFT"]   = {13, string_format('\\fs%d\\sb140\\sbasedon5\\ql LEFT', fontsize * 2)},
+	["RIGHT"]  = {14, string_format('\\fs%d\\sb140\\sbasedon5\\qr RIGHT', fontsize * 2)},
+	["BOTH"]   = {16, string_format('\\fs%d\\sb140\\sbasedon5\\qj BOTH', fontsize * 2)},
+	["CENTER"] = {17, string_format('\\fs%d\\sb140\\sbasedon5\\qc CENTER', fontsize * 2)},
+	["IMG"]    = {18, string_format('\\fs%d\\sb140\\sbasedon5\\qc IMG', fontsize * 2)},
 }
+end
 
 local function callback(writer, document)
 	local settings = DocumentSet.addons.htmlexport
+
+	style_tab_init()
 	
 	return ExportFileUsingCallbacks(document,
 	{
@@ -119,7 +126,7 @@ local function callback(writer, document)
 				h = y
 			end
 
-			local str = string_format('\\paperw%s\\paperh%s\\margl%s\\margr%s\\margt%s\\margb%s\n', tostring(w), tostring(h), tostring(settings.left*576), tostring(settings.right*576), tostring(settings.top*576), tostring(settings.bottom*576))
+			local str = string_format('\\paperw%d\\paperh%d\\margl%d\\margr%d\\margt%d\\margb%d\n', w, h, settings.left*567, settings.right*567, settings.top*567, settings.bottom*567)
 			
 			writer(str)
 			
@@ -255,6 +262,49 @@ local function callback(writer, document)
 		end,
 		
 		image_end = function(para)
+			
+			-- set page size
+			local settings = DocumentSet.addons.pageconfig
+			local h = 0
+			local w = 0
+			local x1 = 0
+			local y1 = 0
+			
+			if settings.pagesize == "A4" or 
+				 settings.pagesize == "a4" then 
+
+				 x1 = 11906
+				 y1 = 16838
+			end
+
+			if settings.pagesize == "A5" or 
+				 settings.pagesize == "a5" then 
+
+				 x1 = 8391
+				 y1 = 11906
+			end
+
+			if settings.pagesize == "letter" or 
+				 settings.pagesize == "Letter" or 
+				 settings.pagesize == "LETTER" then 
+
+				 x1 = 12240
+				 y1 = 15840
+			end
+
+			if settings.language then 
+				w = y1
+				h = x1
+			else
+				w = x1
+				h = y1
+			end
+
+			local pagewidth = w
+
+			pagewidth = pagewidth - settings.left*567 - settings.right*567
+			
+
 			local X = 0
 			local Y = 0
 			
@@ -269,7 +319,7 @@ local function callback(writer, document)
 			end
 
 			getimagesize(para.imagename, imagesize)
-			writer(string_format('{\\pict\\picwgoal9258\\pichgoal%d\\jpegblip\n', Y/X*9258))
+			writer(string_format('{\\pict\\picwgoal%d\\pichgoal%d\\jpegblip\n', pagewidth, Y/X*pagewidth))
 			ImageToRTF(para.imagename, rtfimage)
 			
 			writer('\\par\n')
