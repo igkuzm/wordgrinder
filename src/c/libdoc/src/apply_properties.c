@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -249,6 +249,48 @@ int apply_section_property(
 	BYTE sgc = SprmSgc(prl->sprm);
 	LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd); 
 #endif
+
+	if (ismpd == sprmSXaPage){
+		SHORT *n = (SHORT *)(prl->operand);
+		doc->prop.sep.xaPage = *n;
+
+		return 0;
+	}
+
+	if (ismpd == sprmSYaPage){
+		SHORT *n = (SHORT *)(prl->operand);
+		doc->prop.sep.yaPage = *n;
+
+		return 0;
+	}
+	
+	if (ismpd == sprmSDxaLeft){
+		USHORT *n = (USHORT *)(prl->operand);
+		doc->prop.sep.xaLeft = *n;
+
+		return 0;
+	}
+
+	if (ismpd == sprmSDxaRight){
+		USHORT *n = (USHORT *)(prl->operand);
+		doc->prop.sep.xaRight = *n;
+
+		return 0;
+	}
+
+	if (ismpd == sprmSDyaTop){
+		USHORT *n = (USHORT *)(prl->operand);
+		doc->prop.sep.yaTop = *n;
+
+		return 0;
+	}
+
+	if (ismpd == sprmSDyaBottom){
+		USHORT *n = (USHORT *)(prl->operand);
+		doc->prop.sep.yaBottom = *n;
+
+		return 0;
+	}
 
 
 #ifdef DEBUG

@@ -202,7 +202,7 @@ void flushstyle(struct unrtf_t *t, int STY, bool val){
 	lua_call(t->L, 2, 0);
 }
 
-void flushpageprop(struct unrtf_t *t, prop_t *p){
+static void flushpageprop(struct unrtf_t *t, prop_t *p){
 	lua_pushvalue(t->L, 8);
 	lua_pushnumber(t->L, p->dop.xaPage);
 	lua_pushnumber(t->L, p->dop.yaPage);

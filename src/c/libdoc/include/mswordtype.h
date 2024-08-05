@@ -2,7 +2,7 @@
  * File              : mswordtype.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 17.01.2024
- * Last Modified Date: 26.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -129,6 +129,13 @@ typedef struct sect_prop
 	int yaPgn;        // y position of page number in twips
 	PGN pgnFormat;    // how the page number is formatted
 	int ds;           // section style
+	int   xaPage;     // page width in twips
+	int   yaPage;     // page height in twips
+	int   xaLeft;     // left margin in twips
+	int   yaTop;      // top margin in twips
+	int   xaRight;    // right margin in twips
+	int   yaBottom;   // bottom margin in twips
+
 } SEP;              // SEction Properties
 
 /* table cell pattern */

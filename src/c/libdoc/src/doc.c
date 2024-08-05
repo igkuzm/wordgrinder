@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 26.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -381,6 +381,66 @@ int _doc_plcfspa_init(cfb_doc_t *doc){
 
 	return 0;
 }
+
+int _doc_plcfSed_init(cfb_doc_t *doc){
+#ifdef DEBUG
+	LOG("start");
+#endif	
+
+	FibRgFcLcb97 *rgFcLcb97 = (FibRgFcLcb97 *)(doc->fib.rgFcLcb);
+	ULONG off = rgFcLcb97->fcPlcfSed;
+	ULONG len = rgFcLcb97->lcbPlcfSed;
+
+	if (len <= 0 || off <= 0){
+		// some error 
+		ERR("unknown error");
+		return 1;
+	}
+
+	// number of cp is len/(12 + 4) + 1 CP
+	doc->plcfSedNaCP = len / 16 + 1;
+
+	// read cp's
+	doc->plcfSed = 
+		NEW(struct PlcfSed, 
+				ERR("NEW"); 
+				return -1);
+	doc->plcfSed->aCP = (CP *) 
+		ALLOC(sizeof(CP) * doc->plcfSedNaCP, return -1);
+	doc->plcfSed->aSed = (struct Sed *) 
+		ALLOC(sizeof(struct Sed) * (doc->plcfSedNaCP - 1), return -1);
+
+	fseek(doc->Table, off, SEEK_SET);
+	fread(doc->plcfSed->aCP, sizeof(CP),
+			doc->plcfSedNaCP, doc->Table);
+
+	
+	// read aSpa
+	int i;
+	for (i = 0; i < doc->plcfSedNaCP; ++i) {
+		// skeep fn
+		fseek(doc->Table, 2, SEEK_CUR);
+		LONG fcSepx;
+		fread(&fcSepx, 4,
+				1, doc->Table);
+		doc->plcfSed->aSed[i].fcSepx = fcSepx;
+		// skeep fnMpr
+		fseek(doc->Table, 2, SEEK_CUR);
+		// skeep fcMpr
+		fseek(doc->Table, 4, SEEK_CUR);
+	}
+	
+#ifdef DEBUG
+	LOG("PlcfSed with NaCP: %d", doc->plcfSedNaCP);
+	for (i = 0; i < doc->plcfSedNaCP; ++i) {
+		LOG("CP: %d, fcSepx: %d", 
+				doc->plcfSed->aCP[i], doc->plcfSed->aSed[i].fcSepx);
+	}
+#endif	
+
+	return 0;
+}
+
 
 int _plcpcd_init(struct PlcPcd * PlcPcd, uint32_t len, cfb_doc_t *doc){
 #ifdef DEBUG
@@ -771,6 +831,12 @@ int doc_read(cfb_doc_t *doc, struct cfb *cfb){
 	if (ret)
 		return ret;	
 
+	// get PlcfSed
+	ret = _doc_plcfSed_init(doc);
+	if (ret)
+		return ret;	
+	
+
 	// get STSH
 	ret = _doc_STSH_init(doc);
 	if (ret)
@@ -809,7 +875,13 @@ void doc_close(cfb_doc_t *doc)
 				free(doc->plcfspa->aSpa);
 			free(doc->plcfspa);
 		}
-
+		if (doc->plcfSed){
+			if(doc->plcfSed->aCP);
+				free(doc->plcfSed->aCP);
+			if(doc->plcfSed->aSed);
+				free(doc->plcfSed->aSed);
+			free(doc->plcfSed);
+		}
 		
 		if (doc->clx.Pcdt){
 			if (doc->clx.Pcdt->PlcPcd.aCp)

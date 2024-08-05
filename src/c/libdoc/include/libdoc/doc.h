@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -5895,6 +5895,61 @@ struct NilPICFAndBinData {
  //is invalid, it MUST be ignored.
 };
 
+/* SECTION STRUCTURES */
+
+/* 2.9.243 Sed
+ * The Sed structure specifies the location of the section
+ * properties.*/
+struct Sed {
+	SHORT fn;            //(2 bytes): This value is undefined
+											 //and MUST be ignored.
+	LONG fcSepx;         //(4 bytes): A signed integer value
+											 //that specifies the position in the
+											 //WordDocument Stream at which a Sepx
+											 //structure is located.
+	SHORT fnMpr;         //(2 bytes): This value is undefined
+											 //and MUST be ignored.
+	LONG fcMpr;          //(4 bytes): This value is undefined
+											 //and MUST be ignored.
+};
+
+
+/* 2.8.26 PlcfSed
+ * The PlcfSed structure is a PLC structure where the data
+ * elements are Sed structures (12 bytes
+ * each).*/
+struct PlcfSed {
+	CP *aCP;             //(variable): An array of CPs. Each
+											 //CP specifies the beginning of a
+											 //range of text in the main document
+											 //that constitutes a section. The
+											 //range of text ends immediately
+											 //prior to the next CP. A PlcfSed
+											 //MUST NOT contain duplicate CPs.
+											 //There MUST also be an
+											 //end-of-section character (0x0C) as
+											 //the final character in the text
+											 //range of all but the last section.
+											 //An end-of-section character (0x0C)
+											 //which occurs at a CP and which is
+											 //not the last character in a section
+											 //specifies a manual page break. The
+											 //last CP does not begin a new
+											 //section. It MUST be at or beyond
+											 //the end of the main document.
+											 //Sections only contain text from the
+											 //main document, so even when the
+											 //last CP comes after text in other
+											 //document parts, that text is not
+											 //part of the last section.
+	struct Sed *aSed;    //(variable): An array of 12-byte Sed
+											 //structures. Each Sed structure
+											 //contains the location of properties
+											 //pertaining to the section that
+											 //begins at the corresponding CP.
+};
+
+
 /*
  * MS-DOC Structure.
  */
@@ -5914,6 +5969,8 @@ typedef struct cfb_doc
 	int plcbteChpxNaFc;   // number of aFc in plcbteChpx
 	struct PlcfSpa *plcfspa;
 	int plcfspaNaCP;      // number of aCP in plcfspa;
+	struct PlcfSed *plcfSed;
+	int plcfSedNaCP;      // number of aCP in plcfSed;
 	struct STSH *STSH;    // style sheet 
 	int lrglpstd;         // len of rglpstd
 	ldp_t prop;           // properties

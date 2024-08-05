@@ -2,12 +2,14 @@
  * File              : doc_parse.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc.h"
 #include "../include/libdoc/paragraph_boundaries.h"
 #include "../include/libdoc/retrieving_text.h"
+#include "../include/libdoc/direct_section_formatting.h"
+#include "../include/libdoc/section_boundaries.h"
 #include "../include/libdoc/direct_character_formatting.h"
 #include "../include/libdoc/direct_paragraph_formatting.h"
 
@@ -85,24 +87,38 @@ int doc_parse(const char *filename, void *user_data,
  * FibRgLw97.ccpText characters long.
  * The last character in the main document MUST be a 
  * paragraph mark (Unicode 0x000D).*/
-for (cp = 0; cp < doc.fib.rgLw97->ccpText; ) {
 	
-	// get table row and cell boundaries and apply props
-	CP lcp = last_cp_in_row(&doc, cp);
-	if (lcp != CPERROR){
-		// this CP is in table
-		cp = parse_table_row(&doc, cp, lcp, user_data, 
-				main_document);
-
-	} else {
-		// get paragraph boundaries and apply props
-		CP lcp = last_cp_in_paragraph(&doc, cp); 
+	// for each section in word document
+	for (i=0; i < doc.plcfSedNaCP; ++i){
+		CP first = doc.plcfSed->aCP[i];
+		CP last;
+		if (i < doc.plcfSedNaCP)
+			last = doc.plcfSed->aCP[i+1];
+		else
+			last = doc.fib.rgLw97->ccpText;
+		// apply section prop
+		direct_section_formatting(&doc, i);
 		
-		// iterate cp
-		cp = parse_range_cp(&doc, cp, lcp, user_data, 
-				main_document);
+		// parse section
+		for (cp = first; cp < last; ) {
+			
+			// get table row and cell boundaries and apply props
+			CP lcp = last_cp_in_row(&doc, cp);
+			if (lcp != CPERROR){
+				// this CP is in table
+				cp = parse_table_row(&doc, cp, lcp, user_data, 
+						main_document);
+
+			} else {
+				// get paragraph boundaries and apply props
+				CP lcp = last_cp_in_paragraph(&doc, cp); 
+				
+				// iterate cp
+				cp = parse_range_cp(&doc, cp, lcp, user_data, 
+						main_document);
+			}
+		}	
 	}
-}
 
 /* 2.3.2 Footnotes
  * The footnote document contains all of the content in the

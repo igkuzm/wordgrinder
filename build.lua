@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 03.08.2024
+Last Modified Date: 05.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -295,6 +295,8 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
         srcfile("src/c/libdoc/src/prl.c")
         srcfile("src/c/libdoc/src/retrieving_text.c")
         srcfile("src/c/libdoc/src/style_properties.c")
+        srcfile("src/c/libdoc/src/section_boundaries.c")
+        srcfile("src/c/libdoc/src/direct_section_formatting.c")
     end
 
     -- Frontends

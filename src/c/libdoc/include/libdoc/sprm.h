@@ -975,7 +975,15 @@ enum {
 	sprmSLnnMin        = 0x1B,
 	sprmSPgnStart97    = 0x1C,
 	sprmSBOrientation  = 0x1D,
-	sprmSXaPage        = 0x1F,
+	sprmSXaPage        = 0x1F, //An unsigned 16-bit integer
+														 //that specifies the page width
+														 //of the section in twips.
+														 //The value of the operand MUST
+														 //be in the interval [144,
+														 //31680].
+														 //By default, the page width is
+														 //215.9 mm (8.5 inches, or
+														 //12240 twips)
 
 	sprmSYaPage        = 0x20, //0x20 An unsigned 16-bit
 														 //integer that specifies the
@@ -990,7 +998,24 @@ enum {
 														 //is 279.4 mm (11 inches, or
 														 //15840 twips).
 
-	sprmSDxaLeft       = 0x21,
+	sprmSDxaLeft       = 0x21, //An XAS_nonNeg that specifies
+														 //the width, in twips, of the
+														 //left margin.
+														 //By default, the width of the
+														 //left margin varies depending
+														 //on the implementation
+														 //and the system settings, so
+														 //implementations MUST use this
+														 //SPRM to specify the
+														 //left margin of each section
+														 
+														 // 2.9.350 XAS_nonNeg
+														 // The XAS_nonNeg value is a
+														 // 16-bit unsigned integer that
+														 // specifies horizontal
+														 // distance, in twips. This
+														 // value MUST be less than or
+														 // equal to 31680
 	sprmSDxaRight      = 0x22,
 	sprmSDyaTop        = 0x23,
 	sprmSDyaBottom     = 0x24,

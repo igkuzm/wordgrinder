@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 31.07.2024
+ * Last Modified Date: 05.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -28,6 +28,7 @@ struct undoc_t {
 	bool bordered;
 	STYLE styles[32];
 	int nstyles;
+	bool flushpageprop;
 };
 
 int footnotes(void *d, ldp_t *p, int ch){
@@ -190,8 +191,24 @@ static void flusfloatingpicture(struct undoc_t *t, ldp_t *p)
 			picture_callback);
 }
 
+static void flushpageprop(struct undoc_t *t, ldp_t *p){
+	lua_pushvalue(t->L, 8);
+	lua_pushnumber(t->L, p->sep.xaPage);
+	lua_pushnumber(t->L, p->sep.yaPage);
+	lua_pushnumber(t->L, p->sep.xaLeft);
+	lua_pushnumber(t->L, p->sep.xaRight);
+	lua_pushnumber(t->L, p->sep.yaTop);
+	lua_pushnumber(t->L, p->sep.yaBottom);
+	lua_call(t->L, 6, 0);
+}
+
 int main_document(void *d, ldp_t *p, int ch){
 	struct undoc_t *t = d;
+
+	if (!t->flushpageprop){
+		flushpageprop(t, p);
+		t->flushpageprop = true;
+	}
 
 	char c = ch;
 	

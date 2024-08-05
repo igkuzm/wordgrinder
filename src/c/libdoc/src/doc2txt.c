@@ -2,7 +2,7 @@
  * File              : doc2txt.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 26.07.2024
+ * Last Modified Date: 30.07.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -58,30 +58,41 @@ int main_document(void *d, ldp_t *p, int ch){
 	switch (ch) {
 		case INLINE_PICTURE:
 			{
-				fprintf(stderr,
-						"INLINE_PICTURE\n");
 				doc_get_picture(
 						ch, 
 						p, 
 						NULL, 
 						picture);
 				printf("%c", ' '); break;
+				break;
 			}
 			
 		case FLOATING_PICTURE:
 			{
-				fprintf(stderr,
-						"FLOATING_PICTURE\n");
 				doc_get_picture(
 						ch, 
 						p, 
 						NULL, 
 						picture);
 				printf("%c", ' '); break;
+				break;
+			}
+		case CELL_MARK:
+			{
+				if (p->pap.TTP){
+					printf("\n____________________________\n");
+
+				} else {
+					printf(" | ");	
+				}
+				break;
+			}
+		case PARAGRAPH_MARK:
+			{
+				printf("\n");
+				break;
 			}
 
-		case 0x0D: printf("%c", '\n'); break;
-		case 0x07: printf("%c", '\n'); break;
 		case 0x1E: printf("%c", '-' ); break;
 		case 0x09: printf("%c", '\t'); break;
 		case 0x13: printf("%c", ' ' ); break;
