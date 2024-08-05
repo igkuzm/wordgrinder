@@ -2,7 +2,7 @@
 File              : pageconfig.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.08.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 05.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -18,6 +18,7 @@ do
 			left = 2.0,
 			bottom = 2.0,
 			right = 2.0,
+			fontsize = 12,
 		}
 	end
 	
@@ -73,11 +74,18 @@ function Cmd.ConfigurePage()
 			value = tostring(settings.right)
 		}
 
+	local fontsize_textfield =
+		Form.TextField {
+			x1 = 33, y1 = 13,
+			x2 = 43, y2 = 13,
+			value = tostring(settings.fontsize)
+		}
+
 	local dialogue =
 	{
 		title = "Page Layout Config",
 		width = Form.Large,
-		height = 13,
+		height = 15,
 		stretchy = false,
 
 		["KEY_^C"] = "cancel",
@@ -125,6 +133,14 @@ function Cmd.ConfigurePage()
 			value = "Page right margin (cm):"
 		},
 		right_textfield,
+
+		Form.Label {
+			x1 = 1, y1 = 11,
+			x2 = 32, y2 = 11,
+			align = Form.Left,
+			value = "Default font size (12, 14):"
+		},
+		fontsize_textfield,
 	}
 	
 	while true do
@@ -154,6 +170,11 @@ function Cmd.ConfigurePage()
 		then
 			ModalMessage("Parameter error", "Pagesize should be A4, A5, or letter.")
 		
+		elseif pagesize ~= "12" and 
+					 pagesize ~= "14"
+		then
+			ModalMessage("Parameter error", "Default font size should be 12 or 14")
+		
 		else
 			settings.landscape = landscape
 			settings.pagesize = pagesize
@@ -161,6 +182,7 @@ function Cmd.ConfigurePage()
 			settings.left = left
 			settings.bottom = bottom
 			settings.right = right
+			settings.fontsize = fontsize
 			DocumentSet:touch()
 
 			return true
