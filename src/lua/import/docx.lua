@@ -531,6 +531,9 @@ function Cmd.ImportDOCXFile(filename)
 						if (element._name == W .. " pgSz") then
 							local w = element[W .. " w"] or 11906
 							local h = element[W .. " h"] or 16838
+
+							w = tonumber(w)
+							h = tonumber(h)
 							
 							local x = 0
 							local y = 0
@@ -557,15 +560,15 @@ function Cmd.ImportDOCXFile(filename)
 						end
 						
 						if (element._name == W .. " pgMar") then
-							local left = element[W .. " left"] or 2
-							local right = element[W .. " right"] or 2
-							local top = element[W .. " top"] or 2
-							local bottom = element[W .. " bottom"] or 2
+							local left   = element[W .. " left"]   or 1134
+							local right  = element[W .. " right"]  or 1134
+							local top    = element[W .. " top"]    or 1134
+							local bottom = element[W .. " bottom"] or 1134
 							
-							settings.left = left / 576
-							settings.right = right / 576
-							settings.top = top / 576
-							settings.bottom = bottom / 576
+							settings.left   = left   / 567
+							settings.right  = right  / 567
+							settings.top    = top    / 567
+							settings.bottom = bottom / 567
     
 						end
 					end

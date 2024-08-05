@@ -193,7 +193,7 @@ local function size_to_cm(w)
 	elseif string.match(w, "in") then
 		s = s * 2.5
 	elseif string.match(w, "dxa") then
-		s = s / 576
+		s = s / 1440
 	end
 	return s
 end

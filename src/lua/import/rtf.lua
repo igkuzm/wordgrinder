@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 05.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -115,6 +115,7 @@ function Cmd.ImportRTFFile(filename)
     end
 
     local pageprop = function(w, h, l, r, t, b)
+        
 	  local settings = DocumentSet.addons.pageconfig
       local x = 0
       local y = 0
@@ -137,10 +138,10 @@ function Cmd.ImportRTFFile(filename)
         settings.pagesize = "letter"
       end
 
-      settings.left = l / 576
-      settings.right = r / 576
-      settings.top = t / 576
-      settings.bottom = b / 576
+      settings.left = l / 567
+      settings.right = r / 567
+      settings.top = t / 567
+      settings.bottom = b / 567
       
     end
 
