@@ -2,7 +2,7 @@
 File              : pageconfig.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.08.2024
-Last Modified Date: 05.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -34,19 +34,19 @@ function Cmd.SetTextWidth()
 	local pagewidth = 0;
 	if settings.landscape then
 		if settings.pagesize == "A4" then
-			pagewidth = 29
+			pagewidth = 29.7
 		elseif settings.pagesize == "A5" then
-			pagewidth = 21
+			pagewidth = 21.001
 		elseif settings.pagesize == "letter" then
-			pagewidth = 28
+			pagewidth = 27.94
 		end
 	else
 		if settings.pagesize == "A4" then
-			pagewidth = 21
+			pagewidth = 21.001
 		elseif settings.pagesize == "A5" then
-			pagewidth = 15
+			pagewidth = 14.801
 		elseif settings.pagesize == "letter" then
-			pagewidth = 22
+			pagewidth = 21.59
 		end
 	end
 
@@ -56,7 +56,7 @@ function Cmd.SetTextWidth()
 	if settings.fontsize == 12 then
 		width = pagewidth / 0.22
 	else
-		width = pagewidth / 0.27
+		width = pagewidth / 0.269
 	end
 
 	GlobalSettings.lookandfeel.maxwidth = width

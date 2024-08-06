@@ -60,7 +60,7 @@ local function style_tab_init()
 	["H2"]     = {2,  string_format('\\fs%d\\sb360\\b\\sbasedon0 H2', fontsize * 2.5)},
 	["H3"]     = {3,  string_format('\\fs%d\\sb320\\b\\sbasedon0 H3', fontsize * 2.2)},
 	["H4"]     = {4,  string_format('\\fs%d\\sb280\\b\\sbasedon0 H4', fontsize * 2)},
-	["P"]      = {5,  string_format('\\fs%d\\sb140\\sbasedon0\\qj P', fontsize * 2)},
+	["P"]      = {5,  string_format('\\fs%d\\sb140\\sbasedon0 P', fontsize * 2)},
 	["L"]      = {6,  string_format('\\fs%d\\sb140\\sbasedon5 L', fontsize * 2)},
 	["LB"]     = {7,  string_format('\\fs%d\\sb140\\sbasedon5 LB', fontsize * 2)},
 	["LN"]     = {8,  string_format('\\fs%d\\sb140\\sbasedon5 LN', fontsize * 2)},
