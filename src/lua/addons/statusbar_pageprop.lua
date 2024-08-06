@@ -9,13 +9,17 @@ local string_format = string.format
 
 do
 	local function cb(event, token, terms)
+		local pageconf = DocumentSet.addons.pageconfig or {}
+		local orientation = "port"
+		if pageconf.landscape then
+			orientation = "land"
+		end
 		terms[#terms+1] = 
 			{
 				priority=60,
 				value=string_format("%s %s",
 					DocumentSet.addons.pageconfig.pagesize,
-					Pluralise(DocumentSet.addons.pageconfig.landscape, "land", "port")
-				)
+					orientation)
 			}
 	end
 	
