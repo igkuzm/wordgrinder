@@ -7,13 +7,69 @@
 
 do
 	local function cb(event, token, terms)
+		local lines = 0
+		local cp, cw, co = Document.cp, Document.cw, Document.co
+		local cw = Document.cw
+		local paragraph = Document[cp]
+
+		-- count lines of prev paragraphs
+		local n = 1
+		while n < cp do
+			for _, l in ipairs(Document[n].lines) do
+				lines = lines + 1
+			end
+			n = n + 1
+		end
+			
+		-- get current line 
+		local cl
+		cl, cw = paragraph:getLineOfWord(cw)
+
+		cl = lines + cl
+
+		-- get current page
+		local pageconf = DocumentSet.addons.pageconfig or {}
+		-- if fontsize is 12 - then it should be 0,22 cm for 1
+		-- symbol and 0,51 cm for 1 line
+		-- if fontsize is 14 - then it should be 0,27 cm for 1
+		-- symbol and 0,522 cm for 1 line
+		local pageheight = 0;
+		if not pageconf.landscape then
+			if pageconf.pagesize == "A4" then
+				pageheight = 29.7
+			elseif pageconf.pagesize == "A5" then
+				pageheight = 21.001
+			elseif pageconf.pagesize == "letter" then
+				pageheight = 27.94
+			end
+		else
+			if pageconf.pagesize == "A4" then
+				pageheight = 21.001
+			elseif pageconf.pagesize == "A5" then
+				pageheight = 14.801
+			elseif pageconf.pagesize == "letter" then
+				pageheight = 21.59
+			end
+		end
+
+		pageheight = pageheight - pageconf.top - pageconf.bottom
+
+		local linesperpage = 0
+		if pageconf.fontsize == 12 then
+			linesperpage = pageheight / 0.51
+		else
+			linesperpage = pageheight / 0.522
+		end
+
+		local page = math.floor(cl / linesperpage + 1)
+ 
 		local settings = DocumentSet.addons.pagecount or {}
 		if settings.enabled then
-			local pages = math.floor((Document.wordcount or 0) / settings.wordsperpage)
+			--local pages = math.floor((Document.wordcount or 0) / settings.wordsperpage)
 			terms[#terms+1] = {
 				priority=80,
-				value=string.format("%d %s", pages,
-					Pluralise(pages, "page", "pages"))
+				value=string.format("%d %s", page,
+					Pluralise(page, "page", "pages"))
 			}
 		end
 	end
@@ -27,7 +83,7 @@ end
 do
 	local function cb()
 		DocumentSet.addons.pagecount = DocumentSet.addons.pagecount or {
-			enabled = false,
+			enabled = true,
 			wordsperpage = 250,
 		}
 	end

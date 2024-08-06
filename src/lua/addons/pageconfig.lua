@@ -28,9 +28,9 @@ end
 function Cmd.SetTextWidth()
 	local settings = DocumentSet.addons.pageconfig or {}
 	-- if fontsize is 12 - then it should be 0,22 cm for 1
-	-- symbol and 0,3 cm for 1 line
+	-- symbol and 0,51 cm for 1 line
 	-- if fontsize is 14 - then it should be 0,27 cm for 1
-	-- symbol and 0,56 cm for 1 line
+	-- symbol and 0,522 cm for 1 line
 	local pagewidth = 0;
 	if settings.landscape then
 		if settings.pagesize == "A4" then
