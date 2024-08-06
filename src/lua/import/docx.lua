@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -168,8 +168,33 @@ end
 
 local function collect_styles(styles, xml)
 	for _, element in ipairs(xml) do
+		
+		-- get style
 		if (element._name == W .. " style") then
 			parse_style(styles, element)
+		end
+
+		-- get doc defaults
+		if (element._name == W .. " docDefaults") then
+			for _, element in ipairs(element) do
+				if (element._name == W .. " rPrDefault") then
+					for _, element in ipairs(element) do
+						if (element._name == W .. " rPr") then
+							for _, element in ipairs(element) do
+								if (element._name == W .. " sz") then
+									-- default font size
+									local sz = element[VAL]
+									if sz then
+										local settings = DocumentSet.addons.pageconfig
+										settings.fontsize = sz / 2
+										Cmd.SetTextWidth()
+									end
+								end
+							end
+						end
+					end
+				end
+			end
 		end
 	end
 end
@@ -557,6 +582,7 @@ function Cmd.ImportDOCXFile(filename)
 								settings.pagesize = "letter"
 							end
 
+							Cmd.SetTextWidth()
 						end
 						
 						if (element._name == W .. " pgMar") then
@@ -569,7 +595,8 @@ function Cmd.ImportDOCXFile(filename)
 							settings.right  = right  / 567
 							settings.top    = top    / 567
 							settings.bottom = bottom / 567
-    
+							
+							Cmd.SetTextWidth()
 						end
 					end
 				end

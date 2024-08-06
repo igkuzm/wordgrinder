@@ -459,6 +459,8 @@ local function export_docx_with_ui(filename, title, extension)
 	
 	add_relation('</Relationships>\n')
 	relations = table_concat(relations)
+	
+	local settings = DocumentSet.addons.pageconfig
 
 	local styles = [[<?xml version="1.0" encoding="utf-8"?>
 		<w:styles 
@@ -466,13 +468,16 @@ local function export_docx_with_ui(filename, title, extension)
 			xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" 
 			xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
 			mc:Ignorable="w14">
+	]]
+
+	styles = styles .. string_format([[
 			<w:docDefaults>
 				<w:rPrDefault>
 					<w:rPr>
-						<w:rFonts w:ascii="Nimbus Roman" w:hAnsi="Nimbus Roman" w:eastAsia="Cantarell" w:cs="FreeSerif"/>
+						<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Cantarell" w:cs="FreeSerif"/>
 						<w:color w:val="000000"/>
-						<w:sz w:val="24"/>
-						<w:szCs w:val="24"/>
+						<w:sz w:val="%d"/>
+						<w:szCs w:val="%d"/>
 						<w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/>
 					</w:rPr>
 				</w:rPrDefault>
@@ -482,6 +487,9 @@ local function export_docx_with_ui(filename, title, extension)
 					</w:pPr>
 				</w:pPrDefault>
 			</w:docDefaults>
+	]], settings.fontsize * 2, settings.fontsize * 2)
+
+	styles = styles .. [[
 			<w:style w:type="paragraph" w:styleId="Normal">
 				<w:name w:val="Normal"/>
 				<w:qFormat/>
@@ -519,7 +527,6 @@ local function export_docx_with_ui(filename, title, extension)
 			</w:style>
 	]]
 			
-	local settings = DocumentSet.addons.pageconfig
 
 	styles = styles .. string_format('<w:style w:type="paragraph" w:styleId="H1"><w:name w:val="H1"/><w:qFormat/><w:pPr><w:widowControl w:val="false"/><w:bidi w:val="0"/><w:spacing w:before="283" w:after="113"/></w:pPr><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:sz w:val="%d"/><w:lang w:val="ru-RU" w:eastAsia="zh-CN" w:bidi="hi-IN"/></w:rPr></w:style>', settings.fontsize * 3)
 	
