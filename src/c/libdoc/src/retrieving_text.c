@@ -2,7 +2,7 @@
  * File              : retrieving_text.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 06.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc/retrieving_text.h"
@@ -21,7 +21,8 @@ static void check_marks(cfb_doc_t *doc, int ch)
 
 void get_char_for_cp(cfb_doc_t *doc, CP cp,
 		void *user_data,
-		int (*callback)(void *user_data, ldp_t *p, int ch)		
+		DOC_PART part,
+		int (*callback)(void *user_data, DOC_PART part, ldp_t *p, int ch)		
 		)
 {
 	struct PlcPcd *PlcPcd = &(doc->clx.Pcdt->PlcPcd);
@@ -75,9 +76,9 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 		// check special chars
 		int sch = FcCompressedSpecialChar_get(ch);
 		if (sch)
-			callback(user_data, &doc->prop, sch);
+			callback(user_data, part, &doc->prop, sch);
 		else
-			callback(user_data, &doc->prop, ch);
+			callback(user_data, part, &doc->prop, ch);
 		
 		//check_marks(doc, ch);
 
@@ -120,17 +121,17 @@ void get_char_for_cp(cfb_doc_t *doc, CP cp,
 				fread(&ch, 1, 1,
 						doc->WordDocument);
 		
-				callback(user_data, &doc->prop, ch);
+				callback(user_data, part, &doc->prop, ch);
 			} else {
 				//this is a mark
-				callback(user_data, &doc->prop, u);
+				callback(user_data, part, &doc->prop, u);
 				//check_marks(doc, u);
 			}
 		} else if (u != 0xfeff) {
 			char utf8[4]={0};
 			_utf16_to_utf8(&u, 1, utf8);
 			for (i = 0; i < 4; ++i) {
-				callback(user_data, &doc->prop, utf8[i]);
+				callback(user_data, part, &doc->prop, utf8[i]);
 			}
 		}
 	}

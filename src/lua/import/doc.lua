@@ -2,7 +2,7 @@
 File              : doc.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 12.01.2024
-Last Modified Date: 05.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -147,6 +147,14 @@ function Cmd.ImportDOCFile(filename)
       
     end
 
+    local fontsize = function(sz)
+	  local settings = DocumentSet.addons.pageconfig
+	  settings.fontsize = sz / 2
+
+      Cmd.SetTextWidth()
+    end
+
+
     UnDOC(
       filename,
       paragraph,
@@ -155,7 +163,8 @@ function Cmd.ImportDOCFile(filename)
       tablecell,
       text,
       image,
-      pageprop
+      pageprop,
+      fontsize
     )
     
 	if (#document > 1) then

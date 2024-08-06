@@ -2,7 +2,7 @@
  * File              : libdoc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 26.07.2024
+ * Last Modified Date: 06.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -79,12 +79,22 @@ typedef struct libdoc_prop {
 	void *data;
 } ldp_t;
 
+typedef enum {
+	MAIN_DOCUMENT,
+	FOOTNOTES,
+	HEADERS,
+	COMMENTS,
+	ENDNOTES,
+	TEXTBOXES,
+	HEADER_TEXTBOXES,
+
+} DOC_PART;
+
 /* open MS-DOC file and run callbacks for characters in 
  * main document, footnotes and headers */
 int doc_parse(const char *filename, void *user_data,
-		int (*main_document)(void *user_data, ldp_t *p, int ch),
-		int (*footnotes)(void *user_data, ldp_t *p, int ch),
-		int (*headers)(void *user_data, ldp_t *p, int ch));
+		int (*styles)(void *user_data, STYLE *s),
+		int (*text)(void *user_data, DOC_PART part, ldp_t *p, int ch));
 
 void doc_get_picture(
 		int ch, ldp_t *p, void *userdata,

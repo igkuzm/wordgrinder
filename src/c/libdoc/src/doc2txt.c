@@ -2,7 +2,7 @@
  * File              : doc2txt.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 30.07.2024
+ * Last Modified Date: 06.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -12,9 +12,8 @@
 
 /* read MS-DOC and print it's content */
 
-int main_document(void *, ldp_t*, int);
-int footnotes(void *, ldp_t*, int);
-int headers(void *, ldp_t*, int);
+int styles(void *, STYLE *s);
+int text(void *, DOC_PART,  ldp_t*, int);
 
 int main(int argc, char *argv[])
 {
@@ -26,9 +25,8 @@ int main(int argc, char *argv[])
 	int ret = doc_parse(
 			argv[1], 
 			NULL, 
-			main_document,
-			footnotes,
-			headers);
+			styles,
+			text);
 
 	if (ret)
 		ERR("can't parse file: %s", argv[1]);
@@ -39,7 +37,7 @@ static void picture(struct picture *pic, void *d){
 	fprintf(stderr, "PIC len: %d\n", pic->len);
 }
 
-int main_document(void *d, ldp_t *p, int ch){
+int text(void *d, DOC_PART part, ldp_t *p, int ch){
 
 /* Following symbols below 32 are allowed inside paragraph:
 0x0002 - footnote mark
@@ -105,11 +103,9 @@ int main_document(void *d, ldp_t *p, int ch){
 
 	return 0;
 }
-int footnotes(void *d, ldp_t *p, int ch){
 
-	return 0;
-}
-int headers(void *d, ldp_t *p, int ch){
+int styles(void *d, STYLE *s){
+	fprintf(stderr, "STYLE: %d, %s, fs: %d\n", s->s, s->name, s->chp.size);
 
 	return 0;
 }
