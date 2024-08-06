@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 03.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008-2013 David Given.
@@ -181,6 +181,22 @@ local function collect_styles(styles, xml)
 				if (element._name == TEXT_NS .. " list-style") then
 					parse_style(styles, element)
 				end
+			
+				-- get default style
+				if (element._name == STYLE_NS .. " default-style") then
+					for _, element in ipairs(element) do
+						if (element._name == STYLE_NS .. " text-properties") then
+							local fontsize = element[FO_NS .. " font-size"]
+							if fontsize then
+								local sz = tonumber(string.match(fontsize, "%d+"))
+								local settings = DocumentSet.addons.pageconfig
+								settings.fontsize = sz
+								Cmd.SetTextWidth()
+							end
+						end
+					end
+				end
+
 			end
 		end
 	end
@@ -249,6 +265,7 @@ local function get_page_properties(xml)
 							settings.top = size_to_cm(t)
 							settings.bottom = size_to_cm(b)
 
+							Cmd.SetTextWidth()
 						end
 					end
 				end

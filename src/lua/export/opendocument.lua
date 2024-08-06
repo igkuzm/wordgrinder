@@ -344,6 +344,8 @@ local function export_odt_with_ui(filename, title, extension)
 
 	callback(writer, Document)
 	content = table_concat(content)
+			
+	local fontsize = DocumentSet.addons.pageconfig.fontsize
 
 	local styles = 
 	[[<?xml version="1.0" encoding="UTF-8"?>
@@ -367,10 +369,12 @@ local function export_odt_with_ui(filename, title, extension)
       <style:paragraph-properties style:text-autospace="ideograph-alpha" style:line-break="strict" style:writing-mode="lr-tb" style:font-independent-line-spacing="false">
         <style:tab-stops/>
       </style:paragraph-properties>
-    </style:default-style>
 			]]
 
-			local fontsize = DocumentSet.addons.pageconfig.fontsize
+			styles = styles .. string_format('<style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="%dpt" fo:language="ru" fo:country="RU" style:letter-kerning="false" style:font-name-asian="Cantarell" style:font-size-asian="%dpt" style:language-asian="zh" style:country-asian="CN" style:font-name-complex="FreeSerif" style:font-size-complex="%dpt" style:language-complex="hi" style:country-complex="IN"/>', fontsize, fontsize, fontsize)
+  
+		styles = styles .. '</style:default-style>'
+
 
 			styles = styles .. string_format('<style:style style:name="H1" style:family="paragraph"><style:paragraph-properties fo:margin-top="5mm" fo:margin-bottom="2mm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize * 1.5)
 
