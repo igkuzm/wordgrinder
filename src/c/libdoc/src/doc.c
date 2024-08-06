@@ -869,16 +869,16 @@ void doc_close(cfb_doc_t *doc)
 		if (doc->STSH)
 			STSH_free(doc->STSH);
 		if (doc->plcfspa){
-			if(doc->plcfspa->aCP);
+			if(doc->plcfspa->aCP)
 				free(doc->plcfspa->aCP);
-			if(doc->plcfspa->aSpa);
+			if(doc->plcfspa->aSpa)
 				free(doc->plcfspa->aSpa);
 			free(doc->plcfspa);
 		}
 		if (doc->plcfSed){
-			if(doc->plcfSed->aCP);
+			if(doc->plcfSed->aCP)
 				free(doc->plcfSed->aCP);
-			if(doc->plcfSed->aSed);
+			if(doc->plcfSed->aSed)
 				free(doc->plcfSed->aSed);
 			free(doc->plcfSed);
 		}

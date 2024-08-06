@@ -202,7 +202,6 @@ static void flushpageprop(struct undoc_t *t, ldp_t *p){
 }
 
 int text(void *d, DOC_PART part, ldp_t *p, int ch){
-	return 0;
 	struct undoc_t *t = d;
 
 	if (!t->flushpageprop){
@@ -309,7 +308,6 @@ int text(void *d, DOC_PART part, ldp_t *p, int ch){
 }
 
 static int styles(void *d, STYLE *s){
-	return 0;
 	struct undoc_t *t = d;
 
 	// set default font size

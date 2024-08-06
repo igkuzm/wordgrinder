@@ -13,7 +13,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static int callback(void *userdata, struct Prl *prl);
+static int callbackPar(void *userdata, struct Prl *prl);
+static int callbackChar(void *userdata, struct Prl *prl);
 /* 2.4.6.5 Determining Properties of a Style
  * This section specifies an algorithm to determine the set
  * of properties to apply to text, a paragraph, a
@@ -74,7 +75,7 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 	LOG("parent style: %d (0x%04X)", 
 			istdBase, istdBase);
 #endif
-	if (istdBase == 0x0FFF){
+	if (istdBase != 0x0FFF){
 		// recursion 
 		apply_style_properties(doc, istdBase);
 	}
@@ -154,7 +155,7 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 				parse_grpprl(
 					ptr+fc, 
 					cbUpx, 
-					doc, callback);
+					doc, callbackPar);
 
 				// character prop
 				fc += cbUpx;
@@ -169,11 +170,11 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 				#ifdef DEBUG
 					LOG("UpxChpx len: %d", len);
 				#endif
-				
+			
 				parse_grpprl(
 					(BYTE *)(pupxChpx->CHPX), 
 					cbUpx, 
-					doc, callback);
+					doc, callbackPar);
 
 				// revision marking prop
 				if (cpux == 3){
@@ -201,7 +202,7 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 				parse_grpprl(
 				(BYTE *)(pupxChpx->CHPX), 
 				cbUpx, 
-				doc, callback);
+				doc, callbackChar);
 
 				// revision marking prop
 				if (cpux == 2){
@@ -233,9 +234,15 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 	LOG("done");
 #endif
 }
-int callback(void *userdata, struct Prl *prl){
+int callbackPar(void *userdata, struct Prl *prl){
 	// parse properties
 	cfb_doc_t *doc = userdata;
 	apply_property(doc, 1, prl);
+	return 0;
+}
+int callbackChar(void *userdata, struct Prl *prl){
+	// parse properties
+	cfb_doc_t *doc = userdata;
+	apply_property(doc, 0, prl);
 	return 0;
 }

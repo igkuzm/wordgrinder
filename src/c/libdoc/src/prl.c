@@ -2,7 +2,7 @@
  * File              : prl.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -18,7 +18,7 @@ static struct Prl * prl_parse(BYTE *grpprl, int *read)
 #endif
 	Sprm sprm = *(Sprm *)(&grpprl[*read]);
 
-	sprm = ctohs(sprm);	
+	/*sprm = ctohs(sprm);	*/
 	int spra  = SprmSpra(sprm);
 
 #ifdef DEBUG

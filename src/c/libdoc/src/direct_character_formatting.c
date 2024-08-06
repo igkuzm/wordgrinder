@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void set_to_default(cfb_doc_t *doc){
+void set_chp_to_default(cfb_doc_t *doc){
 	CHP *chp = &(doc->prop.chp);
 	memset(chp, 0, sizeof(CHP));
 	
@@ -47,7 +47,7 @@ void direct_character_formatting(
 	LOG("start");
 #endif
 
-	set_to_default(doc);
+	set_chp_to_default(doc);
 
 /* 1. Follow the algorithm from Retrieving Text. From step 5
  * or 6, determine the offset in the
