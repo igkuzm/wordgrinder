@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 05.08.2024
+Last Modified Date: 06.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -560,6 +560,8 @@ emit("build ", OBJDIR.."/luascripts.c: luascripts ", table.concat({
     "src/lua/addons/statusbar_pagecount.lua",
     "src/lua/addons/statusbar_position.lua",
     "src/lua/addons/statusbar_wordcount.lua",
+    "src/lua/addons/statusbar_fontsize.lua",
+    "src/lua/addons/statusbar_pageprop.lua",
     "src/lua/addons/debug.lua",
     "src/lua/addons/look-and-feel.lua",
     "src/lua/addons/keymapoverride.lua",
