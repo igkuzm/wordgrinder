@@ -2,7 +2,7 @@
  * File              : doc.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 04.11.2022
- * Last Modified Date: 06.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -13,7 +13,7 @@
 extern "C"{
 #endif
 
-#define DEBUG
+//#define DEBUG
 
 #include <stdint.h>
 #include <stdio.h>
@@ -3470,52 +3470,10 @@ struct PlcBteChpx {
 											 //properties for the text at the
 											 //corresponding offset in aFC
 };
-static struct PlcBteChpx * plcbteChpx_get(
-		FILE *fp, ULONG offset, ULONG size, int *n)
-{
-	// get PlcBteChpx data
-	BYTE * p = (BYTE *)ALLOC(size,
-			ERR("malloc"); 
-			exit(ENOMEM)); 
-	fseek(fp, offset, SEEK_SET);
-	if (fread(p, size, 1, fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
+struct PlcBteChpx * plcbteChpx_get(
+		FILE *fp, ULONG offset, ULONG size, int *n);
 
-	// get nuber of aFc;
-	*n = (size/4 - 1)/2 + 1;
-
-	struct PlcBteChpx *plcbteChpx = 
-		NEW(struct PlcBteChpx, 
-				ERR("malloc"); 
-				exit(ENOMEM));
-
-	plcbteChpx->aFc = (ULONG *)p;	
-	plcbteChpx->aPnBteChpx = (ULONG *)(p) + *n;
-#ifdef DEBUG
-	LOG("PlcbtePapx->aFc count: %d", *n);
-	int i;
-	for (i = 0; i < *n; ++i) {
-		LOG("PlcbteChpx->aFc[%d]: %d", 
-				i, plcbteChpx->aFc[i]);
-	}
-	for (i = 0; i < *n - 1; ++i) {
-		LOG("PlcbteChpx->aPnBtePapx[%d]: %d", 
-				i, plcbteChpx->aPnBteChpx[i]);
-	}
-#endif
-	return plcbteChpx;
-}
-
-static void plcbteChpx_free(struct PlcBteChpx *p){
-	if (p){
-		if (p->aFc)
-			free(p->aFc);
-		free(p);
-	}
-}
+void plcbteChpx_free(struct PlcBteChpx *p);
 
 
 struct PlcBtePapx {
@@ -3538,56 +3496,11 @@ struct PlcBtePapx {
 								// aFC[i+1]; aPnBtePapx MUST contain one
 								// less entry than aFC 
 };
-static struct PlcBtePapx * plcbtePapx_get(
-		FILE *fp, ULONG offset, ULONG size, int *n)
-{
-#ifdef DEBUG
-	LOG("start");
-#endif
-	// get PlcBtePapx data
-	BYTE *p = (BYTE *)ALLOC(size,
-			ERR("malloc"); 
-			exit(ENOMEM)); 
-	fseek(fp, offset, SEEK_SET);
-	if (fread(p, size, 1, fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
 
-	// get nuber of aFc;
-	*n = (size/4 - 1)/2 + 1;
+struct PlcBtePapx * plcbtePapx_get(
+		FILE *fp, ULONG offset, ULONG size, int *n);
 
-	struct PlcBtePapx *plcbtePapx = 
-		NEW(struct PlcBtePapx, 
-				ERR("malloc"); 
-				exit(ENOMEM));
-
-	plcbtePapx->aFc = (ULONG *)p;	
-	plcbtePapx->aPnBtePapx = (ULONG *)p + *n;
-#ifdef DEBUG
-	LOG("PlcbtePapx->aFc count: %d", *n);
-	int i;
-	for (i = 0; i < *n; ++i) {
-		LOG("PlcbtePapx->aFc[%d]: %d", 
-				i, plcbtePapx->aFc[i]);
-	}
-	for (i = 0; i < *n - 1; ++i) {
-		LOG("PlcbtePapx->aPnBtePapx[%d]: %d", 
-				i, plcbtePapx->aPnBtePapx[i]);
-	}
-#endif
-
-	return plcbtePapx;
-}
-
-static void plcbtePapx_free(struct PlcBtePapx *p){
-	if (p){
-		if (p->aFc)
-			free(p->aFc);
-		free(p);
-	}
-}
+void plcbtePapx_free(struct PlcBtePapx *p);
 
 /* 2.9.222 Rca
  * The Rca structure is used to define the coordinates of a
@@ -3864,13 +3777,13 @@ static void papxFkp_init(
 	papxFkp->rgbx = (struct BxPap *)(&(buf[(papxFkp->cpara + 1)*4]));
 #ifdef DEBUG
 LOG("PapxFkp->cpara: %d", papxFkp->cpara);
-int i;
-for (i = 0; i < papxFkp->cpara+1; ++i) {
-	LOG("PapxFkp.rgfc[%d]: %d ", i, papxFkp->rgfc[i]);	
-}
-for (i = 0; i < papxFkp->cpara; ++i) {
-	LOG("rgbx[%d].bOffset: %d ", i, papxFkp->rgbx[i].bOffset);	
-}
+//int i;
+//for (i = 0; i < papxFkp->cpara+1; ++i) {
+	//LOG("PapxFkp.rgfc[%d]: %d ", i, papxFkp->rgfc[i]);	
+//}
+//for (i = 0; i < papxFkp->cpara; ++i) {
+	//LOG("rgbx[%d].bOffset: %d ", i, papxFkp->rgbx[i].bOffset);	
+//}
 #endif
 }
 
@@ -3940,13 +3853,13 @@ static void chpxFkp_init(
 	chpxFkp->rgb = &(buf[(chpxFkp->crun + 1)*4]);
 #ifdef DEBUG
 LOG("ChpxFkp->cpara: %d", chpxFkp->crun);
-int i;
-for (i = 0; i < chpxFkp->crun+1; ++i) {
-	LOG("ChpxFkp.rgfc[%d]: %d ", i, chpxFkp->rgfc[i]);	
-}
-for (i = 0; i < chpxFkp->crun; ++i) {
-	LOG("rgb[%d]: %d ", i, chpxFkp->rgb[i]);	
-}
+//int i;
+//for (i = 0; i < chpxFkp->crun+1; ++i) {
+	//LOG("ChpxFkp.rgfc[%d]: %d ", i, chpxFkp->rgfc[i]);	
+//}
+//for (i = 0; i < chpxFkp->crun; ++i) {
+	//LOG("rgb[%d]: %d ", i, chpxFkp->rgb[i]);	
+//}
 #endif
 }
 
@@ -4483,105 +4396,13 @@ struct STSH {
 										//(see sti in StdfBase)
 };
 
-static struct STSH *STSH_get(FILE *fp, 
-		ULONG off, ULONG size, int *n)
-{
-	struct STSH *STSH = NEW(struct STSH, 
-			ERR("malloc stsh"); 
-			return NULL);
+struct STSH *STSH_get(FILE *fp, 
+		ULONG off, ULONG size, int *n);
 
-	fseek(fp, off, SEEK_SET);
-	USHORT cbStshi;
-	if (fread(&cbStshi, 2, 1, fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-#ifdef DEBUG
-	LOG("cbStshi: %d", cbStshi);
-#endif
-	if (!cbStshi){
-		ERR("something wrong... cbStd is 0");
-		return NULL;
-	}
+void STSH_free(struct STSH *stsh);
 
-	STSH->lpstshi = (struct LPStshi *)ALLOC(
-			cbStshi + 2, 
-			ERR("malloc");
-			exit(ENOMEM));
-	STSH->lpstshi->cbStshi = cbStshi;
-	if (fread(STSH->lpstshi->stshi, cbStshi, 1,
-			fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-
-	// get len of rglpstd
-	*n = size - cbStshi - 2;
-#ifdef DEBUG
-	LOG("STSH rglpstd len: %d", *n);
-#endif
-	
-	STSH->rglpstd = (BYTE *)ALLOC(*n, 
-			ERR("malloc");
-			exit(ENOMEM));
-	if (fread(STSH->rglpstd, *n, 1,
-			fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-
-#ifdef DEBUG
-	struct str str;
-	str_init(&str, BUFSIZ);
-	str_appendf(&str, "STSH->rglpstd:\n");
-	for (int i = 0; i < *n; ++i) {
-		str_appendf(&str, "%d ", STSH->rglpstd[i]);
-	}
-	LOG("STSH->rglpstd:\n%s", str.str);
-#endif
-	return STSH;
-
-}
-
-static void STSH_free(struct STSH *stsh){
-	if (stsh){
-		if (stsh->lpstshi)
-			free(stsh->lpstshi);
-		free(stsh);
-	}
-}
-
-static struct LPStd *LPStd_at_index(
-		BYTE *rglpstd, int size, int index)
-{
-	int i, k;
-	for (i = 0, k = 0; i < size; ++k) {
-#ifdef DEBUG
-	LOG("looking for SDT at index: %d", k);
-#endif
-		if (k == index)
-			break;
-
-		void *p = &(rglpstd[i]); 
-		// read cbStd
-		USHORT *cbStd = (USHORT *)p;
-#ifdef DEBUG
-	LOG("SDT at index %d size: %d", k, *cbStd);
-#endif
-		
-		// skeep next cbStd bytes and 2 bytes of cbStd itself
-		i += *cbStd + 2;
-	}
-
-	if (k != index)
-		return NULL;
-
-	void *p = &(rglpstd[i]); 
-	return (struct LPStd *)p;	
-}
+struct LPStd *LPStd_at_index(
+		BYTE *rglpstd, int size, int index);
 
 /* 2.9.336 UpxChpx
  * The UpxChpx structure specifies the character formatting

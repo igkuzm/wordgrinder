@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 06.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -202,6 +202,7 @@ static void flushpageprop(struct undoc_t *t, ldp_t *p){
 }
 
 int text(void *d, DOC_PART part, ldp_t *p, int ch){
+	return 0;
 	struct undoc_t *t = d;
 
 	if (!t->flushpageprop){
@@ -308,10 +309,15 @@ int text(void *d, DOC_PART part, ldp_t *p, int ch){
 }
 
 static int styles(void *d, STYLE *s){
+	return 0;
 	struct undoc_t *t = d;
 
 	// set default font size
-	if (s->s == 0 && strcmp(s->name, "Normal") == 0){
+	if (
+			strcmp(s->name, "Normal") == 0 ||
+			strcmp(s->name, "P") == 0
+			)
+	{
 		if (s->chp.size){
 			//fprintf(stderr, "FS: %d\n", s->chp.size);
 			lua_pushvalue(t->L, 9);
@@ -319,6 +325,7 @@ static int styles(void *d, STYLE *s){
 			lua_call(t->L, 1, 0);
 		}
 	}
+	return 0;
 }
 
 static int undoc_cb(lua_State* L)

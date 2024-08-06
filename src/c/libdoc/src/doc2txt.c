@@ -2,7 +2,7 @@
  * File              : doc2txt.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 06.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -28,8 +28,6 @@ int main(int argc, char *argv[])
 			styles,
 			text);
 
-	if (ret)
-		ERR("can't parse file: %s", argv[1]);
 	return ret;
 }
 

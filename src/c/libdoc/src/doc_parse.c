@@ -2,7 +2,7 @@
  * File              : doc_parse.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 06.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "../include/libdoc.h"
@@ -56,6 +56,88 @@ CP parse_table_row(cfb_doc_t *doc, CP cp, CP lcp,
 	return cp;
 }
 
+static void _parse_styles(cfb_doc_t *doc, void *user_data, 
+		int (*styles)(void *user_data, STYLE *s))
+{
+	// parse styles
+	USHORT cstd = doc->STSH->lpstshi->stshi->stshif.cstd;
+	
+	int i, index = 0;
+	for (i = 0; i < doc->lrglpstd && index < cstd;) {
+
+		void *ptr = &(doc->STSH->rglpstd[i]); 
+		// read cbStd
+		USHORT *cbStd = (USHORT *)ptr;
+#ifdef DEBUG
+		LOG("SDT at index %d size: %d", index, *cbStd);
+#endif
+		
+		struct LPStd *LPStd = 
+			(struct LPStd *)&(doc->STSH->rglpstd[i]);
+
+		apply_style_properties(doc, index);
+				
+		if (LPStd->cbStd == 0){
+			i += 2;
+			continue;
+		}
+
+		struct STD *STD = (struct STD *)LPStd->STD;
+		
+		STYLE s;
+		memset(&s, 0, sizeof(STYLE));
+		s.s = index;
+		s.chp = doc->prop.pap_chp;
+
+		USHORT *p = NULL;
+
+		// check if STD->Stdf has StdfPost2000;
+		struct STSH *STSH = doc->STSH;
+		struct STSHI *STSHI = STSH->lpstshi->stshi;
+		USHORT cbSTDBaseInFile = STSHI->stshif.cbSTDBaseInFile;
+		
+		if (cbSTDBaseInFile == 0x000A){
+			// no StdfPost2000
+			p = (USHORT *)((struct STD_noStdfPost2000 *)STD)->xstzName_grLPUpxSw;
+
+		} else if (cbSTDBaseInFile == 0x0012){
+			// has StdfPost2000
+			p = (USHORT *)STD->xstzName_grLPUpxSw;
+		
+		} else {
+			ERR("cbSTDBaseInFile");
+			i += *cbStd + 2;
+			continue;
+		}
+
+		// get name
+		char str[BUFSIZ];
+		memset(str, 0, BUFSIZ);
+		
+		if (*p){
+			USHORT *xstz = p+1;
+			_utf16_to_utf8(xstz, *p, str);
+#ifdef DEBUG
+	LOG("%s", str);
+#endif
+			strncpy(s.name, str, sizeof(s.name) - 1);
+			s.lname = strlen(s.name);
+		}
+
+		struct StdfBase *stdfBase = (struct StdfBase *)STD;
+		USHORT istdBase = StdfBaseIstdBase(stdfBase);
+
+		s.sbedeon = istdBase;
+
+		styles(user_data, &s);
+
+		// iterate
+		// skeep next cbStd bytes and  2 bytes of cbStd itself
+		i += *cbStd + 2;
+		index++;
+	}
+}
+
 int doc_parse(const char *filename, void *user_data,
 		int (*styles)(void *user_data, STYLE *s),
 		int (*text)(void *user_data, DOC_PART part, ldp_t *p, int ch))
@@ -78,71 +160,11 @@ int doc_parse(const char *filename, void *user_data,
 		return ret;
 
 	doc.prop.data = &doc;
-
 	FibRgFcLcb97 *rgFcLcb97 = (FibRgFcLcb97 *)(doc.fib.rgFcLcb);
 
-// parse styles
-	struct LPStd *LPStd =  
-		LPStd_at_index(doc.STSH->rglpstd,
-			doc.lrglpstd, 0);
-	
-	for (i = 0; LPStd; ++i, 
-			LPStd = 
-				LPStd_at_index(doc.STSH->rglpstd,
-					doc.lrglpstd, i)
-			) 
-	{
-		apply_style_properties(&doc, i);
-				
-		if (LPStd->cbStd == 0)
-			continue;
+	// parse styles
+	_parse_styles(&doc, user_data, styles);
 
-		struct STD *STD = (struct STD *)LPStd->STD;
-		
-		STYLE s;
-		memset(&s, 0, sizeof(STYLE));
-		s.s = i;
-		s.chp = doc.prop.pap_chp;
-
-		USHORT *p = NULL;
-
-		// check if STD->Stdf has StdfPost2000;
-		struct STSH *STSH = doc.STSH;
-		struct STSHI *STSHI = STSH->lpstshi->stshi;
-		USHORT cbSTDBaseInFile = STSHI->stshif.cbSTDBaseInFile;
-		
-		if (cbSTDBaseInFile == 0x000A){
-			// no StdfPost2000
-			p = (USHORT *)((struct STD_noStdfPost2000 *)STD)->xstzName_grLPUpxSw;
-
-		} else if (cbSTDBaseInFile == 0x0012){
-			// has StdfPost2000
-			p = (USHORT *)STD->xstzName_grLPUpxSw;
-		
-		} else {
-			ERR("cbSTDBaseInFile");
-			continue;
-		}
-
-		// get name
-		char str[BUFSIZ];
-		memset(str, 0, BUFSIZ);
-		
-		if (*p){
-			USHORT *xstz = p+1;
-			_utf16_to_utf8(xstz, *p, str);
-			//LOG(str);
-			strncpy(s.name, str, sizeof(s.name) - 1);
-			s.lname = strlen(s.name);
-		}
-
-		struct StdfBase *stdfBase = (struct StdfBase *)STD;
-		USHORT istdBase = StdfBaseIstdBase(stdfBase);
-
-		s.sbedeon = istdBase;
-
-		styles(user_data, &s);
-	}
 
 /* 2.3.1 Main Document
  * The main document contains all content outside any of 
@@ -199,10 +221,10 @@ int doc_parse(const char *filename, void *user_data,
  * by a PlcffndRef whose location is specified
  * by the fcPlcffndRef member of FibRgFcLcb97. */
 
-for (;cp < doc.fib.rgLw97->ccpFtn; ++cp) {
-	get_char_for_cp(&doc, cp, user_data, FOOTNOTES,
-			text);
-}
+/*for (;cp < doc.fib.rgLw97->ccpFtn; ++cp) {*/
+	/*get_char_for_cp(&doc, cp, user_data, FOOTNOTES,*/
+			/*text);*/
+/*}*/
 
 /* by the fcPlcffndRef member of FibRgFcLcb97.
  * 2.3.3 Headers
@@ -224,10 +246,10 @@ for (;cp < doc.fib.rgLw97->ccpFtn; ++cp) {
  * no guard paragraph mark. Thus, an empty
  * story is indicated by the beginning CP, as specified in
  * PlcfHdd, being the same as the next CP in PlcfHdd */
-for (;cp < doc.fib.rgLw97->ccpHdd; ++cp) {
-	get_char_for_cp(&doc, cp, user_data,
-			HEADERS, text);
-}
+/*for (;cp < doc.fib.rgLw97->ccpHdd; ++cp) {*/
+	/*get_char_for_cp(&doc, cp, user_data,*/
+			/*HEADERS, text);*/
+/*}*/
 
 doc_close(&doc);
 

@@ -2,7 +2,7 @@
  * File              : apply_properties.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 06.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -540,49 +540,51 @@ int apply_table_property(
 	LOG("Size of TDefTableOperand: %d", *((SHORT *)(prl->operand))); 
 	LOG("NumberOfColumns: %d", prl->operand[2]); 
 #endif
-		struct TDefTableOperand *t = TDefTableOperandInit(prl);	
-		if (t){
-			struct TC80 *rgTc80 = 
-				(struct TC80 *)t->rgTc80;
-			doc->prop.trp.ncellx = t->NumberOfColumns;
-			XAS *axas = (SHORT *)(t->rgdxaCenter);
-			// first cell left indent = axas[0];
-			/*! TODO: first cell left indent */
-			int i;
-			for (i = 0; i < t->NumberOfColumns; ++i) {
-				XAS xas = axas[i+1];
-				doc->prop.trp.cellx[i] = xas;
+		struct TDefTableOperand t; 
+		if (TDefTableOperandInit(prl, &t))
+			return -1;	
+		struct TC80 *rgTc80 = 
+			(struct TC80 *)t.rgTc80;
+		doc->prop.trp.ncellx = t.NumberOfColumns;
+		XAS *axas = (SHORT *)(t.rgdxaCenter);
+		// first cell left indent = axas[0];
+		/*! TODO: first cell left indent */
+		int i;
+		for (i = 0; i < t.NumberOfColumns; ++i) {
+			XAS xas = axas[i+1];
+			doc->prop.trp.cellx[i] = xas;
 
-				// set borders
-				bool bT = fFalse;
-				bool bL = fFalse;
-				bool bB= fFalse;
-				bool bR = fFalse;
-				if (t->rgTc80){	
-					if (rgTc80[i].brcTop.brcType != 0xFF &&
-					    rgTc80[i].brcTop.brcType > 0)
-						bT = fTrue;
-					if (rgTc80[i].brcLeft.brcType != 0xFF &&
-					    rgTc80[i].brcLeft.brcType > 0)
-						bL = fTrue;
-					if (rgTc80[i].brcBottom.brcType != 0xFF &&
-					    rgTc80[i].brcBottom.brcType > 0)
-						bB = fTrue;
-					if (rgTc80[i].brcRight.brcType != 0xFF &&
-					    rgTc80[i].brcRight.brcType > 0)
-						bR = fTrue;
-				}
+			// set borders
+			bool bT = fFalse;
+			bool bL = fFalse;
+			bool bB= fFalse;
+			bool bR = fFalse;
+			if (t.rgTc80){	
+				if (rgTc80[i].brcTop.brcType != 0xFF &&
+						rgTc80[i].brcTop.brcType > 0)
+					bT = fTrue;
+				if (rgTc80[i].brcLeft.brcType != 0xFF &&
+						rgTc80[i].brcLeft.brcType > 0)
+					bL = fTrue;
+				if (rgTc80[i].brcBottom.brcType != 0xFF &&
+						rgTc80[i].brcBottom.brcType > 0)
+					bB = fTrue;
+				if (rgTc80[i].brcRight.brcType != 0xFF &&
+						rgTc80[i].brcRight.brcType > 0)
+					bR = fTrue;
+				
 				doc->prop.trp.cbordT[i] = bT;
 				doc->prop.trp.cbordL[i] = bL;
 				doc->prop.trp.cbordB[i] = bB;
 				doc->prop.trp.cbordR[i] = bR;
 
-			//TDefTableOperandFree(t);
 #ifdef DEBUG
 	LOG("Column %d has XAS: %d, borders: %d:%d:%d:%d", i-1, xas, bT, bL, bB, bR); 
 #endif
 			}
 		}
+		
+		free(t.rgTc80);
 
 		
 		return 0;

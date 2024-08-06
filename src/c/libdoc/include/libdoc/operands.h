@@ -2,7 +2,7 @@
  * File              : operands.h
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 28.05.2024
- * Last Modified Date: 20.07.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -333,11 +333,12 @@ struct TDefTableOperand {
 												// excess TC80s MUST be ignored.
 };
 
-static struct TDefTableOperand *
-TDefTableOperandInit(struct Prl *prl)
+static int
+TDefTableOperandInit(struct Prl *prl, struct TDefTableOperand *t)
 {
-	struct TDefTableOperand *t = 
-		NEW(struct TDefTableOperand, ERR("NEW"); return NULL);
+#ifdef DEBUG
+	LOG("start");
+#endif
 
 	t->cb = *(USHORT *)(prl->operand);
 	t->NumberOfColumns = *(&(prl->operand[2]));
@@ -346,11 +347,14 @@ TDefTableOperandInit(struct Prl *prl)
 
 	if (t->NumberOfColumns > 0){
 		int size = t->cb - ((t->NumberOfColumns + 1)*2) - 1; 
+#ifdef DEBUG
+	LOG("size: %d", size);
+#endif
 		int len  = t->NumberOfColumns * sizeof(struct TC80);
 		if (size > sizeof(struct TC80)){
 			t->rgTc80 = (BYTE *)malloc(len);
 			if (!t->rgTc80)
-				return t;
+				return -1;
 			memset(t->rgTc80, 0xFF, len);
 			int i;
 			for (i=0; i < size; i++){
@@ -359,18 +363,8 @@ TDefTableOperandInit(struct Prl *prl)
 			}
 		}
 	}
-	return t;
+	return 0;
 };
-
-static void 
-TDefTableOperandFree(struct TDefTableOperand *t)
-{
-	if (t){
-		if (t->rgTc80)
-			free(t->rgTc80);
-		free(t);
-	}
-}
 
 enum BordersToApply {
 	BordersToApplyTop    = 0x01, //Top border.

@@ -2,7 +2,7 @@
  * File              : doc.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 26.05.2024
- * Last Modified Date: 05.08.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -1543,3 +1543,202 @@ void doc_get_picture(
 	else 
 		ERR("Not a picture CH: 0x%X", ch);
 }
+
+struct PlcBteChpx * plcbteChpx_get(
+		FILE *fp, ULONG offset, ULONG size, int *n)
+{
+	// get PlcBteChpx data
+	BYTE * p = (BYTE *)ALLOC(size,
+			ERR("malloc"); 
+			exit(ENOMEM)); 
+	fseek(fp, offset, SEEK_SET);
+	if (fread(p, size, 1, fp) != 1)
+	{
+		ERR("fread");
+		return NULL;
+	}
+
+	// get nuber of aFc;
+	*n = (size/4 - 1)/2 + 1;
+
+	struct PlcBteChpx *plcbteChpx = 
+		NEW(struct PlcBteChpx, 
+				ERR("malloc"); 
+				exit(ENOMEM));
+
+	plcbteChpx->aFc = (ULONG *)p;	
+	plcbteChpx->aPnBteChpx = (ULONG *)(p) + *n;
+#ifdef DEBUG
+	LOG("PlcbtePapx->aFc count: %d", *n);
+	int i;
+	for (i = 0; i < *n; ++i) {
+		LOG("PlcbteChpx->aFc[%d]: %d", 
+				i, plcbteChpx->aFc[i]);
+	}
+	for (i = 0; i < *n - 1; ++i) {
+		LOG("PlcbteChpx->aPnBtePapx[%d]: %d", 
+				i, plcbteChpx->aPnBteChpx[i]);
+	}
+#endif
+	return plcbteChpx;
+}
+
+void plcbteChpx_free(struct PlcBteChpx *p){
+	if (p){
+		if (p->aFc)
+			free(p->aFc);
+		free(p);
+	}
+}
+
+struct PlcBtePapx * plcbtePapx_get(
+		FILE *fp, ULONG offset, ULONG size, int *n)
+{
+#ifdef DEBUG
+	LOG("start");
+#endif
+	// get PlcBtePapx data
+	BYTE *p = (BYTE *)ALLOC(size,
+			ERR("malloc"); 
+			exit(ENOMEM)); 
+	fseek(fp, offset, SEEK_SET);
+	if (fread(p, size, 1, fp) != 1)
+	{
+		ERR("fread");
+		return NULL;
+	}
+
+	// get nuber of aFc;
+	*n = (size/4 - 1)/2 + 1;
+
+	struct PlcBtePapx *plcbtePapx = 
+		NEW(struct PlcBtePapx, 
+				ERR("malloc"); 
+				exit(ENOMEM));
+
+	plcbtePapx->aFc = (ULONG *)p;	
+	plcbtePapx->aPnBtePapx = (ULONG *)p + *n;
+#ifdef DEBUG
+	LOG("PlcbtePapx->aFc count: %d", *n);
+	int i;
+	for (i = 0; i < *n; ++i) {
+		LOG("PlcbtePapx->aFc[%d]: %d", 
+				i, plcbtePapx->aFc[i]);
+	}
+	for (i = 0; i < *n - 1; ++i) {
+		LOG("PlcbtePapx->aPnBtePapx[%d]: %d", 
+				i, plcbtePapx->aPnBtePapx[i]);
+	}
+#endif
+
+	return plcbtePapx;
+}
+
+void plcbtePapx_free(struct PlcBtePapx *p){
+	if (p){
+		if (p->aFc)
+			free(p->aFc);
+		free(p);
+	}
+}
+
+struct STSH *STSH_get(FILE *fp, 
+		ULONG off, ULONG size, int *n)
+{
+	struct STSH *STSH = NEW(struct STSH, 
+			ERR("malloc stsh"); 
+			return NULL);
+
+	fseek(fp, off, SEEK_SET);
+	USHORT cbStshi;
+	if (fread(&cbStshi, 2, 1, fp) != 1)
+	{
+		ERR("fread");
+		return NULL;
+	}
+#ifdef DEBUG
+	LOG("cbStshi: %d", cbStshi);
+#endif
+	if (!cbStshi){
+		ERR("something wrong... cbStd is 0");
+		return NULL;
+	}
+
+	STSH->lpstshi = (struct LPStshi *)ALLOC(
+			cbStshi + 2, 
+			ERR("malloc");
+			exit(ENOMEM));
+	STSH->lpstshi->cbStshi = cbStshi;
+	if (fread(STSH->lpstshi->stshi, cbStshi, 1,
+			fp) != 1)
+	{
+		ERR("fread");
+		return NULL;
+	}
+
+	// get len of rglpstd
+	*n = size - cbStshi - 2;
+#ifdef DEBUG
+	LOG("STSH rglpstd len: %d", *n);
+#endif
+	
+	STSH->rglpstd = (BYTE *)ALLOC(*n, 
+			ERR("malloc");
+			exit(ENOMEM));
+	if (fread(STSH->rglpstd, *n, 1,
+			fp) != 1)
+	{
+		ERR("fread");
+		return NULL;
+	}
+
+#ifdef DEBUG
+	struct str str;
+	str_init(&str, BUFSIZ);
+	str_appendf(&str, "STSH->rglpstd:\n");
+	for (int i = 0; i < *n; ++i) {
+		str_appendf(&str, "%d ", STSH->rglpstd[i]);
+	}
+	LOG("STSH->rglpstd:\n%s", str.str);
+#endif
+	return STSH;
+
+}
+
+void STSH_free(struct STSH *stsh){
+	if (stsh){
+		if (stsh->lpstshi)
+			free(stsh->lpstshi);
+		free(stsh);
+	}
+}
+
+struct LPStd *LPStd_at_index(
+		BYTE *rglpstd, int size, int index)
+{
+	int i, k;
+	for (i = 0, k = 0; i < size; ++k) {
+#ifdef DEBUG
+	LOG("looking for SDT at index: %d", k);
+#endif
+		if (k == index)
+			break;
+
+		void *p = &(rglpstd[i]); 
+		// read cbStd
+		USHORT *cbStd = (USHORT *)p;
+#ifdef DEBUG
+	LOG("SDT at index %d size: %d", k, *cbStd);
+#endif
+		
+		// skeep next cbStd bytes and 2 bytes of cbStd itself
+		i += *cbStd + 2;
+	}
+
+	if (k != index)
+		return NULL;
+
+	void *p = &(rglpstd[i]); 
+	return (struct LPStd *)p;	
+}
+

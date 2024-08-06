@@ -2,7 +2,7 @@
  * File              : direct_character_formatting.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 27.05.2024
- * Last Modified Date: 28.07.2024
+ * Last Modified Date: 07.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -132,11 +132,11 @@ void direct_character_formatting(
 			doc->WordDocument);
 
 #ifdef DEBUG
-	char str[BUFSIZ] = "grpprl: ";
-	for (int i = 0; i < cb; ++i) {
-		STRFCAT(str, "%d ", grpprl[i]);	
-	}
-	LOG("%s", str);
+	//char str[BUFSIZ] = "grpprl: ";
+	//for (int i = 0; i < cb; ++i) {
+		//STRFCAT(str, "%d ", grpprl[i]);	
+	//}
+	//LOG("%s", str);
 #endif
 
 /* 5. The grpprl within the Chpx is an array of Prls that
