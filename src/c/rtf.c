@@ -2,7 +2,7 @@
  * File              : rtf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.01.2024
- * Last Modified Date: 05.08.2024
+ * Last Modified Date: 06.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 #include "globals.h"
@@ -45,6 +45,16 @@ int style_cb(void *d, STYLE *s)
 {
 	struct unrtf_t *t = d;
 	t->styles[t->nstyles++] = *s;
+
+	// set default font size
+	if (s->s == 0 && strcmp(s->name, "Normal") == 0){
+		if (s->chp.size){
+			//fprintf(stderr, "FS: %d\n", s->chp.size);
+			lua_pushvalue(t->L, 9);
+			lua_pushnumber(t->L, s->chp.size);
+			lua_call(t->L, 1, 0);
+		}
+	}
 
 	return 0;
 }

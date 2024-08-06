@@ -145,7 +145,7 @@ local function callback(writer, document)
 			writer('}\n')
 			
 			writer('{\\stylesheet\n')
-			writer('{\\s0 Normal;}\n')
+			writer(string_format('{\\s0\\fs%d Normal;}\n', settings.fontsize * 2))
 			for _, s in pairs(style_tab) do
 				writer('{\\s', s[1], ' ', s[2], ';}\n')
 			end
