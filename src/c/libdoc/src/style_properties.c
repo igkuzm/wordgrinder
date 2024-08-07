@@ -26,7 +26,7 @@ static int callbackChar(void *userdata, struct Prl *prl);
  * paragraphs, and characters. */
 
 /* Given an istd: */
-void apply_style_properties(cfb_doc_t *doc, USHORT istd)
+ struct LPStd *apply_style_properties(cfb_doc_t *doc, USHORT istd)
 {
 /* 1. Read the FIB from offset zero in the WordDocument
  * Stream. */
@@ -37,25 +37,26 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
  * structure. Read a STSH from offset FibRgFcLcb97.fcStshf
  * in the Table Stream with size
  * FibRgFcLcb97.lcbStshf. */
-	struct STSH *STSH = doc->STSH;
+	struct STSH *STSH = &doc->STSH;
 
 /* 3. The given istd is a zero-based index into
  * STSH.rglpstd. Read an LPStd at STSH.rglpstd[istd]. */
+	USHORT cstd = doc->STSH.lpstshi->stshi->stshif.cstd;
 	struct LPStd *LPStd = 
 		LPStd_at_index(STSH->rglpstd, 
-				doc->lrglpstd, istd);
+				cstd, istd);
 	if (!LPStd){
 #ifdef DEBUG
 	LOG("no STD int STSH at index: %d", istd);
 #endif
-		return;
+		return NULL;
 	}
 
 	if (LPStd->cbStd == 0){
 #ifdef DEBUG
 	LOG("STD at index %d is 0 size - skiping...", istd);
 #endif
-		return;
+		return NULL;
 	}
 
 /* 4. Read the STD structure as LPStd.std, of length
@@ -99,36 +100,35 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 	LOG("cbSTDBaseInFile: 0x%04X", cbSTDBaseInFile);
 #endif
 
-	USHORT *p = NULL;
+	BYTE *p = NULL;
 
 	if (cbSTDBaseInFile == 0x000A){
 		// no StdfPost2000
-		p = (USHORT *)((struct STD_noStdfPost2000 *)STD)->xstzName_grLPUpxSw;
+		p = (BYTE *)(((struct STD_noStdfPost2000 *)STD)->xstzName_grLPUpxSw);
 
 	} else if (cbSTDBaseInFile == 0x0012){
 		// has StdfPost2000
-		p = (USHORT *)STD->xstzName_grLPUpxSw;
+		p = (BYTE *)(STD->xstzName_grLPUpxSw);
 	
 	} else {
 		ERR("cbSTDBaseInFile");
-		return;
+		return NULL;
 	}
 
 	// get style name
+	struct Xst *xst = (struct Xst *)p;
 #ifdef DEBUG
 	char str[BUFSIZ] = "";
-	USHORT *xstz = p+1;
-	_utf16_to_utf8(xstz, *p > BUFSIZ?BUFSIZ:*p, str);
-	LOG("style name: %s", str);
+	_utf16_to_utf8(xst->rgtchar, xst->cch > BUFSIZ?BUFSIZ:xst->cch, str);
+	LOG("style %d name: %s, nlen: %d, stk: %d, cpux: %d", istd, str, xst->cch, stk, cpux);
 #endif
 
-	// skip xstzName
-	USHORT len = *p;
-#ifdef DEBUG
-	LOG("style name len: %d", len);
-#endif
-	p += len;
-
+// skip xstzName
+	USHORT skip = 
+		2              // size of cch (2 bytes) 
+		+ xst->cch * 2 // number   16-bit Unicode characters
+		+ 2;           // xstzName 16-bit null-terminated 
+									 //
 /* 7. Each of the preceding structures contains one or more
  * of the following: LPUpxPapx, LPUpxChpx,
  * LPUpxTapx. Each of the latter structures leads to one or
@@ -136,21 +136,21 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
  * For more information, see the sections documenting these
  * structures for how to obtain these
  * arrays.*/
-	BYTE *ptr = (BYTE *)p;
+	BYTE *ptr = p + skip;
 
 	switch (stk) {
 		case stkPar:
 			{
 				// paragraph prop
-				struct LPUpxPapx *pupxPapx =
-					(struct LPUpxPapx *)ptr;
-				USHORT cbUpx = pupxPapx->cbUpx;
-				USHORT _istd = pupxPapx->PAPX->istd;
+				USHORT cbUpx = *ptr;
+				USHORT _istd = *(ptr + 2);
 				int fc = 2;
-				if (istd == _istd)
+				if (istd == _istd){
 					fc+=2;
+					cbUpx -= 2;
+				}
 				#ifdef DEBUG
-					LOG("UpxPapx len: %d", len);
+					LOG("UpxPapx len: %d", cbUpx);
 				#endif
 				parse_grpprl(
 					ptr+fc, 
@@ -163,16 +163,18 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 				if(cbUpx % 2 != 0)
 					fc++;
 				
-				struct LPUpxChpx *pupxChpx =
-					(struct LPUpxChpx *)(ptr + fc);
-				
-				cbUpx = pupxChpx->cbUpx; 
+				cbUpx = *(ptr + fc); 
 				#ifdef DEBUG
-					LOG("UpxChpx len: %d", len);
+					LOG("UpxChpx len: %d", cbUpx);
+				#endif
+				fc += 2;
+				BYTE *CHPX = ptr + fc;
+				#ifdef DEBUG
+					LOG("UpxChpx len: %d", cbUpx);
 				#endif
 			
 				parse_grpprl(
-					(BYTE *)(pupxChpx->CHPX), 
+					CHPX, 
 					cbUpx, 
 					doc, callbackPar);
 
@@ -183,7 +185,6 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 					// check padding 
 					if(cbUpx % 2 != 0)
 						fc++;
-				
 
 					/* TODO:  parse StkParaLpUpxGrLpUpxRM */
 				}
@@ -191,16 +192,27 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 			break;
 		case stkCha:
 			{
-				struct  LPUpxChpx *pupxChpx =
-					(struct LPUpxChpx *)ptr;
-				
-				USHORT cbUpx = pupxChpx->cbUpx; 
+				USHORT cbUpx = *ptr; 
 				#ifdef DEBUG
-					LOG("UpxChpx len: %d", len);
+					LOG("UpxChpx len: %d", cbUpx);
+				#endif
+				BYTE *CHPX = ptr + 2;
+				#ifdef DEBUG
+				Sprm sprm = *CHPX;
+				fprintf(stderr, "sprm: 0x%X\n", sprm);
+				USHORT ismpd = SprmIspmd(sprm);
+				BYTE sgc = SprmSgc(sprm);
+				LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd);
+
+				int i;
+				for (i = 2; i < cbUpx; ++i) {
+					fprintf(stderr, "0x%X ", CHPX[i]);
+				}
+				fprintf(stderr, "\n");
 				#endif
 				
 				parse_grpprl(
-				(BYTE *)(pupxChpx->CHPX), 
+				CHPX, 
 				cbUpx, 
 				doc, callbackChar);
 
@@ -222,7 +234,7 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 #ifdef DEBUG
 	LOG("no rule to parse stk: %d", stk);
 #endif
-			return;
+		return LPStd;
 	}
 
 /* 8. For each array obtained in step 7 that specifies
@@ -233,14 +245,22 @@ void apply_style_properties(cfb_doc_t *doc, USHORT istd)
 #ifdef DEBUG
 	LOG("done");
 #endif
+	return LPStd;
 }
 int callbackPar(void *userdata, struct Prl *prl){
 	// parse properties
+	//USHORT ismpd = SprmIspmd(prl->sprm);
+	//BYTE sgc = SprmSgc(prl->sprm);
+	//LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd);
 	cfb_doc_t *doc = userdata;
 	apply_property(doc, 1, prl);
 	return 0;
 }
 int callbackChar(void *userdata, struct Prl *prl){
+		
+	//USHORT ismpd = SprmIspmd(prl->sprm);
+	//BYTE sgc = SprmSgc(prl->sprm);
+	//LOG("sgc: 0x%x, ismpd: 0x%02x", sgc, ismpd);
 	// parse properties
 	cfb_doc_t *doc = userdata;
 	apply_property(doc, 0, prl);

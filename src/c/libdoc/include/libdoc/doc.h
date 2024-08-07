@@ -4354,7 +4354,7 @@ struct LPStd {
  * The LPStshi structure specifies general stylesheet
  * information.*/
 struct LPStshi {
-	USHORT cbStshi; //cbStshi (2 bytes): An unsigned integer
+	USHORT cbStshi;   //cbStshi (2 bytes): An unsigned integer
 										//that specifies the size, in bytes, of
 										//stshi
 	struct STSHI stshi[];//stshi (variable): A stshi that
@@ -4377,7 +4377,8 @@ struct LPStshi {
  * than 0x0FFE.
  * Each FIB MUST contain a stylesheet.*/
 struct STSH {
-	struct LPStshi *lpstshi; //lpstshi (variable): An LPStshi that
+	struct LPStshi *lpstshi; 
+	                  //lpstshi (variable): An LPStshi that
 										//specifies information about the
 										//stylesheet.
 	BYTE *rglpstd; //rglpstd (variable): An array of LPStd
@@ -4402,7 +4403,7 @@ struct STSH *STSH_get(FILE *fp,
 void STSH_free(struct STSH *stsh);
 
 struct LPStd *LPStd_at_index(
-		BYTE *rglpstd, int size, int index);
+		BYTE *rglpstd, int cstd, int index);
 
 /* 2.9.336 UpxChpx
  * The UpxChpx structure specifies the character formatting
@@ -4562,6 +4563,49 @@ struct StkParaGRLPUPX {
 															//specifies the revision-
 															//marking information and
 															//formatting for the style.
+};
+
+/* 2.9.127 Kul
+ * The Kul enumeration specifies the style of underlining
+ * for text.
+ * Name Value Meaning
+ * kulNone 0x00 No underlining.
+ * kulSingle 0x01 Normal single underline.
+ * kulWords 0x02 Underline words only.
+ * kulDouble 0x03 Double underline.
+ * kulDotted 0x04 Dotted underline.
+ * kulThick 0x06 Heavy underline.
+ * kulDash 0x07 Dashed underline.
+ * kulDotDash 0x09 Dot-dash underline.
+ * kulDotDotDash 0x0A Dot-dot-dash underline.
+ * kulWavy 0x0B Wavy underline.
+ * kulDottedHeavy 0x14 Heavy dotted underline.
+ * kulDashHeavy 0x17 Heavy dashed underline.
+ * kulDotDashHeavy 0x19 Heavy dot-dash underline.
+ * kulDotDotDashHeavy 0x1A Heavy dot-dot-dash underline.
+ * kulWavyHeavy 0x1B Heavy wavy underline.
+ * kulDashLong 0x27 Long-dash underline.
+ * kulWavyDouble 0x2B Wavy double underline.
+ * kulDashLongHeavy 0x37 Heavy long-dash underline.*/
+enum Kul {
+	kulNone            = 0x00,
+	kulSingle          = 0x01,
+	kulWords           = 0x02,
+	kulDouble          = 0x03,
+	kulDotted          = 0x04,
+	kulThick           = 0x06,
+	kulDash            = 0x07,
+	kulDotDash         = 0x09,
+	kulDotDotDash      = 0x0A,
+	kulWavy            = 0x0B,
+	kulDottedHeavy     = 0x14,
+	kulDashHeavy       = 0x17,
+	kulDotDashHeavy    = 0x19,
+	kulDotDotDashHeavy = 0x1A,
+	kulWavyHeavy       = 0x1B,
+	kulDashLong        = 0x27,
+	kulWavyDouble      = 0x2B,
+	kulDashLongHeavy   = 0x37,
 };
 
 /* 2.9.22 BrcType
@@ -4859,11 +4903,45 @@ enum BrcType {
 //0xFF This MUST be ignored.
 };
 
+/* 2.9.43 COLORREF
+ * The COLORREF structure specifies a color in terms of its
+ * red, green, and blue components. */
+struct COLOREF {
+	BYTE red;        //(1 byte): An unsigned integer that
+									 //specifies the intensity of the color
+									 //red. A value of zero specifies that
+									 //there is no red. Larger numbers specify
+									 //a more intense red than smaller
+									 //numbers.
+	BYTE green;      //(1 byte): An unsigned integer that
+									 //specifies the intensity of the color
+									 //green. A value of zero specifies that
+									 //there is no green. Larger numbers
+									 //specify a more intense green than
+									 //smaller numbers.
+	BYTE blue;       //(1 byte): An unsigned integer that
+									 //specifies the intensity of the color
+									 //blue. A value of zero specifies that
+									 //there is no blue. Larger numbers
+									 //specify a more intense blue than
+									 //smaller numbers.
+	BYTE fAuto;      //(1 byte): An unsigned integer whose
+									 //value MUST be either 0xFF or 0x00. If
+									 //the value is 0xFF, the values of red,
+									 //green, and blue in this COLORREF
+									 //SHOULD<208> all be 0x00. If fAuto is
+									 //0xFF, this COLORREF designates the
+									 //default color for the application. An
+									 //application MAY<209> use different
+									 //default colors based on context. This
+									 //documentation refers to the COLORREF
+									 //with fAuto set to 0xFF as cvAuto.
+};
 
 /* 2.9.16 Brc
  * The Brc structure specifies a border. */
 struct Brc {
-	ULONG vc;          //cv (4 bytes): A COLORREF that
+	struct COLOREF vc; //cv (4 bytes): A COLORREF that
 										 //specifies the color of this border.
 	BYTE dptLineWidth; //(8 bits): Specifies the width of the
 										 //border. Different meanings based on
@@ -5792,8 +5870,7 @@ typedef struct cfb_doc
 	int plcfspaNaCP;      // number of aCP in plcfspa;
 	struct PlcfSed *plcfSed;
 	int plcfSedNaCP;      // number of aCP in plcfSed;
-	struct STSH *STSH;    // style sheet 
-	int lrglpstd;         // len of rglpstd
+	struct STSH STSH;     // style sheet 
 	ldp_t prop;           // properties
 } cfb_doc_t;
 

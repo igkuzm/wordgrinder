@@ -85,6 +85,17 @@ int apply_char_property(
 		return 0;
 	}
 
+	// set underline
+	if (ismpd == sprmCKul){
+		enum Kul *kul = (enum Kul *)prl->operand;
+		if (kul == kulNone)
+			chp->fUnderline = fFalse;
+		else 
+			chp->fUnderline = fTrue;
+		
+		return 0;
+	}
+
 	// background color
 	if (ismpd == sprmCHighlight){
 		const COLOR *c = Ico(prl->operand[0]);
@@ -99,10 +110,91 @@ int apply_char_property(
 		return 0;
 	}
 
+	// text color
+	if (ismpd == sprmCIco){
+		const COLOR *c = Ico(prl->operand[0]);
+		if (c){
+			int rgb;
+			int r = c->red;
+			int g = c->green;
+			int b = c->blue;
+			rgb = (r << 24) + (g << 16) + (b << 8);
+			chp->fcolor = rgb; 
+		}
+		return 0;
+	}
+	if (ismpd == sprmCCv){
+		const struct COLOREF *c = 
+			(struct COLOREF *)(prl->operand);
+		if (c->fAuto == 0xFF){
+			chp->fcolor = 0; 
+		} else {
+			int rgb;
+			int r = c->red;
+			int g = c->green;
+			int b = c->blue;
+			rgb = (r << 24) + (g << 16) + (b << 8);
+			chp->fcolor = rgb; 
+		}
+		return 0;
+	}
 	// font size
+	if (ismpd == sprmCHps){
+		USHORT *n = (USHORT *)(prl->operand);
+		chp->size = *n;
+		return 0;
+	}
+	// font size for right-to left
+	/*
 	if (ismpd == sprmCHpsBi){
 		USHORT *n = (USHORT *)(prl->operand);
 		chp->size = *n;
+		return 0;
+	}
+	*/
+
+	// font index
+	if (ismpd == sprmCRgFtc0){
+		SHORT *n = (SHORT *)(prl->operand);
+		chp->font = *n;
+		return 0;
+	}
+	if (ismpd == sprmCRgFtc1){
+		SHORT *n = (SHORT *)(prl->operand);
+		chp->font1 = *n;
+		return 0;
+	}
+	if (ismpd == sprmCRgFtc2){
+		SHORT *n = (SHORT *)(prl->operand);
+		chp->font2 = *n;
+		return 0;
+	}
+
+	// kerning
+	if (ismpd == sprmCHpsKern){
+		LONG *n = (LONG *)(prl->operand);
+		chp->kern = *n;
+		return 0;
+	}
+	// charset
+	if (ismpd == sprmCRgLid0_80){
+		LID *n = (LID *)(prl->operand);
+		chp->charset = *n;
+		return 0;
+	}
+	if (ismpd == sprmCRgLid0){
+		LID *n = (LID *)(prl->operand);
+		chp->charset = *n;
+		return 0;
+	}
+	if (ismpd == sprmCRgLid1_80){
+		LID *n = (LID *)(prl->operand);
+		chp->charsetEastAsian = *n;
+		return 0;
+	}
+	if (ismpd == sprmCRgLid1){
+		LID *n = (LID *)(prl->operand);
+		chp->charsetEastAsian = *n;
 		return 0;
 	}
 

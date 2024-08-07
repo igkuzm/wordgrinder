@@ -62,9 +62,14 @@ typedef struct char_prop
 	char fUnderline;
 	char fItalic;
 	int  font;
+	int  font1;
+	int  font2;
 	int  size;
+	int  kern; // kerning
 	int  fcolor;
 	int  bcolor;
+	int  charset;      //
+	int  charsetEastAsian;      //
 	char allCaps;    // all capital symbols
 	
 	// MS DOC special 

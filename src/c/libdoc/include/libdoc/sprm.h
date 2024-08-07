@@ -233,18 +233,115 @@ enum {
 
 	sprmCFCaps            = 0x3B,
 	sprmCFVanish          = 0x3C,
-	sprmCKul              = 0x3E,
+	sprmCKul              = 0x3E, //0x3E A Kul value that
+																//specifies the underlining
+																//style of the text. By
+																//default, text is
+																//not underlined.
 	sprmCDxaSpace         = 0x40,
-	sprmCIco              = 0x42,
-	sprmCHps              = 0x43,
+	sprmCIco              = 0x42, //0x42 An Ico value that
+																//specifies the color of the
+																//text. The default text
+																//color is
+																//cvAuto.
+	sprmCHps              = 0x43, //0x43 An unsigned 2-byte
+																//integer that specifies the
+																//size of the text, except
+																//for text
+																//that meets the
+																//qualifications for
+																//sprmCHpsBi. This value is
+																//specified in half-
+																//points. The specified
+																//value MUST be between 2
+																//and 3276. By default, the
+																//font size is 20
+																//half-points.
 	sprmCHpsPos           = 0x45,
 	sprmCMajority         = 0x47,
 	sprmCIss              = 0x48,
-  sprmCHpsKern          = 0x4B,
+  sprmCHpsKern          = 0x4B, //0x4B A signed integer that
+																//specifies a font size
+																//threshold, in half-points,
+																//at or
+																//above which kerning is
+																//applied to the text. If
+																//the operand is 0, no
+																//kerning is
+																//applied; otherwise, it
+																//MUST be a value between 1
+																//and 3276. By default,
+																//kerning is not applied to
+																//any characters.
 	sprmCHresi            = 0x4E,
-	sprmCRgFtc0           = 0x4F,
-	sprmCRgFtc1           = 0x50,
-	sprmCRgFtc2           = 0x51,
+	sprmCRgFtc0           = 0x4F, //0x4F A 2-byte signed
+																//integer value that is an
+																//index into the font table
+																//(SttbfFfn).
+																//The font that is
+																//referenced by this index
+																//is used to display the
+																//text only if the
+																//conditions for using these
+																//fonts do not apply:
+																//sprmCRgFtc1, sprmCRgFtc2
+																//and sprmCFtcBi. This value
+																//MUST be between 0 and a
+																//number that is one
+																//less than the count of
+																//entries in SttbfFfn unless
+																//there are 0 entries, in
+																//which
+																//case this value MUST be 0.
+																//By default, the font used
+																//under these conditions
+																//is
+																//STSH.Stshi.Stshif.ftcAsci.
+	sprmCRgFtc1           = 0x50, //0x50 A 2-byte signed
+																//integer value that is an
+																//index into the font table
+																//(SttbfFfn).
+																//The font referenced by
+																//this index is used only if
+																//the language for the text
+																//is
+																//an East Asian language.
+																//This value MUST be between
+																//0 and a number that is
+																//one less than the count of
+																//entries in SttbfFfn unless
+																//there are 0 entries, in
+																//which case this value MUST
+																//be 0. By default, the font
+																//that is used under
+																//these conditions is
+																//STSH.Stshi.Stshif.ftcFE.
+	sprmCRgFtc2           = 0x51, //0x51 A 2-byte signed
+																//integer that is an index
+																//into the font table
+																//(SttbfFfn). The
+																//font that is referenced by
+																//this index is used to
+																//display text if the
+																//character
+																//falls outside the Unicode
+																//character range U+0020 to
+																//U+007F and the
+																//conditions for using these
+																//fonts do not apply:
+																//sprmCRgFtc1 and
+																//sprmCFtcBi.This value MUST
+																//be between 0 and a number
+																//that is one less than the
+																//count
+																//of entries in SttbfFfn
+																//unless there are 0
+																//entries, in which case
+																//this value
+																//MUST be 0. By default, the
+																//font that is used under
+																//these conditions is
+																//STSH.Stshi.Stshif.ftcOther.
 	sprmCCharScale        = 0x52,
 	sprmCFDStrike         = 0x53,
 	sprmCFImprint         = 0x54,
@@ -359,13 +456,37 @@ enum {
 	sprmCShd80            = 0x66,
 	sprmCIdslRMarkDel     = 0x67,
 	sprmCFUsePgsuSettings = 0x68,
-	sprmCRgLid0_80        = 0x6D,
-	sprmCRgLid1_80        = 0x6E,
+	sprmCRgLid0_80        = 0x6D, // 0x6D A LID value that
+																// specifies the language of
+																// the text, except for East
+																// Asian
+																// languages. East Asian
+																// languages are specified
+																// by sprmCRgLid1_80. By
+																// default, the text
+																// language is undefined.
+																// 16-bit integer - LID - 
+																// two digit hexdecimal
+																// language code
+	sprmCRgLid1_80        = 0x6E, // 0x6E A LID value that
+																// specifies the language of
+																// the text if it is an East
+																// Asian
+																// language. Other languages
+																// are specified by
+																// sprmCRgLid0_80. By
+																// default, the
+																// text language is
+																// undefined.
 	sprmCIdctHint         = 0x6F,
-	sprmCCv               = 0x70,
+	sprmCCv               = 0x70, // 0x70 A COLORREF value
+																// that specifies the color
+																// of the text. The default
+																// text color
+																// is cvAuto.
 	sprmCShd              = 0x71,
 	sprmCBrc              = 0x72,
-	sprmCRgLid0           = 0x73,
+	sprmCRgLid0           = 0x73, // LID value
 	sprmCRgLid1           = 0x74,
 	sprmCFNoProof         = 0x75,
 	sprmCFitText          = 0x76,

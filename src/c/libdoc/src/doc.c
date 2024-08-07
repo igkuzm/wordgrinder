@@ -760,23 +760,46 @@ static int _doc_plcBteChpx_init(cfb_doc_t *doc){
 	return 0;
 }
 
-static int _doc_STSH_init(cfb_doc_t *doc){
-#ifdef DEBUG
-	LOG("start");
-#endif
+int _doc_STSH_init(cfb_doc_t *doc)
+{
 	FibRgFcLcb97 *fibRgFcLcb97 = 
 		(FibRgFcLcb97 *)(doc->fib.rgFcLcb);
-	doc->STSH = STSH_get(doc->Table, 
-			fibRgFcLcb97->fcStshf, 
-			fibRgFcLcb97->lcbStshf, 
-			&doc->lrglpstd);
-	
-	if (!doc->STSH){
-		ERR("can't read PlcBteChpx");
+
+	ULONG fc  = fibRgFcLcb97->fcStshf;
+	ULONG lcb = fibRgFcLcb97->lcbStshf;
+	if (lcb == 0){
+		ERR("lcb: %d", lcb);
 		return -1;
 	}
 	
+	BYTE *buf = (BYTE *)ALLOC(lcb, ERR("alloc"); return -1);
+	
+	fseek(doc->Table, fc, SEEK_SET);
+	if (fread(buf, lcb, 1,
+			 	doc->Table) != 1)
+	{
+		ERR("fread");
+		return -1;
+	}
+	doc->STSH.lpstshi = (struct LPStshi *)buf;
+
+#ifdef DEBUG
+	LOG("cbStshi: %d", doc->STSH.lpstshi->cbStshi);
+#endif
+	if (doc->STSH.lpstshi->cbStshi == 0){
+		ERR("cbStshi: %d", doc->STSH.lpstshi->cbStshi);
+		return -1;
+	}
+
+	int off = doc->STSH.lpstshi->cbStshi + 2;
+	doc->STSH.rglpstd = &buf[off];
+
 	return 0;
+}
+
+void STSH_free(struct STSH *stsh){
+	if (stsh->lpstshi)
+		free(stsh->lpstshi);
 }
 
 
@@ -866,8 +889,9 @@ void doc_close(cfb_doc_t *doc)
 			free(doc->plcbteChpx);
 		if (doc->plcbtePapx)
 			free(doc->plcbtePapx);
-		if (doc->STSH)
-			STSH_free(doc->STSH);
+		
+		STSH_free(&doc->STSH);
+		
 		if (doc->plcfspa){
 			if(doc->plcfspa->aCP)
 				free(doc->plcfspa->aCP);
@@ -1642,103 +1666,35 @@ void plcbtePapx_free(struct PlcBtePapx *p){
 	}
 }
 
-struct STSH *STSH_get(FILE *fp, 
-		ULONG off, ULONG size, int *n)
-{
-	struct STSH *STSH = NEW(struct STSH, 
-			ERR("malloc stsh"); 
-			return NULL);
-
-	fseek(fp, off, SEEK_SET);
-	USHORT cbStshi;
-	if (fread(&cbStshi, 2, 1, fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-#ifdef DEBUG
-	LOG("cbStshi: %d", cbStshi);
-#endif
-	if (!cbStshi){
-		ERR("something wrong... cbStd is 0");
-		return NULL;
-	}
-
-	STSH->lpstshi = (struct LPStshi *)ALLOC(
-			cbStshi + 2, 
-			ERR("malloc");
-			exit(ENOMEM));
-	STSH->lpstshi->cbStshi = cbStshi;
-	if (fread(STSH->lpstshi->stshi, cbStshi, 1,
-			fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-
-	// get len of rglpstd
-	*n = size - cbStshi - 2;
-#ifdef DEBUG
-	LOG("STSH rglpstd len: %d", *n);
-#endif
-	
-	STSH->rglpstd = (BYTE *)ALLOC(*n, 
-			ERR("malloc");
-			exit(ENOMEM));
-	if (fread(STSH->rglpstd, *n, 1,
-			fp) != 1)
-	{
-		ERR("fread");
-		return NULL;
-	}
-
-#ifdef DEBUG
-	struct str str;
-	str_init(&str, BUFSIZ);
-	str_appendf(&str, "STSH->rglpstd:\n");
-	for (int i = 0; i < *n; ++i) {
-		str_appendf(&str, "%d ", STSH->rglpstd[i]);
-	}
-	LOG("STSH->rglpstd:\n%s", str.str);
-#endif
-	return STSH;
-
-}
-
-void STSH_free(struct STSH *stsh){
-	if (stsh){
-		if (stsh->lpstshi)
-			free(stsh->lpstshi);
-		free(stsh);
-	}
-}
-
 struct LPStd *LPStd_at_index(
-		BYTE *rglpstd, int size, int index)
+		BYTE *rglpstd, int cstd, int index)
 {
 	int i, k;
-	for (i = 0, k = 0; i < size; ++k) {
+	SHORT cbStd;
+	for (i = 0, k = 0; k < cstd; ++k) {
 #ifdef DEBUG
 	LOG("looking for SDT at index: %d", k);
 #endif
 		if (k == index)
 			break;
 
-		void *p = &(rglpstd[i]); 
 		// read cbStd
-		USHORT *cbStd = (USHORT *)p;
+		cbStd = *(SHORT *)&(rglpstd[i]);
 #ifdef DEBUG
 	LOG("SDT at index %d size: %d", k, *cbStd);
 #endif
+	if (cbStd < 0){
+		ERR("STSH corrupted, LPStd at index: %d, cbStd: %d", k, cbStd);
+		return NULL;
+	}
 		
 		// skeep next cbStd bytes and 2 bytes of cbStd itself
-		i += *cbStd + 2;
+		i += cbStd + 2;
 	}
 
 	if (k != index)
 		return NULL;
 
-	void *p = &(rglpstd[i]); 
-	return (struct LPStd *)p;	
+	return (struct LPStd *)&(rglpstd[i]);	
 }
 

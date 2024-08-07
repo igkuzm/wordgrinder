@@ -103,9 +103,11 @@ int text(void *d, DOC_PART part, ldp_t *p, int ch){
 }
 
 int styles(void *d, STYLE *s){
-	fprintf(stderr, 
-			"STYLE: %d, %s, fs: %d, b: %d, u: %d, i: %d\n", 
-			s->s, s->name, s->chp.size, s->chp.fBold, s->chp.fUnderline, s->chp.fItalic);
-
+	//fprintf(stderr, 
+			//"STYLE: %d, %s, fs: %d, b: %d, u: %d, i: %d\n", 
+			//s->s, s->name, s->chp.size, s->chp.fBold, s->chp.fUnderline, s->chp.fItalic);
+	//fprintf(stderr, 
+			//"STYLE: %d, %s, fs: %d, b: %d, u: %d, i: %d\n", 
+			//s->s, s->name, s->pap_chp.size, s->pap_chp.fBold, s->pap_chp.fUnderline, s->pap_chp.fItalic);
 	return 0;
 }

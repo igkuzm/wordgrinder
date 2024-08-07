@@ -60,25 +60,20 @@ static void _parse_styles(cfb_doc_t *doc, void *user_data,
 		int (*styles)(void *user_data, STYLE *s))
 {
 	// parse styles
-	USHORT cstd = doc->STSH->lpstshi->stshi->stshif.cstd;
+	USHORT cstd = doc->STSH.lpstshi->stshi->stshif.cstd;
+#ifdef DEBUG
+	LOG("cstd: %d", cstd);
+#endif
 	
 	int i, index = 0;
-	for (i = 0; i < doc->lrglpstd && index < cstd;) {
+	for (i = 0; index < cstd;) {
+		// clean prop
+		memset(&doc->prop, 0, sizeof(ldp_t));
 
-		void *ptr = &(doc->STSH->rglpstd[i]); 
-		// read cbStd
-		USHORT *cbStd = (USHORT *)ptr;
-#ifdef DEBUG
-		LOG("SDT at index %d size: %d", index, *cbStd);
-#endif
-		
 		struct LPStd *LPStd = 
-			(struct LPStd *)&(doc->STSH->rglpstd[i]);
-
-		apply_style_properties(doc, index);
+			apply_style_properties(doc, index);
 				
-		if (LPStd->cbStd == 0){
-			i += 2;
+		if (!LPStd){
 			index++;
 			continue;
 		}
@@ -94,7 +89,7 @@ static void _parse_styles(cfb_doc_t *doc, void *user_data,
 		USHORT *p = NULL;
 
 		// check if STD->Stdf has StdfPost2000;
-		struct STSH *STSH = doc->STSH;
+		struct STSH *STSH = &doc->STSH;
 		struct STSHI *STSHI = STSH->lpstshi->stshi;
 		USHORT cbSTDBaseInFile = STSHI->stshif.cbSTDBaseInFile;
 		
@@ -108,7 +103,6 @@ static void _parse_styles(cfb_doc_t *doc, void *user_data,
 		
 		} else {
 			ERR("cbSTDBaseInFile");
-			i += *cbStd + 2;
 			index++;
 			continue;
 		}
@@ -132,11 +126,10 @@ static void _parse_styles(cfb_doc_t *doc, void *user_data,
 
 		s.sbedeon = istdBase;
 
+		// callback
 		styles(user_data, &s);
 
 		// iterate
-		// skeep next cbStd bytes and  2 bytes of cbStd itself
-		i += *cbStd + 2;
 		index++;
 	}
 }
