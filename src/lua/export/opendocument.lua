@@ -2,7 +2,7 @@
 File              : opendocument.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.08.2024
+Last Modified Date: 07.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -392,7 +392,7 @@ local function export_odt_with_ui(filename, title, extension)
     
 		styles = styles .. string_format('<style:style style:name="LEFT" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
     
-		styles = styles .. string_format('<style:style style:name="RIGTH" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="start" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
+		styles = styles .. string_format('<style:style style:name="RIGHT" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="end" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
     
 		styles = styles .. string_format('<style:style style:name="IMG" style:family="paragraph"><style:paragraph-properties fo:margin-top="0.15cm" fo:margin-bottom="0.15cm" style:contextual-spacing="false" fo:text-align="center" style:justify-single-word="false" fo:orphans="0" fo:widows="0" fo:hyphenation-ladder-count="no-limit" style:writing-mode="lr-tb"/><style:text-properties style:font-name="Times New Roman" fo:font-family="\'Times New Roman\'" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="%dpt"/></style:style>', fontsize)
     
