@@ -2,7 +2,7 @@
 File              : docx.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.08.2024
+Last Modified Date: 07.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -415,7 +415,7 @@ local function callback(writer, document)
 				<w:p><w:r><w:t>
 				]])
 			else
-				writer('<w:tc><w:r><w:t>')
+				writer('<w:tc><w:p><w:r><w:t>')
 			end
 		end,		
 		
