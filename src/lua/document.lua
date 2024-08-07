@@ -682,7 +682,7 @@ ParagraphClass =
 
 			-- Justify lines
 			for ln, line in ipairs(lines) do
-				if ln < nlines - 1 then
+				if ln < nlines then
 					local w = linesw[ln]
 					local dw = width
 					if ln == 1 then
