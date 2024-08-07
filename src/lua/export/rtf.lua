@@ -2,7 +2,7 @@
 File              : rtf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.08.2024
+Last Modified Date: 07.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2011 David Given.
@@ -56,23 +56,23 @@ local function style_tab_init()
 	local fontsize = DocumentSet.addons.pageconfig.fontsize
 	style_tab =
 {
-	["H1"]     = {1,  string_format('\\fs%d\\sb400\\b\\sbasedon0 H1', fontsize * 3)},
-	["H2"]     = {2,  string_format('\\fs%d\\sb360\\b\\sbasedon0 H2', fontsize * 2.5)},
-	["H3"]     = {3,  string_format('\\fs%d\\sb320\\b\\sbasedon0 H3', fontsize * 2.2)},
-	["H4"]     = {4,  string_format('\\fs%d\\sb280\\b\\sbasedon0 H4', fontsize * 2)},
-	["P"]      = {5,  string_format('\\fs%d\\sb140\\sbasedon0 P', fontsize * 2)},
-	["L"]      = {6,  string_format('\\fs%d\\sb140\\sbasedon5 L', fontsize * 2)},
-	["LB"]     = {7,  string_format('\\fs%d\\sb140\\sbasedon5 LB', fontsize * 2)},
-	["LN"]     = {8,  string_format('\\fs%d\\sb140\\sbasedon5 LN', fontsize * 2)},
-	["Q"]      = {9,  string_format('\\fs%d\\sb140\\li500\\sbasedon5 Q', fontsize * 2)},
-	["V"]      = {10, string_format('\\fs%d\\sb140\\li500\\sbasedon5 V', fontsize * 2)},
-	["RAW"]    = {11, string_format('\\fs%d\\sb140\\sbasedon5 RAW', fontsize * 2)},
-	["PRE"]    = {12, string_format('\\fs%d\\sb140\\sbasedon5 PRE', fontsize * 2)},
-	["LEFT"]   = {13, string_format('\\fs%d\\sb140\\sbasedon5\\ql LEFT', fontsize * 2)},
-	["RIGHT"]  = {14, string_format('\\fs%d\\sb140\\sbasedon5\\qr RIGHT', fontsize * 2)},
-	["BOTH"]   = {16, string_format('\\fs%d\\sb140\\sbasedon5\\qj BOTH', fontsize * 2)},
-	["CENTER"] = {17, string_format('\\fs%d\\sb140\\sbasedon5\\qc CENTER', fontsize * 2)},
-	["IMG"]    = {18, string_format('\\fs%d\\sb140\\sbasedon5\\qc IMG', fontsize * 2)},
+	["H1"]     = {15,  string_format('\\fs%d\\sb400\\b\\sbasedon0 H1', fontsize * 3)},
+	["H2"]     = {16,  string_format('\\fs%d\\sb360\\b\\sbasedon0 H2', fontsize * 2.5)},
+	["H3"]     = {17,  string_format('\\fs%d\\sb320\\b\\sbasedon0 H3', fontsize * 2.2)},
+	["H4"]     = {18,  string_format('\\fs%d\\sb280\\b\\sbasedon0 H4', fontsize * 2)},
+	["P"]      = {19,  string_format('\\fs%d\\sb140\\sbasedon0 P', fontsize * 2)},
+	["L"]      = {20,  string_format('\\fs%d\\sb140\\sbasedon5 L', fontsize * 2)},
+	["LB"]     = {21,  string_format('\\fs%d\\sb140\\sbasedon5 LB', fontsize * 2)},
+	["LN"]     = {22,  string_format('\\fs%d\\sb140\\sbasedon5 LN', fontsize * 2)},
+	["Q"]      = {23,  string_format('\\fs%d\\sb140\\li500\\sbasedon5 Q', fontsize * 2)},
+	["V"]      = {24, string_format('\\fs%d\\sb140\\li500\\sbasedon5 V', fontsize * 2)},
+	["RAW"]    = {25, string_format('\\fs%d\\sb140\\sbasedon5 RAW', fontsize * 2)},
+	["PRE"]    = {26, string_format('\\fs%d\\sb140\\sbasedon5 PRE', fontsize * 2)},
+	["LEFT"]   = {27, string_format('\\fs%d\\sb140\\sbasedon5\\ql LEFT', fontsize * 2)},
+	["RIGHT"]  = {28, string_format('\\fs%d\\sb140\\sbasedon5\\qr RIGHT', fontsize * 2)},
+	["BOTH"]   = {29, string_format('\\fs%d\\sb140\\sbasedon5\\qj BOTH', fontsize * 2)},
+	["CENTER"] = {30, string_format('\\fs%d\\sb140\\sbasedon5\\qc CENTER', fontsize * 2)},
+	["IMG"]    = {31, string_format('\\fs%d\\sb140\\sbasedon5\\qc IMG', fontsize * 2)},
 }
 end
 
@@ -196,7 +196,17 @@ local function callback(writer, document)
 		end,
 		
 		paragraph_start = function(para)
-			writer('\\pard\\s', style_tab[para.style][1])
+			local settings = DocumentSet.addons.pageconfig
+			local n = 2
+			if para.style == "H1" then
+				n = 3
+			elseif para.style == "H2" then
+				n = 2.5
+			elseif para.style == "H3" then
+				n = 2.2
+			end
+
+			writer('\\pard\\s', style_tab[para.style][1], string_format("\\fs%d", settings.fontsize*n))
 			
 			if (para.style == "LN") then
 				writer('\\ls1')
@@ -226,7 +236,8 @@ local function callback(writer, document)
 		end,
 		
 		table_start = function(para)
-			writer('\\pard\\trowd\n')
+			local settings = DocumentSet.addons.pageconfig
+			writer(string_format('\\pard\\trowd\\fs%d\n', settings.fontsize*2))
 			local width = 0
 			for cn, cell in ipairs(para.cells) do
 				if (para.style == "TRB") then
@@ -258,7 +269,8 @@ local function callback(writer, document)
 		end,
 
 		image_start = function(para)
-			writer('\\pard\\s', style_tab[para.style][1])
+			local settings = DocumentSet.addons.pageconfig
+			writer('\\pard\\s', style_tab[para.style][1], string_format("\\fs%d", settings.fontsize * 2))
 		end,
 		
 		image_end = function(para)
