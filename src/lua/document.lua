@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.08.2024
+Last Modified Date: 07.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -639,6 +639,7 @@ ParagraphClass =
 		if (self.wrapwidth ~= width) then
 			local lines = {}
 			local line = {wn = 1}
+			local nlines = 0  -- number of lines
 			local linesw = {} -- width of line
 			local w = 0
 			local xs = {}
@@ -659,6 +660,7 @@ ParagraphClass =
 				xs[wn] = w
 				w = w + ww
 				if (w >= width) then
+					nlines = nlines + 1
 					linesw[#linesw+1] = w - ww
 					lines[#lines+1] = line
 					if #lines == 1 then
@@ -673,13 +675,14 @@ ParagraphClass =
 			end
 
 			if (#line > 0) then
+				nlines = nlines + 1
 				linesw[#linesw+1] = w
 				lines[#lines+1] = line
 			end
 
 			-- Justify lines
 			for ln, line in ipairs(lines) do
-				if line[ln + 1] then
+				if ln < nlines - 1 then
 					local w = linesw[ln]
 					local dw = width
 					if ln == 1 then
