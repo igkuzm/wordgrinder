@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 06.08.2024
+Last Modified Date: 08.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -121,6 +121,7 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
         "$LDFLAGS",
         "-lz",
         "-lm",
+        "-lpng",
         "-g",
     }
     local objs = {}
@@ -297,6 +298,64 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
         srcfile("src/c/libdoc/src/style_properties.c")
         srcfile("src/c/libdoc/src/section_boundaries.c")
         srcfile("src/c/libdoc/src/direct_section_formatting.c")
+        -- HPDF (libharu)
+        srcfile("src/c/HPDF/hpdf_3dmeasure.c")
+        srcfile("src/c/HPDF/hpdf_annotation.c")
+        srcfile("src/c/HPDF/hpdf_array.c")
+        srcfile("src/c/HPDF/hpdf_binary.c")
+        srcfile("src/c/HPDF/hpdf_boolean.c")
+        srcfile("src/c/HPDF/hpdf_catalog.c")
+        srcfile("src/c/HPDF/hpdf_destination.c")
+        srcfile("src/c/HPDF/hpdf_dict.c")
+        srcfile("src/c/HPDF/hpdf_doc.c")
+        srcfile("src/c/HPDF/hpdf_doc_png.c")
+        srcfile("src/c/HPDF/hpdf_encoder.c")
+        srcfile("src/c/HPDF/hpdf_encoder_cns.c")
+        srcfile("src/c/HPDF/hpdf_encoder_cnt.c")
+        srcfile("src/c/HPDF/hpdf_encoder_jp.c")
+        srcfile("src/c/HPDF/hpdf_encoder_kr.c")
+        srcfile("src/c/HPDF/hpdf_encoder_utf.c")
+        srcfile("src/c/HPDF/hpdf_encrypt.c")
+        srcfile("src/c/HPDF/hpdf_encryptdict.c")
+        srcfile("src/c/HPDF/hpdf_error.c")
+        srcfile("src/c/HPDF/hpdf_exdata.c")
+        srcfile("src/c/HPDF/hpdf_ext_gstate.c")
+        srcfile("src/c/HPDF/hpdf_font.c")
+        srcfile("src/c/HPDF/hpdf_font_cid.c")
+        srcfile("src/c/HPDF/hpdf_font_tt.c")
+        srcfile("src/c/HPDF/hpdf_font_type1.c")
+        srcfile("src/c/HPDF/hpdf_fontdef.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_base14.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_cid.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_cns.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_cnt.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_jp.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_kr.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_tt.c")
+        srcfile("src/c/HPDF/hpdf_fontdef_type1.c")
+        srcfile("src/c/HPDF/hpdf_gstate.c")
+        srcfile("src/c/HPDF/hpdf_image.c")
+        srcfile("src/c/HPDF/hpdf_image_ccitt.c")
+        srcfile("src/c/HPDF/hpdf_image_png.c")
+        srcfile("src/c/HPDF/hpdf_info.c")
+        srcfile("src/c/HPDF/hpdf_list.c")
+        srcfile("src/c/HPDF/hpdf_mmgr.c")
+        srcfile("src/c/HPDF/hpdf_name.c")
+        srcfile("src/c/HPDF/hpdf_namedict.c")
+        srcfile("src/c/HPDF/hpdf_null.c")
+        srcfile("src/c/HPDF/hpdf_number.c")
+        srcfile("src/c/HPDF/hpdf_objects.c")
+        srcfile("src/c/HPDF/hpdf_outline.c")
+        srcfile("src/c/HPDF/hpdf_page_label.c")
+        srcfile("src/c/HPDF/hpdf_page_operator.c")
+        srcfile("src/c/HPDF/hpdf_pages.c")
+        srcfile("src/c/HPDF/hpdf_pdfa.c")
+        srcfile("src/c/HPDF/hpdf_real.c")
+        srcfile("src/c/HPDF/hpdf_streams.c")
+        srcfile("src/c/HPDF/hpdf_string.c")
+        srcfile("src/c/HPDF/hpdf_u3d.c")
+        srcfile("src/c/HPDF/hpdf_utils.c")
+        srcfile("src/c/HPDF/hpdf_xref.c")
     end
 
     -- Frontends
