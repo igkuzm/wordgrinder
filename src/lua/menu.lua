@@ -2,7 +2,7 @@
 File              : menu.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 04.08.2024
+Last Modified Date: 08.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -111,6 +111,7 @@ local ExportMenu = CreateMenu("Export current document",
 	{"FErtf",  "R", "Export to Rtf...",          nil,         Cmd.ExportRTFFile},
 	{"FEdocx", "D", "Export to MS DOCX...",      nil,         Cmd.ExportDOCXFile},
 	{"FEorg",  "E", "Export to Emacs Org...",    nil,         Cmd.ExportOrgFile},
+	{"FEpdf",  "P", "Export to PDF...",          nil,         Cmd.ExportPDFFile},
 })
 
 local DocumentSettingsMenu = CreateMenu("Document settings",

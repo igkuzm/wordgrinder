@@ -103,6 +103,9 @@ extern void undoc_init(void);
 /* IMAGES */
 extern void image_init(void);
 
+/* PDF */
+extern void pdf_init(void);
+
 /* --- General utilities ------------------------------------------------- */
 
 extern int getu8bytes(char c);

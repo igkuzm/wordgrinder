@@ -232,6 +232,7 @@ function build_wordgrinder_binary(exe, luapackage, frontend, buildstyle)
     srcfile("src/c/main.c")
     srcfile("src/c/lua.c")
     srcfile("src/c/word.c")
+    srcfile("src/c/pdf.c")
     srcfile("src/c/screen.c")
     srcfile(OBJDIR.."/luascripts.c")
 
@@ -595,6 +596,7 @@ emit("build ", OBJDIR.."/luascripts.c: luascripts ", table.concat({
     "src/lua/export/text.lua",
     "src/lua/export/html.lua",
     "src/lua/export/rtf.lua",
+    "src/lua/export/pdf.lua",
     "src/lua/export/org.lua",
     "src/lua/export/latex.lua",
     "src/lua/export/troff.lua",

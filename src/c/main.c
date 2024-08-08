@@ -42,6 +42,7 @@ int main(int argc, const char* argv[])
 	unrtf_init();
 	undoc_init();
 	image_init();
+	pdf_init();
 	#if (LUA_VERSION_NUM < 502)
 		luaopen_lpeg(L);
 	#else
