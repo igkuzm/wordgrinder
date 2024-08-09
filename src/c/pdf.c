@@ -2,7 +2,7 @@
  * File              : pdf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.07.2022
- * Last Modified Date: 08.08.2024
+ * Last Modified Date: 09.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -38,7 +38,6 @@ draw_text  (HPDF_Doc     pdf,
             float        y,
 						char				*text)
 {
-	HPDF_Page_SetFontAndSize(page, font, fs);
 	HPDF_Page_SetRGBFill(page, 0.0, 0.0, 0.0);
   HPDF_Page_BeginText(page);
 	HPDF_Page_TextOut(page, x, y, text);
@@ -139,15 +138,30 @@ int pdf_new_cb(lua_State *L)
 	HPDF_UseUTFEncodings(pdf);
 	HPDF_SetCurrentEncoder(pdf,"UTF-8");
 
-	/* int fonts */
+		return 0;
+}
+
+int pdf_load_font_cb(lua_State* L)
+{
+	const char* file_name = 
+		luaL_checkstring(L, 1);
+	if (!file_name)
+		return 1;
+	
+	int fs = forceinteger(L, 2);
+	if (fs < 1)
+		return -1;
+	
+	/* init font */
 	font = 
 		HPDF_GetFont (pdf, 
 				HPDF_LoadTTFontFromFile(
 					pdf, 
-					"1.ttf", 
+					file_name, 
 					HPDF_TRUE), 
 				"UTF-8");
 
+	HPDF_Page_SetFontAndSize(current_page, font, fs);
 	return 0;
 }
 
@@ -223,6 +237,7 @@ void pdf_init(void)
 		{ "pdf_close",      pdf_close_cb },
 		{ "pdf_add_page",   pdf_add_page_cb },
 		{ "pdf_write_text", pdf_write_text_cb },
+		{ "pdf_load_font", pdf_load_font_cb },
 		{ NULL,            NULL }
 	};
 

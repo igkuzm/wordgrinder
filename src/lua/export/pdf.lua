@@ -2,15 +2,18 @@
 File              : pdf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 08.08.2024
+Last Modified Date: 09.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
 local NextCharInWord = wg.nextcharinword
+
 local PdfNew = wg.pdf_new
 local PdfAddPage = wg.pdf_add_page
 local PdfClose = wg.pdf_close
 local PdfWriteText = wg.pdf_write_text
+local PdfLoadFont = wg.pdf_load_font
+
 local getimagesize = wg.getimagesize
 local string_len = string.len
 local string_char = string.char
@@ -23,6 +26,9 @@ local table_concat = table.concat
 local function error_handler(msg)
 end
 
+HOME = os.getenv("HOME") or os.getenv("USERPROFILE")
+CONFIGDIR = HOME .. "/.wordgrinder"
+
 local function callback(writer, document)
 
 	local npage = 1 -- page number
@@ -32,7 +38,7 @@ local function callback(writer, document)
 		prologue = function()
 			PdfNew()
 			PdfAddPage(npage)	
-			PdfWriteText("hello world!")
+			PdfLoadFont(CONFIGDIR .. "/normal.ttf", 12)
 		end,
 		
 		rawtext = function(s)
