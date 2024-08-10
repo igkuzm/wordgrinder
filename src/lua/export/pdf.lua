@@ -17,6 +17,10 @@ local PdfStartParagraph = wg.pdf_start_paragraph
 local PdfEndParagraph = wg.pdf_end_paragraph
 local PdfStartLine = wg.pdf_start_line
 local PdfEndLine = wg.pdf_end_line
+local PdfJustyfyRight = wg.pdf_justify_right
+local PdfJustyfyCenter = wg.pdf_justify_center
+local PdfJustyfyBoth = wg.pdf_justify_both
+local PdfMakeIndent = wg.pdf_make_indent
 
 local getimagesize = wg.getimagesize
 local string_len = string.len
@@ -97,16 +101,49 @@ local function callback(document)
 		end,
 		
 		line_start = function(ln, para)
-			-- get text from line to handle it's width
-			local nspaces = 0
-			local text = {}
-			for _, wn in ipairs(para.lines[ln]) do
-				local word = para[wn]
-				text[#text + 1] = word
-				text[#text + 1] = " "
-				nspaces = nspaces + 1
+			PdfStartLine()
+
+			if DocumentStyles[para.style].indent
+			then
+				PdfMakeIndent(DocumentStyles[para.style].indent)
 			end
-			PdfStartLine(nspaces, table_concat(text))
+
+			if ln == 1 then
+				local firstindent = 
+					DocumentStyles[para.style].firstindent or 0
+				if firstindent then
+					PdfMakeIndent(firstindent)
+				end
+			end
+			
+			if 
+				para.style == "RIGHT" or
+				para.style == "CENTER" or
+				para.style == "BOTH"
+			then
+				-- get text from line to handle it's width
+				local nlines = 0
+				local text = {}
+				for n, wn in ipairs(para.lines[ln]) do
+					if n ~= 1 then 
+						text[#text + 1] = " "
+					end
+					local word = para[wn]
+					text[#text + 1] = word
+					nlines = n
+				end
+
+				if para.style == "RIGHT" then
+					PdfJustyfyRight(table_concat(text))
+				elseif para.style == "CENTER" then
+					PdfJustyfyCenter(table_concat(text))
+				elseif para.style == "BOTH" then
+					if ln < nlines - 1 then
+						PdfJustyfyBoth(table_concat(text))
+					end
+				end
+			end
+
 		end,
 		
 		line_end = function(ln, para)

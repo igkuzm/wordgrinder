@@ -116,6 +116,10 @@ float left, right, top, bottom;
 
 float fs;
 
+float lw; // line width
+
+float firstindent;
+
 int pdf_new_cb(lua_State *L)
 {
   pdf = HPDF_New (
@@ -224,12 +228,6 @@ int pdf_add_page_cb(lua_State* L)
 	py = HPDF_Page_GetHeight(page) - top * 72 / 2.5;
 	px = left * 72 / 2.5;
 
-	HPDF_Page_SetLineWidth(
-			page, 
-			HPDF_Page_GetWidth(page) 
-			- left  * 72 / 2.5
-			- right * 72 / 2.5);
-
 	HPDF_Page_SetRGBFill(page, 0.0, 0.0, 0.0);
 	HPDF_Page_SetTextLeading(page, 20);
 
@@ -266,38 +264,13 @@ int pdf_end_paragraph_cb(lua_State* L)
 
 int pdf_start_line_cb(lua_State* L)
 {
-	int nspaces = luaL_forceinteger(L, 1);
-	if (nspaces < 0) // some error
-		return 1;
-	
-	const char* text = 
-		luaL_checkstring(L, 2);
-	if (!text || text[0] == 0) // this is empthy string
-		return 0;
-	
-	// count text width
-	float w = HPDF_Page_TextWidth(page, text);
+	firstindent = 0;
+	lw = HPDF_Page_GetWidth(page) 
+			- left  * 72 / 2.5
+			- right * 72 / 2.5;
 
-	//float lw = 	HPDF_Page_GetWidth(page) 
-			//- left  * 72 / 2.5
-			//- right * 72 / 2.5;
-
-	//// justify text
-	//if (w < lw){
-		//float value = (lw - w) / nspaces;
-		////HPDF_Page_SetWordSpace(page, 10);
-		lua_getglobal(L, "pdf_error_handler");
-		lua_pushfstring(L, 
-				"w: %d "
-				"lw: %d "
-				"ns: %d "
-				"word spaces: %d", 
-				w, 0, nspaces, 0);
-		lua_call(L, 1, 0);
-	//}
-
-
-	//HPDF_Page_SetTextLeading(page, 20);
+	HPDF_Page_SetLineWidth(page, lw); 
+	HPDF_Page_SetWordSpace(page, 0);
 	
 	return 0;
 }
@@ -306,6 +279,64 @@ int pdf_end_line_cb(lua_State* L)
 {
 	p.x = px;
 	p.y -= 20;
+	return 0;
+}
+
+int pdf_justify_right_cb(lua_State* L)
+{
+	const char* text = 
+		luaL_checkstring(L, 1);
+	if (!text || text[0] == 0) // this is empthy string
+		return 0;
+
+	// count text width
+	float w = HPDF_Page_TextWidth(page, text);
+
+	p.x = lw - w;
+	return 0;
+}
+
+int pdf_justify_center_cb(lua_State* L)
+{
+	const char* text = 
+		luaL_checkstring(L, 1);
+	if (!text || text[0] == 0) // this is empthy string
+		return 0;
+
+	// count text width
+	float w = HPDF_Page_TextWidth(page, text);
+		
+	p.x = lw / 2 - w / 2;
+	return 0;
+}
+
+int pdf_justify_both_cb(lua_State* L)
+{
+	const char* text = 
+		luaL_checkstring(L, 1);
+	if (!text || text[0] == 0) // this is empthy string
+		return 0;
+
+	// count text width
+	float w = HPDF_Page_TextWidth(page, text);
+
+	// count spaces
+	int ns = 0, i;
+	for (i = 0; i < strlen(text); ++i)
+		if (text[i] == ' ')
+			ns++;
+
+	if (ns && w < lw - firstindent)
+		HPDF_Page_SetWordSpace(page, (lw - firstindent - w)/ns);
+		
+	return 0;
+}
+
+int pdf_make_indent_cb(lua_State* L)
+{
+	firstindent = forcedouble(L, 1) * 12;
+	p.x += firstindent;
+
 	return 0;
 }
 
@@ -347,6 +378,10 @@ void pdf_init(void)
 		{ "pdf_end_paragraph",   pdf_end_paragraph_cb },
 		{ "pdf_start_line",      pdf_start_line_cb },
 		{ "pdf_end_line",        pdf_end_line_cb },
+		{ "pdf_justify_right",   pdf_justify_right_cb },
+		{ "pdf_justify_center",  pdf_justify_center_cb },
+		{ "pdf_justify_both",  pdf_justify_both_cb },
+		{ "pdf_make_indent",  pdf_make_indent_cb },
 		{ NULL,            NULL }
 	};
 
