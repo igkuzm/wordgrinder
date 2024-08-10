@@ -2,10 +2,11 @@
  * File              : pdf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.07.2022
- * Last Modified Date: 09.08.2024
+ * Last Modified Date: 10.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
+#include "HPDF/hpdf_objects.h"
 #include "HPDF/hpdf_types.h"
 #include "globals.h"
 #include <lua.h>
@@ -106,29 +107,14 @@ HPDF_Doc  pdf;
 HPDF_Font font; 
 HPDF_Page page;
 
+HPDF_Point p;
+
 float py;
 float px;
 
+float left, right, top, bottom;
+
 float fs;
-
-void
-draw_text  (float        x,
-            float        y,
-						char				*text)
-{
-	// count text width
-	HPDF_UINT b = 
-		HPDF_Page_MeasureText(page, text, 
-				HPDF_Page_GetLineWidth(page), HPDF_TRUE, NULL);
-
-  HPDF_Page_BeginText(page);
-	HPDF_Page_SetWordSpace(page, 100);
-	HPDF_Page_TextOut(page, x, y, text);
-  HPDF_Page_EndText(page);
-
-	// move to next line
-	py -= fs;
-}
 
 int pdf_new_cb(lua_State *L)
 {
@@ -222,11 +208,11 @@ int pdf_add_page_cb(lua_State* L)
 
 	bool fLandscape = forceinteger(L, 3);
 	
-	double left   = forcedouble(L, 4);
-	double rigth  = forcedouble(L, 5);
-	double top    = forcedouble(L, 6);
-	double bottom = forcedouble(L, 7);
-	if (left < 0 || rigth < 0 || top < 0 || bottom < 0)
+	left   = forcedouble(L, 4);
+	right  = forcedouble(L, 5);
+	top    = forcedouble(L, 6);
+	bottom = forcedouble(L, 7);
+	if (left < 0 || right < 0 || top < 0 || bottom < 0)
 		return -1;
 
 	page = HPDF_AddPage(pdf);
@@ -242,9 +228,13 @@ int pdf_add_page_cb(lua_State* L)
 			page, 
 			HPDF_Page_GetWidth(page) 
 			- left  * 72 / 2.5
-			- rigth * 72 / 2.5);
+			- right * 72 / 2.5);
 
 	HPDF_Page_SetRGBFill(page, 0.0, 0.0, 0.0);
+	HPDF_Page_SetTextLeading(page, 20);
+
+	p.x = px;
+	p.y = py;
 		
 	return 0;
 }
@@ -256,10 +246,66 @@ int pdf_write_text_cb(lua_State* L)
 	if (!text)
 		return -1;
 	
-	draw_text(
-			px, py, 
-			(char *)text);
+	HPDF_Page_BeginText(page);
+	HPDF_Page_TextOut(page, p.x, p.y, text);
+	p.x += HPDF_Page_TextWidth(page, text);
+  HPDF_Page_EndText(page);
 	
+	return 0;
+}
+
+int pdf_start_paragraph_cb(lua_State* L)
+{
+	return 0;
+}
+
+int pdf_end_paragraph_cb(lua_State* L)
+{
+	return 0;
+}
+
+int pdf_start_line_cb(lua_State* L)
+{
+	int nspaces = luaL_forceinteger(L, 1);
+	if (nspaces < 0) // some error
+		return 1;
+	
+	const char* text = 
+		luaL_checkstring(L, 2);
+	if (!text || text[0] == 0) // this is empthy string
+		return 0;
+	
+	// count text width
+	float w = HPDF_Page_TextWidth(page, text);
+
+	//float lw = 	HPDF_Page_GetWidth(page) 
+			//- left  * 72 / 2.5
+			//- right * 72 / 2.5;
+
+	//// justify text
+	//if (w < lw){
+		//float value = (lw - w) / nspaces;
+		////HPDF_Page_SetWordSpace(page, 10);
+		lua_getglobal(L, "pdf_error_handler");
+		lua_pushfstring(L, 
+				"w: %d "
+				"lw: %d "
+				"ns: %d "
+				"word spaces: %d", 
+				w, 0, nspaces, 0);
+		lua_call(L, 1, 0);
+	//}
+
+
+	//HPDF_Page_SetTextLeading(page, 20);
+	
+	return 0;
+}
+
+int pdf_end_line_cb(lua_State* L)
+{
+	p.x = px;
+	p.y -= 20;
 	return 0;
 }
 
@@ -292,11 +338,15 @@ void pdf_init(void)
 {
 	const static luaL_Reg funcs[] =
 	{
-		{ "pdf_new",        pdf_new_cb },
-		{ "pdf_close",      pdf_close_cb },
-		{ "pdf_add_page",   pdf_add_page_cb },
-		{ "pdf_write_text", pdf_write_text_cb },
-		{ "pdf_load_font", pdf_load_font_cb },
+		{ "pdf_new",             pdf_new_cb },
+		{ "pdf_close",           pdf_close_cb },
+		{ "pdf_add_page",        pdf_add_page_cb },
+		{ "pdf_write_text",      pdf_write_text_cb },
+		{ "pdf_load_font",       pdf_load_font_cb },
+		{ "pdf_start_paragraph", pdf_start_paragraph_cb },
+		{ "pdf_end_paragraph",   pdf_end_paragraph_cb },
+		{ "pdf_start_line",      pdf_start_line_cb },
+		{ "pdf_end_line",        pdf_end_line_cb },
 		{ NULL,            NULL }
 	};
 

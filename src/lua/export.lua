@@ -217,6 +217,7 @@ function ExportFileUsingCallbacks(document, cb)
 				end
 			end
 			cb.image_end(paragraph)
+		
 		else
 			if (#paragraph == 1) and (#paragraph[1] == 0) then
 				cb.notext()
@@ -227,20 +228,40 @@ function ExportFileUsingCallbacks(document, cb)
 				oldunderline = false
 				oldbold = false
 
-				for wn, word in ipairs(paragraph) do
-					if firstword then
-						firstword = false
-					else
-						wordbreak = true
-					end
+				-- wrap paragraph to lines
+				if paragraph.style == "BOTH" then
+					paragraph.wrapBoth(paragraph)
+				elseif paragraph.style == "RIGHT" then
+					paragraph.wrapRight(paragraph)
+				else
+					paragraph.wrap(paragraph)
+				end
 
-					emptyword = true
-					italic = false
-					underline = false
-					bold = false
-					ParseWord(word, 0, wordwriter) -- FIXME
-					if emptyword then
-						wordwriter(0, "")
+				for ln, line in ipairs(paragraph.lines) do
+					if cb.line_start then
+						cb.line_start(ln, paragraph)
+					end
+					--for wn, word in ipairs(paragraph) do
+					for _, wn in ipairs(line) do
+						local word = paragraph[wn]
+						
+						if firstword then
+							firstword = false
+						else
+							wordbreak = true
+						end
+
+						emptyword = true
+						italic = false
+						underline = false
+						bold = false
+						ParseWord(word, 0, wordwriter) -- FIXME
+						if emptyword then
+							wordwriter(0, "")
+						end
+					end
+					if cb.line_end then
+						cb.line_end(ln, paragraph)
 					end
 				end
 

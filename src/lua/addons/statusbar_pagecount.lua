@@ -5,30 +5,8 @@
 -----------------------------------------------------------------------------
 -- Build the status bar.
 
-do
-	local function cb(event, token, terms)
-		local lines = 0
-		local cp, cw, co = Document.cp, Document.cw, Document.co
-		local cw = Document.cw
-		local paragraph = Document[cp]
-
-		-- count lines of prev paragraphs
-		local n = 1
-		while n < cp do
-			for _, l in ipairs(Document[n].lines) do
-				lines = lines + 1
-			end
-			n = n + 1
-		end
-			
-		-- get current line 
-		local cl
-		cl, cw = paragraph:getLineOfWord(cw)
-
-		cl = lines + cl
-
-		-- get current page
-		local pageconf = DocumentSet.addons.pageconfig or {}
+LinesPerPage = function()
+	local pageconf = DocumentSet.addons.pageconfig or {}
 		-- if fontsize is 12 - then it should be 0,22 cm for 1
 		-- symbol and 0,51 cm for 1 line
 		-- if fontsize is 14 - then it should be 0,27 cm for 1
@@ -61,7 +39,13 @@ do
 			linesperpage = pageheight / 0.522
 		end
 
-		local page = math.floor(cl / linesperpage + 1)
+		return linesperpage
+end
+
+do
+	local function cb(event, token, terms)
+			local page = 
+				math.floor(Document.cp / LinesPerPage() + 1)
  
 		local settings = DocumentSet.addons.pagecount or {}
 		if settings.enabled then
