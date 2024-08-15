@@ -2,7 +2,7 @@
 File              : pdf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 10.08.2024
+Last Modified Date: 15.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -130,7 +130,7 @@ local function callback(document)
 					end
 					local word = para[wn]
 					text[#text + 1] = word
-					nlines = n
+					nlines = nlines + 1
 				end
 
 				if para.style == "RIGHT" then
@@ -138,7 +138,7 @@ local function callback(document)
 				elseif para.style == "CENTER" then
 					PdfJustyfyCenter(table_concat(text))
 				elseif para.style == "BOTH" then
-					if ln < nlines - 1 then
+					if nlines > 1 and ln < nlines - 1 then
 						PdfJustyfyBoth(table_concat(text))
 					end
 				end

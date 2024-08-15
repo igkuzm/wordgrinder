@@ -2,7 +2,7 @@
  * File              : pdf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.07.2022
- * Last Modified Date: 10.08.2024
+ * Last Modified Date: 15.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -10,6 +10,7 @@
 #include "HPDF/hpdf_types.h"
 #include "globals.h"
 #include <lua.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,7 +119,10 @@ float fs;
 
 float lw; // line width
 
-float firstindent;
+float indent;
+float space;
+
+bool firstWordInLine;
 
 int pdf_new_cb(lua_State *L)
 {
@@ -243,6 +247,12 @@ int pdf_write_text_cb(lua_State* L)
 		luaL_checkstring(L, 1);
 	if (!text)
 		return -1;
+
+	if (firstWordInLine) {
+		firstWordInLine = false;
+		if (text[0] == ' ')
+			return 0;
+	}
 	
 	HPDF_Page_BeginText(page);
 	HPDF_Page_TextOut(page, p.x, p.y, text);
@@ -264,7 +274,10 @@ int pdf_end_paragraph_cb(lua_State* L)
 
 int pdf_start_line_cb(lua_State* L)
 {
-	firstindent = 0;
+	indent = 0;
+	space  = 0;
+	firstWordInLine = true;	
+
 	lw = HPDF_Page_GetWidth(page) 
 			- left  * 72 / 2.5
 			- right * 72 / 2.5;
@@ -292,7 +305,7 @@ int pdf_justify_right_cb(lua_State* L)
 	// count text width
 	float w = HPDF_Page_TextWidth(page, text);
 
-	p.x = lw - w;
+	p.x = lw - w + left * 72 / 2.5;
 	return 0;
 }
 
@@ -306,7 +319,7 @@ int pdf_justify_center_cb(lua_State* L)
 	// count text width
 	float w = HPDF_Page_TextWidth(page, text);
 		
-	p.x = lw / 2 - w / 2;
+	p.x = lw / 2 - w / 2 + left * 72 / 2.5;
 	return 0;
 }
 
@@ -323,19 +336,24 @@ int pdf_justify_both_cb(lua_State* L)
 	// count spaces
 	int ns = 0, i;
 	for (i = 0; i < strlen(text); ++i)
-		if (text[i] == ' ')
+		if (text[i] == ' ' && i != 0)
 			ns++;
 
-	if (ns && w < lw - firstindent)
-		HPDF_Page_SetWordSpace(page, (lw - firstindent - w)/ns);
+	//if (ns && w < lw - indent)
+	if (ns)
+		space = (lw - w - indent)/ns;
+	if (space < 0)
+		space = 0;
+	
+	HPDF_Page_SetWordSpace(page, space);
 		
 	return 0;
 }
 
 int pdf_make_indent_cb(lua_State* L)
 {
-	firstindent = forcedouble(L, 1) * 12;
-	p.x += firstindent;
+	indent = forcedouble(L, 1) * 12;
+	p.x += indent;
 
 	return 0;
 }
