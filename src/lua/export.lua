@@ -77,6 +77,8 @@ function ExportFileUsingCallbacks(document, cb)
 		oldbold = bold
 	end
 
+	local cl = 1 -- current line
+
 	for _, paragraph in ipairs(Document) do
 		local name = paragraph.style
 		local style = DocumentStyles[name]
@@ -133,6 +135,9 @@ function ExportFileUsingCallbacks(document, cb)
 			paragraph.style == "TR" or 
 			paragraph.style == "TRB"
 		then
+			for ln, line in ipairs(paragraph.lines) do
+				cl = cl + 1
+			end
 				
 			for cn, cell in ipairs(paragraph.cells) do
 				cb.tablecell_start(paragraph, cn)
@@ -146,8 +151,8 @@ function ExportFileUsingCallbacks(document, cb)
 				for _, wn in ipairs(cell) do
 					local word = paragraph[wn]
 					if 
-						word:find(";") and  
-						GetStringWidth(word) == 1 
+						word:find(';') and  
+						GetStringWidth(word) < 2 
 					then
 						wordwriter(0, "")
 						-- skip ';'
@@ -217,9 +222,15 @@ function ExportFileUsingCallbacks(document, cb)
 				end
 			end
 			cb.image_end(paragraph)
+
+			paragraph:wrapImage()
+			for ln, line in ipairs(paragraph.lines) do
+				cl = cl + 1
+			end
 		
 		else
 			if (#paragraph == 1) and (#paragraph[1] == 0) then
+				cl = cl + 1
 				cb.notext()
 			else
 				firstword = true
@@ -239,7 +250,7 @@ function ExportFileUsingCallbacks(document, cb)
 
 				for ln, line in ipairs(paragraph.lines) do
 					if cb.line_start then
-						cb.line_start(ln, paragraph)
+						cb.line_start(ln, paragraph, cl)
 					end
 					--for wn, word in ipairs(paragraph) do
 					for _, wn in ipairs(line) do
@@ -260,6 +271,7 @@ function ExportFileUsingCallbacks(document, cb)
 							wordwriter(0, "")
 						end
 					end
+					cl = cl + 1
 					if cb.line_end then
 						cb.line_end(ln, paragraph)
 					end

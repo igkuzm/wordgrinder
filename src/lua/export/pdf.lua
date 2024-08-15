@@ -41,6 +41,9 @@ CONFIGDIR = HOME .. "/.wordgrinder"
 local function callback(document)
 	local config = DocumentSet.addons.pageconfig
 	local npage = 1 -- page number
+		
+	local nlist = 1 -- list number
+	local inlist = false
 
 	return ExportFileUsingCallbacks(document,
 	{
@@ -66,6 +69,8 @@ local function callback(document)
 		end,
 		
 		notext = function(s)
+			PdfStartLine()
+			PdfEndLine()
 		end,
 		
 		bold_on = function()
@@ -87,9 +92,12 @@ local function callback(document)
 		end,
 		
 		list_start = function()
+			nlist = 1
+			inlist = true
 		end,
 		
 		list_end = function()
+			inlist = false
 		end,
 		
 		paragraph_start = function(para)
@@ -100,7 +108,23 @@ local function callback(document)
 			PdfEndParagraph()	
 		end,
 		
-		line_start = function(ln, para)
+		line_start = function(ln, para, cp)
+			-- check page size
+			local lpp = LinesPerPage()
+			if (cp > lpp * npage) then
+				npage = npage + 1
+				PdfAddPage(
+				npage, 
+				config.pagesize, 
+				config.Landscape, 
+				config.left, 
+				config.right, 
+				config.top, 
+				config.bottom)
+				PdfLoadFont(CONFIGDIR .. "/1.ttf", config.fontsize)
+			end
+
+			-- handle line
 			PdfStartLine()
 
 			if DocumentStyles[para.style].indent
@@ -109,6 +133,14 @@ local function callback(document)
 			end
 
 			if ln == 1 then
+				if inlist then
+					local str = string_format("%d. ", nlist)
+					if para.style == "LB" then
+						str = DocumentStyles[para.style].bullet .. " "
+					end
+					PdfWriteText(str)
+					nlist = nlist + 1
+				end
 				local firstindent = 
 					DocumentStyles[para.style].firstindent or 0
 				if firstindent then
