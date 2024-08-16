@@ -2,22 +2,26 @@
  * File              : pdf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.07.2022
- * Last Modified Date: 15.08.2024
+ * Last Modified Date: 17.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
 #include "HPDF/hpdf_objects.h"
 #include "HPDF/hpdf_types.h"
 #include "globals.h"
+#include <libgen.h>
 #include <lua.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "HPDF/hpdf.h"
 
 #define STR(...) \
 ({char _s[BUFSIZ]; snprintf(_s, BUFSIZ-1, __VA_ARGS__); _s[BUFSIZ-1]=0; _s;})
+
+const char *argv0;
 
 void
 error_handler (HPDF_STATUS   error_no,
@@ -103,6 +107,48 @@ error_handler (HPDF_STATUS   error_no,
 	
 	//return 0;
 //}	
+
+
+static char * _getpath(const char *exe, char buf[256]) {
+	if (!exe || !exe[0] || !buf)
+		return NULL;
+
+	char selfpath[128];
+	if (readlink("/proc/self/exe", selfpath, 127) < 0)
+		return NULL;
+
+	sprintf(buf, "%s/../share/wordgrinder", 
+			dirname(selfpath));
+
+	return buf;
+}
+
+int linux_get_fonts_path_cb(lua_State* L)
+{
+	char buf[256] = {0};
+	if (!_getpath(argv0, buf))
+		return -1;
+
+	lua_pushstring(L, buf);
+	lua_call(L, 1, 0);
+	
+	return 0;
+}
+
+int macos_get_fonts_path_cb(lua_State* L)
+{
+	char buf[256] = {0};
+	char *e = strdup(argv0);
+  sprintf(buf, "%s%s", 
+			dirname(e), "/../Resources");
+	free(e);
+
+	lua_pushstring(L, buf);
+	lua_call(L, 1, 0);
+	
+	return 0;
+}
+
 
 HPDF_Doc  pdf;
 HPDF_Font font; 
@@ -383,8 +429,9 @@ int pdf_close_cb(lua_State *L)
 	return ret;
 }
 
-void pdf_init(void)
+void pdf_init(const char *_argv0)
 {
+	argv0 = _argv0;
 	const static luaL_Reg funcs[] =
 	{
 		{ "pdf_new",             pdf_new_cb },
@@ -400,6 +447,8 @@ void pdf_init(void)
 		{ "pdf_justify_center",  pdf_justify_center_cb },
 		{ "pdf_justify_both",  pdf_justify_both_cb },
 		{ "pdf_make_indent",  pdf_make_indent_cb },
+		{ "linux_get_fonts_path",  linux_get_fonts_path_cb },
+		{ "macos_get_fonts_path",  macos_get_fonts_path_cb },
 		{ NULL,            NULL }
 	};
 

@@ -2,7 +2,7 @@
 File              : pdf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.08.2024
+Last Modified Date: 17.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -22,6 +22,9 @@ local PdfJustyfyCenter = wg.pdf_justify_center
 local PdfJustyfyBoth = wg.pdf_justify_both
 local PdfMakeIndent = wg.pdf_make_indent
 
+local LinixGetFontsPath = wg.linux_get_fonts_path
+local MacOsGetFontsPath = wg.macos_get_fonts_path
+
 local getimagesize = wg.getimagesize
 local string_len = string.len
 local string_char = string.char
@@ -35,8 +38,24 @@ function pdf_error_handler(msg)
 	NonmodalMessage(msg)
 end
 
-HOME = os.getenv("HOME") or os.getenv("USERPROFILE")
-CONFIGDIR = HOME .. "/.wordgrinder"
+local function find_fonts_dir()
+end
+
+local FONTSDIR = "" 
+if (ARCH == "windows") then
+	FONTSDIR = WINDOWS_INSTALL_DIR
+else
+	local function path(buf)
+		FONTSDIR = buf
+	end
+	LinixGetFontsPath(path)
+end
+
+local FONTSANS = FONTSDIR .. "/FreeSans.ttf"
+
+
+--HOME = os.getenv("HOME") or os.getenv("USERPROFILE")
+--CONFIGDIR = HOME .. "/.wordgrinder"
 
 local function callback(document)
 	local config = DocumentSet.addons.pageconfig
@@ -58,7 +77,7 @@ local function callback(document)
 				config.right, 
 				config.top, 
 				config.bottom)	
-			PdfLoadFont(CONFIGDIR .. "/1.ttf", config.fontsize)
+			PdfLoadFont(FONTSANS, config.fontsize)
 		end,
 		
 		rawtext = function(s)
@@ -121,7 +140,7 @@ local function callback(document)
 				config.right, 
 				config.top, 
 				config.bottom)
-				PdfLoadFont(CONFIGDIR .. "/1.ttf", config.fontsize)
+				PdfLoadFont(FONTSANS, config.fontsize)
 			end
 
 			-- handle line

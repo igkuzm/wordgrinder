@@ -2,7 +2,7 @@
 File              : build.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 08.08.2024
+Last Modified Date: 16.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 for _, arg in ipairs({...}) do
@@ -700,6 +700,14 @@ if want_frontend("x11") or want_frontend("curses") then
     install_file("644", "extras/wordgrinder.desktop", DESTDIR..SHAREDIR.."/applications/wordgrinder.desktop")
     install_file("644", "extras/wordgrinder.mime", DESTDIR..SHAREDIR.."/mime-info/wordgrinder.mime")
     install_file("644", "extras/icon.png", DESTDIR..SHAREDIR.."/pixmaps/wordgrinder.png")
+    install_file("644", "src/c/HPDF/fonts/FreeMono.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeMono.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeMonoBold.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeMonoBold.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeMonoBoldOblique.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeMonoBoldOblique.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeMonoOblique.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeMonoOblique.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeSans.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeSans.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeSansBold.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeSansBold.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeSansBoldOblique.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeSansBoldOblique.ttf")
+    install_file("644", "src/c/HPDF/fonts/FreeSansOblique.ttf", DESTDIR..SHAREDIR.."/wordgrinder/FreeSansOblique.ttf")
 
     emit("build bin/wordgrinder.1: manpage wordgrinder.man")
     emit("  date = ", DATE)

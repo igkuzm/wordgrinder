@@ -104,7 +104,7 @@ extern void undoc_init(void);
 extern void image_init(void);
 
 /* PDF */
-extern void pdf_init(void);
+extern void pdf_init(const char *argv1);
 
 /* --- General utilities ------------------------------------------------- */
 
