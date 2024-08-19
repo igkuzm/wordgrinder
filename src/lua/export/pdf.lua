@@ -287,6 +287,9 @@ local function callback(document)
 
 		image_start = function(para)
 		end,
+		
+		image_end = function(para)
+		end,
 			
 		epilogue = function()
 		end
