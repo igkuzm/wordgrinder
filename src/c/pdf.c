@@ -151,7 +151,17 @@ int macos_get_fonts_path_cb(lua_State* L)
 
 
 HPDF_Doc  pdf;
+
 HPDF_Font font; 
+HPDF_Font sans; 
+HPDF_Font sans_bold; 
+HPDF_Font sans_italic; 
+HPDF_Font sans_bold_italic; 
+HPDF_Font mono; 
+HPDF_Font mono_bold; 
+HPDF_Font mono_italic; 
+HPDF_Font mono_bold_italic; 
+
 HPDF_Page page;
 
 HPDF_Point p;
@@ -193,6 +203,21 @@ int pdf_new_cb(lua_State *L)
 	return 0;
 }
 
+typedef enum {
+	FONTERR,
+	FONTSANS,          
+	FONTSANSBOLD,      
+	FONTSANSITALIC,    
+	FONTSANSBOLDITALIC,
+	FONTMONO,          
+	FONTMONOBOLD,      
+	FONTMONOITALIC,    
+	FONTMONOBOLDITALIC,
+} FONTTYPE;
+
+/* arg1 - font filename 
+ * arg2 - font type
+ */
 int pdf_load_font_cb(lua_State* L)
 {
 	const char* file_name = 
@@ -200,13 +225,12 @@ int pdf_load_font_cb(lua_State* L)
 	if (!file_name)
 		return 1;
 	
-	int _fs = forceinteger(L, 2);
-	if (_fs < 1)
+	FONTTYPE type = forceinteger(L, 2);
+	if (type == FONTERR)
 		return -1;
-	fs = _fs;
 	
 	/* init font */
-	font = 
+	HPDF_Font f = 
 		HPDF_GetFont (pdf, 
 				HPDF_LoadTTFontFromFile(
 					pdf, 
@@ -214,6 +238,80 @@ int pdf_load_font_cb(lua_State* L)
 					HPDF_TRUE), 
 				"UTF-8");
 
+	switch (type) {
+		case FONTSANS:
+			sans = f;
+			break;
+		case FONTSANSBOLD:
+			sans_bold = f;
+			break;
+		case FONTSANSITALIC:
+			sans_italic = f;
+			break;
+		case FONTSANSBOLDITALIC:
+			sans_bold_italic = f;
+			break;
+		case FONTMONO:
+			mono = f;
+			break;
+		case FONTMONOBOLD:
+			mono_bold = f;
+			break;
+		case FONTMONOITALIC:
+			mono_italic = f;
+			break;
+		case FONTMONOBOLDITALIC:
+			mono_bold_italic = f;
+			break;
+
+		default:
+			return -1;;
+	}
+
+	return 0;
+}
+
+int pdf_set_font_cb(lua_State* L)
+{
+	FONTTYPE type = forceinteger(L, 1);
+	if (type == FONTERR)
+		return -1;
+	
+	switch (type) {
+		case FONTSANS:
+			font = sans;
+			break;
+		case FONTSANSBOLD:
+			font = sans_bold;
+			break;
+		case FONTSANSITALIC:
+			font = sans_italic;
+			break;
+		case FONTSANSBOLDITALIC:
+			font = sans_bold_italic;
+			break;
+		case FONTMONO:
+			font = mono;
+			break;
+		case FONTMONOBOLD:
+			font = mono_bold;
+			break;
+		case FONTMONOITALIC:
+			font = mono_italic;
+			break;
+		case FONTMONOBOLDITALIC:
+			font = mono_bold_italic;
+			break;
+
+		default:
+			return -1;;
+	}
+
+	int _fs = forceinteger(L, 2);
+	if (_fs < 1)
+		return -1;
+	fs = _fs;
+	
 	HPDF_Page_SetFontAndSize(page, font, fs);
 	return 0;
 }
@@ -439,6 +537,7 @@ void pdf_init(const char *_argv0)
 		{ "pdf_add_page",        pdf_add_page_cb },
 		{ "pdf_write_text",      pdf_write_text_cb },
 		{ "pdf_load_font",       pdf_load_font_cb },
+		{ "pdf_set_font",         pdf_set_font_cb },
 		{ "pdf_start_paragraph", pdf_start_paragraph_cb },
 		{ "pdf_end_paragraph",   pdf_end_paragraph_cb },
 		{ "pdf_start_line",      pdf_start_line_cb },
@@ -454,4 +553,21 @@ void pdf_init(const char *_argv0)
 
 	lua_getglobal(L, "wg");
 	luaL_setfuncs(L, funcs, 0);
+	
+	lua_pushnumber(L, FONTSANS);
+	lua_setfield(L, -2, "FONTSANS");
+	lua_pushnumber(L, FONTSANSBOLD);
+	lua_setfield(L, -2, "FONTSANSBOLD");
+	lua_pushnumber(L, FONTSANSITALIC);
+	lua_setfield(L, -2, "FONTSANSITALIC");
+	lua_pushnumber(L, FONTSANSBOLDITALIC);
+	lua_setfield(L, -2, "FONTSANSBOLDITALIC");
+	lua_pushnumber(L, FONTMONO);
+	lua_setfield(L, -2, "FONTMONO");
+	lua_pushnumber(L, FONTMONOBOLD);
+	lua_setfield(L, -2, "FONTMONOBOLD");
+	lua_pushnumber(L, FONTMONOITALIC);
+	lua_setfield(L, -2, "FONTMONOITALIC");
+	lua_pushnumber(L, FONTMONOBOLDITALIC);
+	lua_setfield(L, -2, "FONTMONOBOLDITALIC");
 }

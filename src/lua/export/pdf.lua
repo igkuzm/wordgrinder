@@ -13,6 +13,7 @@ local PdfAddPage = wg.pdf_add_page
 local PdfClose = wg.pdf_close
 local PdfWriteText = wg.pdf_write_text
 local PdfLoadFont = wg.pdf_load_font
+local PdfSetFont = wg.pdf_set_font
 local PdfStartParagraph = wg.pdf_start_paragraph
 local PdfEndParagraph = wg.pdf_end_paragraph
 local PdfStartLine = wg.pdf_start_line
@@ -51,11 +52,14 @@ else
 	LinixGetFontsPath(path)
 end
 
-local FONTSANS = FONTSDIR .. "/FreeSans.ttf"
-
-
---HOME = os.getenv("HOME") or os.getenv("USERPROFILE")
---CONFIGDIR = HOME .. "/.wordgrinder"
+local FONTSANS           = FONTSDIR .. "/FreeSans.ttf"
+local FONTSANSBOLD       = FONTSDIR .. "/FreeSansBold.ttf"
+local FONTSANSITALIC     = FONTSDIR .. "/FreeSansOblique.ttf"
+local FONTSANSBOLDITALIC = FONTSDIR .. "/FreeSansBoldOblique.ttf"
+local FONTMONO           = FONTSDIR .. "/FreeMono.ttf"
+local FONTMONOBOLD       = FONTSDIR .. "/FreeMonoBold.ttf"
+local FONTMONOITALIC     = FONTSDIR .. "/FreeMonoOblique.ttf"
+local FONTMONOBOLDITALIC = FONTSDIR .. "/FreeMonoBoldOblique.ttf"
 
 local function callback(document)
 	local config = DocumentSet.addons.pageconfig
@@ -63,6 +67,39 @@ local function callback(document)
 		
 	local nlist = 1 -- list number
 	local inlist = false
+
+	local bold = false
+	local italic = false
+	local underline = false
+	local font = "sans"
+
+	local FONT = wg.FONTSANS
+
+	local function SetFont()
+		if font == "mono" then
+			if not bold and not italic then
+				FONT = wg.FONTMONO
+			elseif bold and not italic then
+				FONT = wg.FONTMONOBOLD
+			elseif not bold and italic then
+				FONT = wg.FONTMONOITALIC
+			elseif bold and italic then
+				FONT = wg.FONTMONOBOLDITALIC
+			end
+		elseif font == "sans" then
+			if not bold and not italic then
+				FONT = wg.FONTSANS
+			elseif bold and not italic then
+				FONT = wg.FONTSANSBOLD
+			elseif not bold and italic then
+				FONT = wg.FONTSANSITALIC
+			elseif bold and italic then
+				FONT = wg.FONTSANSBOLDITALIC
+			end
+		end
+		
+		PdfSetFont(FONT, config.fontsize)
+	end
 
 	return ExportFileUsingCallbacks(document,
 	{
@@ -77,10 +114,19 @@ local function callback(document)
 				config.right, 
 				config.top, 
 				config.bottom)	
-			PdfLoadFont(FONTSANS, config.fontsize)
+				PdfLoadFont(FONTSANS, wg.FONTSANS)
+				PdfLoadFont(FONTSANSBOLD, wg.FONTSANSBOLD)
+				PdfLoadFont(FONTSANSITALIC, wg.FONTSANSITALIC)
+				PdfLoadFont(FONTSANSBOLDITALIC, wg.FONTSANSBOLDITALIC)
+				PdfLoadFont(FONTMONO, wg.FONTMONO)
+				PdfLoadFont(FONTMONOBOLD, wg.FONTMONOBOLD)
+				PdfLoadFont(FONTMONOITALIC, wg.FONTMONOITALIC)
+				PdfLoadFont(FONTMONOBOLDITALIC, wg.FONTMONOBOLDITALIC)
+				SetFont()
 		end,
 		
 		rawtext = function(s)
+			PdfWriteText(s)
 		end,
 		
 		text = function(s)
@@ -93,15 +139,23 @@ local function callback(document)
 		end,
 		
 		bold_on = function()
+			bold = true
+			SetFont()
 		end,
 		
 		bold_off = function()
+			bold = false
+			SetFont()
 		end,
 		
 		italic_on = function()
+			italic = true
+			SetFont()
 		end,
 		
 		italic_off = function()
+			italic = false
+			SetFont()
 		end,
 		
 		underline_on = function()
@@ -120,6 +174,14 @@ local function callback(document)
 		end,
 		
 		paragraph_start = function(para)
+			bold = false
+			italic = false
+			underline = false
+			font = "sans"
+			if para.type == "RAW" then
+				font = "mono"
+			end
+			SetFont()
 			PdfStartParagraph()	
 		end,		
 		
@@ -140,7 +202,7 @@ local function callback(document)
 				config.right, 
 				config.top, 
 				config.bottom)
-				PdfLoadFont(FONTSANS, config.fontsize)
+				PdfSetFont(FONT, config.fontsize)
 			end
 
 			-- handle line
