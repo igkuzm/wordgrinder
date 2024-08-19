@@ -2,7 +2,7 @@
  * File              : pdf.c
  * Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
  * Date              : 20.07.2022
- * Last Modified Date: 17.08.2024
+ * Last Modified Date: 19.08.2024
  * Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
  */
 
@@ -180,6 +180,8 @@ float space;
 
 bool firstWordInLine;
 
+bool underline;
+
 int pdf_new_cb(lua_State *L)
 {
   pdf = HPDF_New (
@@ -199,6 +201,8 @@ int pdf_new_cb(lua_State *L)
   /* add UTF-8 support */
 	HPDF_UseUTFEncodings(pdf);
 	HPDF_SetCurrentEncoder(pdf,"UTF-8");
+
+	underline = false;
 
 	return 0;
 }
@@ -316,6 +320,12 @@ int pdf_set_font_cb(lua_State* L)
 	return 0;
 }
 
+int pdf_set_underline_cb(lua_State* L)
+{
+	underline = lua_toboolean(L, 1);
+	return 0;
+}
+
 struct page_size_t {
 	char *format;
 	HPDF_PageSizes size;	
@@ -400,8 +410,20 @@ int pdf_write_text_cb(lua_State* L)
 	
 	HPDF_Page_BeginText(page);
 	HPDF_Page_TextOut(page, p.x, p.y, text);
-	p.x += HPDF_Page_TextWidth(page, text);
-  HPDF_Page_EndText(page);
+	
+	HPDF_REAL w = 
+		HPDF_Page_TextWidth(page, text);
+  
+	HPDF_Page_EndText(page);
+
+	if (underline){ // draw line
+		HPDF_Page_SetLineWidth(page, 0);
+		HPDF_Page_MoveTo(page, p.x, p.y - 1);
+		HPDF_Page_LineTo(page, p.x + w, p.y - 1);	
+		HPDF_Page_Stroke(page);
+	}
+
+	p.x += w; 
 	
 	return 0;
 }
@@ -542,6 +564,7 @@ void pdf_init(const char *_argv0)
 		{ "pdf_end_paragraph",   pdf_end_paragraph_cb },
 		{ "pdf_start_line",      pdf_start_line_cb },
 		{ "pdf_end_line",        pdf_end_line_cb },
+		{ "pdf_set_underline",   pdf_set_underline_cb },
 		{ "pdf_justify_right",   pdf_justify_right_cb },
 		{ "pdf_justify_center",  pdf_justify_center_cb },
 		{ "pdf_justify_both",  pdf_justify_both_cb },

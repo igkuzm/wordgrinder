@@ -2,7 +2,7 @@
 File              : pdf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 17.08.2024
+Last Modified Date: 19.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -22,6 +22,7 @@ local PdfJustyfyRight = wg.pdf_justify_right
 local PdfJustyfyCenter = wg.pdf_justify_center
 local PdfJustyfyBoth = wg.pdf_justify_both
 local PdfMakeIndent = wg.pdf_make_indent
+local PdfSetUnderline = wg.pdf_set_underline
 
 local LinixGetFontsPath = wg.linux_get_fonts_path
 local MacOsGetFontsPath = wg.macos_get_fonts_path
@@ -98,7 +99,7 @@ local function callback(document)
 			end
 		end
 		
-		PdfSetFont(FONT, config.fontsize)
+		PdfSetFont(FONT, config.fontsize or 12)
 	end
 
 	return ExportFileUsingCallbacks(document,
@@ -159,9 +160,11 @@ local function callback(document)
 		end,
 		
 		underline_on = function()
+			PdfSetUnderline(true)
 		end,
 		
 		underline_off = function()
+			PdfSetUnderline(false)
 		end,
 		
 		list_start = function()
@@ -202,7 +205,7 @@ local function callback(document)
 				config.right, 
 				config.top, 
 				config.bottom)
-				PdfSetFont(FONT, config.fontsize)
+				PdfSetFont(FONT, config.fontsize or 12)
 			end
 
 			-- handle line

@@ -13,7 +13,7 @@ do
 			{
 				priority=70,
 				value=string_format("%dpt",
-					DocumentSet.addons.pageconfig.fontsize)
+					DocumentSet.addons.pageconfig.fontsize or 12)
 			}
 	end
 	
