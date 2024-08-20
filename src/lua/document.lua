@@ -2,7 +2,7 @@
 File              : document.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 15.08.2024
+Last Modified Date: 20.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 -- © 2008 David Given.
@@ -413,7 +413,7 @@ ParagraphClass =
 		end
 		
 		-- wrap each cell
-		local maxlinesize = 1
+		self.rowheight = 1
 
 		for cn, cell in ipairs(cells) do
 			local i = 0;
@@ -448,8 +448,8 @@ ParagraphClass =
 				i = i + 1
 			end
 
-			if i > maxlinesize then
-				maxlinesize = i
+			if i > self.rowheight then
+				self.rowheight = i
 			end
 
 			cell.lines = lines
@@ -460,7 +460,7 @@ ParagraphClass =
 		local lines = {}
 		local l 
 		local xs = {}
-		for l=1,maxlinesize,1 do
+		for l=1,self.rowheight,1 do
 			local newline = {wn = 1}
 			local hasstart = false
 			local start = 0

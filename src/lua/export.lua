@@ -148,31 +148,42 @@ function ExportFileUsingCallbacks(document, cb)
 				oldunderline = false
 				oldbold = false
 
-				for _, wn in ipairs(cell) do
-					local word = paragraph[wn]
-					if 
-						word:find(';') and  
-						GetStringWidth(word) < 2 
-					then
-						wordwriter(0, "")
-						-- skip ';'
-					else
-						if firstword then
-							firstword = false
-						else
-							wordbreak = true
-						end
+				for ln, line in ipairs(cell.lines) do
 
-						emptyword = true
-						italic = false
-						underline = false
-						bold = false
-						ParseWord(word, 0, wordwriter) -- FIXME
-						if emptyword then
-							wordwriter(0, "")
+					if ln > 1 then
+						if cb.tablecell_line then
+							cb.tablecell_line(paragraph, cn, ln)
 						end
 					end
+
+					for _, wn in ipairs(line) do
+						local word = paragraph[wn]
+						if 
+							word:find(';') and  
+							GetStringWidth(word) < 2 
+						then
+							wordwriter(0, "")
+							-- skip ';'
+						else
+							if firstword then
+								firstword = false
+							else
+								wordbreak = true
+							end
+
+							emptyword = true
+							italic = false
+							underline = false
+							bold = false
+							ParseWord(word, 0, wordwriter) -- FIXME
+							if emptyword then
+								wordwriter(0, "")
+							end
+						end
+					end
+					
 				end
+			
 				cb.tablecell_end(paragraph, cn)
 			end
 

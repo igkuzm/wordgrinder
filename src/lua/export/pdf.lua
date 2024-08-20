@@ -2,7 +2,7 @@
 File              : pdf.lua
 Author            : Igor V. Sementsov <ig.kuzm@gmail.com>
 Date              : 01.01.2024
-Last Modified Date: 19.08.2024
+Last Modified Date: 21.08.2024
 Last Modified By  : Igor V. Sementsov <ig.kuzm@gmail.com>
 --]]--
 
@@ -23,6 +23,12 @@ local PdfJustyfyCenter = wg.pdf_justify_center
 local PdfJustyfyBoth = wg.pdf_justify_both
 local PdfMakeIndent = wg.pdf_make_indent
 local PdfSetUnderline = wg.pdf_set_underline
+local PdfSetInrow = wg.pdf_set_inrow
+local PdfSetIncell = wg.pdf_set_incell
+local PdfTableCellLine = wg.pdf_stop_table_cell_line
+local PdfEndTable = wg.pdf_end_table
+local PdfDrawLeftCellBorder = wg.pdf_draw_left_cell_border
+local PdfImage = wg.pdf_image
 
 local LinixGetFontsPath = wg.linux_get_fonts_path
 local MacOsGetFontsPath = wg.macos_get_fonts_path
@@ -69,12 +75,17 @@ local function callback(document)
 	local nlist = 1 -- list number
 	local inlist = false
 
+	local intable = false
+
 	local bold = false
 	local italic = false
 	local underline = false
 	local font = "sans"
 
 	local FONT = wg.FONTSANS
+
+	local cells = {}
+	local cellw = {}
 
 	local function SetFont()
 		if font == "mono" then
@@ -267,28 +278,77 @@ local function callback(document)
 		end,
 
 		table_start = function(para)
-		
+			intable = true	
+			for cn, cell in ipairs(para.cells) do
+				cells[#cells+1] = cell
+				local w = para.cellWidth[cn]
+				cellw[#cellw+1] = w
+			end
 		end,
 		
 		table_end = function(para)
+			intable = false	
+			local borders = false
+			if para.style == "TRB" then
+				borders = true
+			end
+			PdfEndTable(borders)
+			cells = {}
+			cellw = {}
 		end,
 
 		tablerow_start = function(para)
+			local borders = false
+			if para.style == "TRB" then
+				borders = true
+			end
+			PdfSetInrow(para.rowheight, borders)	
+			if borders then
+				for cn, cell in ipairs(cells) do
+					local fs = config.fontsize or 12
+					local w = cellw[cn] * fs/2 + 1
+					PdfDrawLeftCellBorder(w)
+				end
+			end
 		end,
 		
 		tablerow_end = function(para)
+			local borders = false
+			if para.style == "TRB" then
+				borders = true
+			end
+			PdfSetInrow(0, borders)	
 		end,
 
-		tablecell_start = function(para)
+		tablecell_start = function(para, cn)
+			local borders = false
+			if para.style == "TRB" then
+				borders = true
+			end
+			local fs = config.fontsize or 12
+			local w = para.cellWidth[cn] * fs/2 + 1
+			PdfSetIncell(w, borders)
 		end,
 		
 		tablecell_end = function(para)
+			local borders = false
+			if para.style == "TRB" then
+				borders = true
+			end
+			PdfSetIncell(0, borders)
+		end,
+		
+		tablecell_line = function(para, cn, ln)
+			PdfTableCellLine()
 		end,
 
 		image_start = function(para)
+			PdfStartLine()
+			PdfJustyfyCenter(table_concat(para.imagetitle))
 		end,
 		
 		image_end = function(para)
+			PdfImage(para.imagename)
 		end,
 			
 		epilogue = function()
